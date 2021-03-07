@@ -24,14 +24,18 @@ def main():
             label.set(i)
             root.after(1000, lambda: button_countdown(i, label))
 
+    def add_button():
+        Tk.Button(master=root, text='QuotaNew', command=_quit).pack()
+
     root = Tk.Tk()
     StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the quit button
-    StartButton.pack(side=Tk.LEFT)
+    StartButton.pack(side=Tk.RIGHT, pady=5)
     QuitButton = Tk.Button(master=root, text='Quit', command=_quit)  # the quit button
-    QuitButton.pack(side=Tk.BOTTOM)
+    QuitButton.pack(side=Tk.RIGHT)
     T = Tk.Label(master=root, text = "Number of Sensors: "+ str(len(a.pressure_sensors)))
     T.pack(side = Tk.TOP)
-
+    for i in range(0,2):
+        Tk.Button(master=root, text='Quota', command=add_button).pack()
     vaal = (a.pressure_sensors[0]).get_value()
 
     counter = 10
