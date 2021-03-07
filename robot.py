@@ -47,17 +47,9 @@ class PressureSensor(threading.Thread):
 
     def run(self):
 
-        counter = 0;
-
         while (self.to_exit == False):
-            '''
-
-            '''
-            if (counter > self.timer):
-                self.read_sensor()
-                counter = 0
-            else:
-                counter += 1
+            time.sleep(0.5+(0.5*int(self.id)))
+            self.read_sensor()
 
     def read_sensor(self):
         x = random.uniform(0, 50)
@@ -100,6 +92,7 @@ class WaterRobot:
     pressure_sensors = []
     actuators = []
     to_exit = False
+    sensors_have_started = False
     '''
     Part 1: Robot
     '''
@@ -121,26 +114,18 @@ class WaterRobot:
             print("Actuator " + str(j.getID))
 
     def start(self):
+        self.sensors_have_started = True
         for i in self.pressure_sensors:
             i.start()
 
     def stop(self):
+        self.sensors_have_started = False
         for i in self.pressure_sensors:
             i.terminate()
 
     def run(self):
-
         counter = 0;
 
-        while (self.to_exit == False):
-            '''
-
-            '''
-            if (counter > self.timer):
-
-                counter = 0
-            else:
-                counter += 1
 
 
 
