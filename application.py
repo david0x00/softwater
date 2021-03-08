@@ -39,12 +39,13 @@ def main():
     StartButton.pack(side=Tk.RIGHT, pady=5)
     QuitButton = Tk.Button(master=root, text='Quit', command=_quit)  # the quit button
     QuitButton.pack(side=Tk.RIGHT)
+
+
     T = Tk.Label(master=root, text = "Number of Sensors: "+ str(len(a.pressure_sensors)))
-    T.pack(side = Tk.TOP)
-    Tk.Button(master=root, text='Quota', command=add_button).pack()
+    T.pack()
     for i in range(0,num_sensors):
         Tk.Button(master=root, text='Read Sensor ' + str(i), command=a.pressure_sensors[i].read_sensor).pack()
-
+    Tk.Label(master=root, text="").pack()  # SPACING
     for j in range(0, num_actuators):
         Tk.Label(master=root, text= "Actuator #" + str(j)).pack()
         move_up = partial(a.actuators[j].actuate_solenoid, ("UP"))
@@ -54,7 +55,6 @@ def main():
         Tk.Label(master=root, text="").pack() #SPACING
 
     vaal = (a.pressure_sensors[0]).get_value()
-
     counter = 10
     button_label = Tk.StringVar()
     button_label.set(counter)
@@ -62,8 +62,9 @@ def main():
 
     R = Tk.Label(master=root, textvariable= button_label)
     R.pack(side=Tk.RIGHT)
-    button_countdown(counter, button_label)
 
+    button_countdown(counter, button_label)
+    Tk.Button(master=root, text='Quota', command=add_button).pack()
     root.mainloop()
 
 
