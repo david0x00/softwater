@@ -10,7 +10,6 @@ import csv
 
 def main():
 
-
     '''
     SETTINGS
     '''
@@ -23,6 +22,7 @@ def main():
         a.start()
 
     def _quit():
+        print("Exit")
         a.to_exit = True
         a.stop()
         root.quit()
@@ -42,7 +42,7 @@ def main():
         a.saveState()
 
     root = Tk.Tk()
-    StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the quit button
+    StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the start button
     StartButton.pack(side=Tk.RIGHT, pady=5)
     QuitButton = Tk.Button(master=root, text='Quit', command=_quit)  # the quit button
     QuitButton.pack(side=Tk.RIGHT)
@@ -60,18 +60,19 @@ def main():
         Tk.Button(master=root, text='Move Down', command=move_down).pack()
         Tk.Label(master=root, text="").pack() #SPACING
 
+    Tk.Button(master=root, text='Save State', command=save_state).pack(side=Tk.RIGHT)
+
+    '''
     vaal = (a.pressure_sensors[0]).get_value()
     counter = 10
     button_label = Tk.StringVar()
     button_label.set(counter)
     Tk.Button(root, textvariable=button_label).pack()
-
-    Tk.Button(master=root, text='Save State', command=save_state).pack(side=Tk.RIGHT)
-
     R = Tk.Label(master=root, textvariable= button_label)
     R.pack(side=Tk.RIGHT)
     button_countdown(counter, button_label)
     Tk.Button(master=root, text='Quota', command=add_button).pack()
+    '''
     root.mainloop()
 
 

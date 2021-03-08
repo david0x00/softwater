@@ -94,10 +94,8 @@ class WaterRobot:
     Part 1: Robot
     '''
 
-
-
     def __init__(self, timerHz, numSensors, numActuators):
-        print("S")
+        print("Robot Init.")
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000)
             self.pressure_sensors.append(sensor)
@@ -111,7 +109,6 @@ class WaterRobot:
             writer.writeheader()
 
 
-
     def getListOfParts(self):
 
         for i in self.pressure_sensors:
@@ -120,11 +117,13 @@ class WaterRobot:
             print("Actuator " + str(j.getID))
 
     def start(self):
+        print("Sensor Start")
         self.sensors_have_started = True
         for i in self.pressure_sensors:
             i.start()
 
     def stop(self):
+        print("Sensor Terminate")
         self.sensors_have_started = False
         for i in self.pressure_sensors:
             i.terminate()
