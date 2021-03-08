@@ -68,16 +68,16 @@ class PressureSensor(threading.Thread):
 
 
 class Actuator(threading.Thread):
-
-    def __init__(self, threadID):
+    id = 0
+    def __init__(self, threadID, id):
         threading.Thread.__init__(self)
         self.threadID = threadID
-
+        self.id = id
     def run(self):
         print("")
 
-    def actuate_solenoid(self, id, direction):
-        print("Move " + direction)
+    def actuate_solenoid(self, direction):
+        print( "Actuator " + str(self.id) + " Move " + direction)
 
     def getID(self):
         return self.threadID
@@ -104,7 +104,7 @@ class WaterRobot:
             self.pressure_sensors.append(sensor)
             values.append(0)
         for j in range(0, numActuators):
-            self.actuators.append(Actuator(j))
+            self.actuators.append(Actuator(j,j))
 
     def getListOfParts(self):
 
