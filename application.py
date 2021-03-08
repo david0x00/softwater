@@ -5,13 +5,12 @@ from robot import WaterRobot
 import tkinter as Tk
 from functools import partial
 
-
 def main():
     '''
     SETTINGS
     '''
-    num_sensors = 2
-    num_actuators = 3
+    num_sensors = 6
+    num_actuators = 6
 
     a = WaterRobot(15, num_sensors, num_actuators)
 
@@ -40,7 +39,6 @@ def main():
     QuitButton = Tk.Button(master=root, text='Quit', command=_quit)  # the quit button
     QuitButton.pack(side=Tk.RIGHT)
 
-
     T = Tk.Label(master=root, text = "Number of Sensors: "+ str(len(a.pressure_sensors)))
     T.pack()
     for i in range(0,num_sensors):
@@ -59,10 +57,8 @@ def main():
     button_label = Tk.StringVar()
     button_label.set(counter)
     Tk.Button(root, textvariable=button_label).pack()
-
     R = Tk.Label(master=root, textvariable= button_label)
     R.pack(side=Tk.RIGHT)
-
     button_countdown(counter, button_label)
     Tk.Button(master=root, text='Quota', command=add_button).pack()
     root.mainloop()
