@@ -3,11 +3,17 @@ import sys
 
 from robot import WaterRobot
 import tkinter as Tk
-
+from functools import partial
 
 
 def main():
-    a = WaterRobot(15, 2, 0)
+    '''
+    SETTINGS
+    '''
+    num_sensors = 2
+    num_actuators = 3
+
+    a = WaterRobot(15, num_sensors, num_actuators)
 
     def _begin():
         a.start()
@@ -25,6 +31,7 @@ def main():
             root.after(1000, lambda: button_countdown(i, label))
 
     def add_button():
+        Tk.Label(master=root,text="New Quota").pack()
         Tk.Button(master=root, text='QuotaNew', command=_quit).pack()
 
     root = Tk.Tk()
@@ -34,8 +41,18 @@ def main():
     QuitButton.pack(side=Tk.RIGHT)
     T = Tk.Label(master=root, text = "Number of Sensors: "+ str(len(a.pressure_sensors)))
     T.pack(side = Tk.TOP)
-    for i in range(0,2):
-        Tk.Button(master=root, text='Quota', command=add_button).pack()
+    Tk.Button(master=root, text='Quota', command=add_button).pack()
+    for i in range(0,num_sensors):
+        Tk.Button(master=root, text='Read Sensor ' + str(i), command=a.pressure_sensors[i].read_sensor).pack()
+
+    for j in range(0, num_actuators):
+        Tk.Label(master=root, text= "Actuator #" + str(j)).pack()
+        move_up = partial(a.actuators[j].actuate_solenoid, ("UP"))
+        Tk.Button(master=root, text='Move Up', command= move_up).pack()
+        move_down = partial(a.actuators[j].actuate_solenoid, ("DOWN"))
+        Tk.Button(master=root, text='Move Down', command=move_down).pack()
+        Tk.Label(master=root, text="").pack() #SPACING
+
     vaal = (a.pressure_sensors[0]).get_value()
 
     counter = 10
