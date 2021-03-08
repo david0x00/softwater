@@ -4,8 +4,13 @@ import sys
 from robot import WaterRobot
 import tkinter as Tk
 from functools import partial
+import csv
+
+
 
 def main():
+
+
     '''
     SETTINGS
     '''
@@ -33,6 +38,9 @@ def main():
         Tk.Label(master=root,text="New Quota").pack()
         Tk.Button(master=root, text='QuotaNew', command=_quit).pack()
 
+    def save_state():
+        a.saveState()
+
     root = Tk.Tk()
     StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the quit button
     StartButton.pack(side=Tk.RIGHT, pady=5)
@@ -57,6 +65,9 @@ def main():
     button_label = Tk.StringVar()
     button_label.set(counter)
     Tk.Button(root, textvariable=button_label).pack()
+
+    Tk.Button(master=root, text='Save State', command=save_state).pack(side=Tk.RIGHT)
+
     R = Tk.Label(master=root, textvariable= button_label)
     R.pack(side=Tk.RIGHT)
     button_countdown(counter, button_label)

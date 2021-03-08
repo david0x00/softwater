@@ -1,8 +1,9 @@
+import csv
 import threading
 import time
 import random
 import tkinter as Tk
-import csv
+
 
 ''' WEEK 1'''
 # find an alternate way insteaad of sleep to "fire the methods or functions at a certain time"
@@ -44,9 +45,7 @@ class PressureSensor(threading.Thread):
         self.threadID = threadID
         self.id = number
         self.timer = frequency
-
     def run(self):
-
         while (self.to_exit == False):
             time.sleep(0.5+(0.5*int(self.id)))
             self.read_sensor()
@@ -66,7 +65,6 @@ class PressureSensor(threading.Thread):
     def terminate(self):
         self.to_exit = True
 
-
 class Actuator(threading.Thread):
     id = 0
     def __init__(self, threadID, id):
@@ -77,11 +75,10 @@ class Actuator(threading.Thread):
         print("")
 
     def actuate_solenoid(self, direction):
-        print( "Actuator " + str(self.id) + " Move " + direction)
+        print("Actuator " + str(self.id) + " Move " + direction)
 
     def getID(self):
         return self.threadID
-
 
 class WaterRobot:
     # add variables pressure sensors, solenoids, timestamp,
@@ -97,6 +94,8 @@ class WaterRobot:
     Part 1: Robot
     '''
 
+
+
     def __init__(self, timerHz, numSensors, numActuators):
         print("S")
         for i in range(0, numSensors):
@@ -105,6 +104,13 @@ class WaterRobot:
             values.append(0)
         for j in range(0, numActuators):
             self.actuators.append(Actuator(j,j))
+
+        with open('dataset.csv', 'w', newline='') as file:
+            fieldnames = ['sensors', 'actuators']
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+
+
 
     def getListOfParts(self):
 
@@ -124,10 +130,7 @@ class WaterRobot:
             i.terminate()
 
     def run(self):
-        counter = 0;
-
-
-
+        counter = 0
 
     def updateSensors(self):
         return 0
@@ -135,7 +138,10 @@ class WaterRobot:
     def updateActuators(self):
         return 0
 
-
+    def saveState(self):
+        with open('dataset.csv', 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
+            writer.writerow({'sensors': values, 'actuators': 0})
 
 
 def main():
