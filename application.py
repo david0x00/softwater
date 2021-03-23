@@ -13,8 +13,8 @@ def main():
     '''
     SETTINGS
     '''
-    num_sensors = 6
-    num_actuators = 6
+    num_sensors = 4
+    num_actuators = 8
 
     a = WaterRobot(15, num_sensors, num_actuators)
 
@@ -41,6 +41,7 @@ def main():
     def save_state():
         a.saveState()
 
+
     root = Tk.Tk()
     StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the start button
     StartButton.pack(side=Tk.RIGHT, pady=5)
@@ -52,17 +53,40 @@ def main():
     for i in range(0,num_sensors):
         Tk.Button(master=root, text='Read Sensor ' + str(i), command=a.pressure_sensors[i].read_sensor).pack()
     Tk.Label(master=root, text="").pack()  # SPACING
+
     for j in range(0, num_actuators):
-        Tk.Label(master=root, text= "Actuator #" + str(j)).pack()
-        move_up = partial(a.actuators[j].actuate_solenoid, ("UP"))
-        Tk.Button(master=root, text='Move Up', command= move_up).pack()
-        move_down = partial(a.actuators[j].actuate_solenoid, ("DOWN"))
-        Tk.Button(master=root, text='Move Down', command=move_down).pack()
+        s = "Pressurizer"
+        if (a.actuators[j].get_is_depressurizer() == True):
+            s = "Depressurizer"
+        Tk.Label(master=root, text= s + " Actuator #" + str(j)).pack()
+        move_up = partial(a.actuators[j].switch, ("UP"))
+        Tk.Button(master=root, text="Switch", command= move_up).pack()
         Tk.Label(master=root, text="").pack() #SPACING
+
+    for k in range(0, 1):
+        s = "Two Way Switch"
+        Tk.Label(master=root, text= s).pack()
+        turn_off = partial(a.two_way_gate.switch, (0))
+        turn_a = partial(a.two_way_gate.switch, (1))
+        turn_b = partial(a.two_way_gate.switch, (2))
+        Tk.Button(master=root, text="OFF", command=turn_off).pack()
+        Tk.Button(master=root, text="A", command=turn_a).pack()
+        Tk.Button(master=root, text="B", command=turn_b).pack()
+        Tk.Label(master=root, text="").pack()  # SPACING
+
+    entryb1 = Tk.StringVar()
+    Tk.Label(root, text="Frequency: ").pack()
+    Tk.Entry(root, textvariable=entryb1).pack()
+    def print_content():
+        content = entryb1.get()
+        print(content)
+    b1 = Tk.Button(root, text="Set", command=print_content)
+    b1.pack()
+
+
 
     Tk.Button(master=root, text='Save State', command=save_state).pack(side=Tk.RIGHT)
 
-    '''
     vaal = (a.pressure_sensors[0]).get_value()
     counter = 10
     button_label = Tk.StringVar()
@@ -72,7 +96,7 @@ def main():
     R.pack(side=Tk.RIGHT)
     button_countdown(counter, button_label)
     Tk.Button(master=root, text='Quota', command=add_button).pack()
-    '''
+
     root.mainloop()
 
 

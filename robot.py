@@ -1,4 +1,5 @@
 import csv
+import os
 import threading
 import time
 import random
@@ -21,12 +22,21 @@ import tkinter as Tk
 
 '''WEEK 2'''
 # In the GUI, Take data from pressure sensors -> actuate each solenoid.
-# Setup and finish the Gui. Turn on solenoids, start expirement button, stop, such.
+# Setup and finish the Gui. Turn on solenoids, start experiment button, stop, such.
 
-'''GOAL LIST'''
+'''WEEK 3'''
+# 4 Pressure Sensors, 8 Solenoid Actuators, 4 will pressurize a solenoid and 4 will depressurize. We have solenoid gate valve which is represented with on/off. we also have a water pump
+# Write to CSV every sensor read. In the csv we need to write actuator states (Actuator is 1/0, solenoid is 1/0, Pump is 1/0, 1 = open, 0 = closed)
+
+'''WEEK 4'''
+# Add a 2 way pump switch
+# Add a Gate solenoid valve
+# finish the UI photo implementation
+# add a text field that allows us to set frequency
+# save dataset to a folder. browse
+# I will create a start recording button for a set frequency
 
 values = []
-
 
 class Camera():
     print("")
@@ -34,6 +44,28 @@ class Camera():
     def capture(self):
         print("")
 
+class TwoWayGate(threading.Thread):
+    to_exit = False
+    activated = 0
+    '''
+    KEY: 0 = OFF, 1 = MODE A, 2 = MODE B
+    '''
+    def __init__(self, threadID):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+
+    def switch(self, direction: int):
+        self.activated = direction
+        print("Two Way Gate Turn " + str(self.activated))
+        if (self.activated == 0):
+            # DO ACTION
+            pass
+        if (self.activated == 1):
+            # DO ACTION
+            pass
+        if (self.activated == 2):
+            # DO ACTION
+            pass
 
 class PressureSensor(threading.Thread):
     timer = 0
@@ -67,18 +99,46 @@ class PressureSensor(threading.Thread):
 
 class Actuator(threading.Thread):
     id = 0
-    def __init__(self, threadID, id):
+    is_depressurizer = False
+    activated = False
+    def __init__(self, threadID, id, is_depressurizer):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.id = id
+        self.is_depressurizer = is_depressurizer
     def run(self):
-        print("")
+        print()
 
-    def actuate_solenoid(self, direction):
-        print("Actuator " + str(self.id) + " Move " + direction)
+    def switch(self, direction):
+        self.activated= not self.activated
+        print("Actuator " + str(self.id) + " Move " + str(self.activated))
+        if (self.is_depressurizer):
+            # DO ACTION
+            if (self.activated == False):
+                # DO ACTION
+                pass
+            if (self.activated == True):
+                # DO ACTION
+                pass
+            pass
+        else:
+            # DO ACTION
+            if (self.activated == False):
+                # DO ACTION
+                pass
+            if (self.activated == True):
+                # DO ACTION
+                pass
+            pass
 
     def getID(self):
         return self.threadID
+
+    def get_is_depressurizer(self):
+        return self.is_depressurizer
+
+    def get_state(self):
+        return self.activated
 
 class WaterRobot:
     # add variables pressure sensors, solenoids, timestamp,
@@ -88,6 +148,7 @@ class WaterRobot:
     timer = 0
     pressure_sensors = []
     actuators = []
+    two_way_gate = TwoWayGate(0)
     to_exit = False
     sensors_have_started = False
     '''
@@ -101,16 +162,17 @@ class WaterRobot:
             self.pressure_sensors.append(sensor)
             values.append(0)
         for j in range(0, numActuators):
-            self.actuators.append(Actuator(j,j))
+            is_dep = False
+            if (j >= 4 ):
+                is_dep = True
+            self.actuators.append(Actuator(j,j,is_dep))
 
         with open('dataset.csv', 'w', newline='') as file:
             fieldnames = ['sensors', 'actuators']
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
 
-
     def getListOfParts(self):
-
         for i in self.pressure_sensors:
             print("Pressure Sensor " + str(i.getID))
         for j in self.actuators:
@@ -129,7 +191,9 @@ class WaterRobot:
             i.terminate()
 
     def run(self):
-        counter = 0
+        while (self.to_exit == False):
+            time.sleep(0.5)
+            self.saveState()
 
     def updateSensors(self):
         return 0
@@ -138,14 +202,20 @@ class WaterRobot:
         return 0
 
     def saveState(self):
-        with open('dataset.csv', 'a', newline='') as file:
+        current_directory = os.getcwd()
+        final_directory = os.path.join(current_directory, r'data')
+        if not os.path.exists(final_directory):
+            os.makedirs(final_directory)
+
+        with open('data/dataset.csv', 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             writer.writerow({'sensors': values, 'actuators': 0})
 
+    def printOut(self, text):
+        print(text)
 
 def main():
     print()
-
 
 if __name__ == "__main__":
     main()
