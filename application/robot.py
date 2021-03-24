@@ -5,7 +5,6 @@ import time
 import random
 import tkinter as Tk
 
-
 ''' WEEK 1'''
 # find an alternate way insteaad of sleep to "fire the methods or functions at a certain time"
 
@@ -38,11 +37,13 @@ import tkinter as Tk
 
 values = []
 
+
 class Camera():
     print("")
 
     def capture(self):
         print("")
+
 
 class TwoWayGate(threading.Thread):
     to_exit = False
@@ -50,6 +51,7 @@ class TwoWayGate(threading.Thread):
     '''
     KEY: 0 = OFF, 1 = MODE A, 2 = MODE B
     '''
+
     def __init__(self, threadID):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -67,6 +69,7 @@ class TwoWayGate(threading.Thread):
             # DO ACTION
             pass
 
+
 class PressureSensor(threading.Thread):
     timer = 0
     id = 0
@@ -77,9 +80,10 @@ class PressureSensor(threading.Thread):
         self.threadID = threadID
         self.id = number
         self.timer = frequency
+
     def run(self):
         while (self.to_exit == False):
-            time.sleep(0.5+(0.5*int(self.id)))
+            time.sleep(0.5 + (0.5 * int(self.id)))
             self.read_sensor()
 
     def read_sensor(self):
@@ -97,20 +101,23 @@ class PressureSensor(threading.Thread):
     def terminate(self):
         self.to_exit = True
 
+
 class Actuator(threading.Thread):
     id = 0
     is_depressurizer = False
     activated = False
+
     def __init__(self, threadID, id, is_depressurizer):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.id = id
         self.is_depressurizer = is_depressurizer
+
     def run(self):
         print()
 
     def switch(self, direction):
-        self.activated= not self.activated
+        self.activated = not self.activated
         print("Actuator " + str(self.id) + " Move " + str(self.activated))
         if (self.is_depressurizer):
             # DO ACTION
@@ -140,12 +147,9 @@ class Actuator(threading.Thread):
     def get_state(self):
         return self.activated
 
+
 class WaterRobot:
-    # add variables pressure sensors, solenoids, timestamp,
-    # like sensor1;
-    # take the state of the robot write to csv.
-    # update function
-    timer = 0
+    frequency = 0
     pressure_sensors = []
     actuators = []
     two_way_gate = TwoWayGate(0)
@@ -157,17 +161,23 @@ class WaterRobot:
 
     def __init__(self, timerHz, numSensors, numActuators):
         print("Robot Init.")
+
+        current_directory = os.getcwd()
+        final_directory = os.path.join(current_directory, r'data')
+        if not os.path.exists(final_directory):
+            os.makedirs(final_directory)
+
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000)
             self.pressure_sensors.append(sensor)
             values.append(0)
         for j in range(0, numActuators):
             is_dep = False
-            if (j >= 4 ):
+            if (j >= 4):
                 is_dep = True
-            self.actuators.append(Actuator(j,j,is_dep))
+            self.actuators.append(Actuator(j, j, is_dep))
 
-        with open('dataset.csv', 'w', newline='') as file:
+        with open('data/dataset.csv', 'w', newline='') as file:
             fieldnames = ['sensors', 'actuators']
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
@@ -202,11 +212,6 @@ class WaterRobot:
         return 0
 
     def saveState(self):
-        current_directory = os.getcwd()
-        final_directory = os.path.join(current_directory, r'data')
-        if not os.path.exists(final_directory):
-            os.makedirs(final_directory)
-
         with open('data/dataset.csv', 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             writer.writerow({'sensors': values, 'actuators': 0})
@@ -214,8 +219,10 @@ class WaterRobot:
     def printOut(self, text):
         print(text)
 
+
 def main():
     print()
+
 
 if __name__ == "__main__":
     main()
