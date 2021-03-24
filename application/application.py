@@ -49,7 +49,6 @@ def main():
         pass
     root.protocol("WM_DELETE_WINDOW", __callback)
 
-
     canvas = Tk.Canvas(root, width=WIDTH, height=HEIGHT)
     canvas.pack()
 

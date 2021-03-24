@@ -214,7 +214,11 @@ class WaterRobot:
     def saveState(self):
         with open('data/dataset.csv', 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
-            writer.writerow({'sensors': values, 'actuators': 0})
+            actuatorvalues = []
+            for i in self.actuators:
+                actuatorvalues.append(i.activated)
+
+            writer.writerow({'sensors': values, 'actuators': actuatorvalues})
 
     def printOut(self, text):
         print(text)
