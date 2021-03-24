@@ -2,9 +2,11 @@ import tkinter as Tk
 import tkinter.font
 from functools import partial
 import threading
+from tkinter import ttk
+
 from PIL import Image, ImageTk
 from robot import WaterRobot
-
+import tkinter.ttk
 
 def main():
     '''
@@ -42,6 +44,9 @@ def main():
     WIDTH, HEIGHT = 1280,720
 
     root = Tk.Tk()
+    #style = ttk.Style(root)
+    #print(style.theme_names())
+    #style.theme_use('clam')
     root.geometry('{}x{}'.format(WIDTH, HEIGHT))
     root.resizable(False, False)
     #root.overrideredirect(1)

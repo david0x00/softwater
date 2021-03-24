@@ -7,11 +7,9 @@ import tkinter as Tk
 
 ''' WEEK 1'''
 # find an alternate way insteaad of sleep to "fire the methods or functions at a certain time"
-
 # collect data and get pressure.
 # either control the robot or give the robot procedures to execute.
 # while the robot moves the data for pressure is being taken.
-
 # TODO: add a function add another function that takes the photos of the robot as it changes position; this way we can see where the position of the robot is .
 # TODO: every round we take a photo and save its positions and pressure, and the state of solenoid valves into a csv
 
@@ -35,8 +33,14 @@ import tkinter as Tk
 # save dataset to a folder. browse
 # I will create a start recording button for a set frequency
 
-values = []
+'''WEEK 5'''
+# Communicate with David about
+# Fix start bug
+# For the switch buttons have a open/close status
+# Wrap up code make it pretty;
+# Add save to path functions
 
+values = []
 
 class Camera():
     print("")
