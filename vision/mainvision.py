@@ -34,13 +34,14 @@ def initialHSVsetup(mediaDirectory):
     cv2.createTrackbar("Val Max","TrackBars",255,255,empty)
 
     #deque setup
+    #only for video files
     ap = argparse.ArgumentParser()
     ap.add_argument("-b", "--buffer", type=int, default=16,
         help="max buffer size")
     args = vars(ap.parse_args())
     pts = deque(maxlen=args["buffer"])
 
-    #open video file with ma
+    #open video file and apply masks
     while True:
         success, img = cap.read()
         capHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
@@ -78,12 +79,11 @@ def initialHSVsetup(mediaDirectory):
 
         if len(contours) > 0:
             i = 0
+            j = 0
             print("# of Contours Detected = " + str(len(contours)))
             averageOne = 0
             averageTwo = 0
             for a in contours:
-
-                print(i)
                 M = cv2.moments(a)
                 if M['m00'] > 4000:
                     ((x, y), radius) = cv2.minEnclosingCircle(a)
@@ -93,11 +93,16 @@ def initialHSVsetup(mediaDirectory):
                     #for deque tracker
                     averageOne = averageOne + int(M["m10"] / M["m00"])
                     averageTwo = averageTwo + int(M["m01"] / M["m00"])
-                    if i > 2:
-                        print("More than 3 contours detected: Edit Mask or HSV settings to eliminate noise/artifacts "
-                              "or check if there are more than 3 robot markers. Also check your threshold value for "
-                              "considering a contour.")
                     i = i + 1
+                if i == 0:
+                    print("Contour " + str(j) + " < " + "threshold")
+                else:
+                    print("Contour " + str(j) + ":" + "passed area threshold")
+                j = j + 1
+                if i > 3:
+                    print("More than 3 contours detected: Edit Mask or HSV settings to eliminate noise/artifacts "
+                          "or check if there are more than 3 robot markers.\nBut first check your threshold value for "
+                          "considering a contour.")
             centerFinal = (int(averageOne/3), int(averageTwo/3))
             pts.appendleft(centerFinal)
 
@@ -106,6 +111,7 @@ def initialHSVsetup(mediaDirectory):
 
 
         #deque tracker
+        #only works if input is video file
         for i in range(1, len(pts)):
             # if either of the tracked points are None, ignore
             # them
@@ -134,5 +140,5 @@ def initialHSVsetup(mediaDirectory):
 
 
         #quit and control video length
-        if cv2.waitKey(20) & 0xFF == ord('q'):
+        if cv2.waitKey(0) & 0xFF == ord('q'):
             break

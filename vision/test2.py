@@ -1,8 +1,13 @@
+import mainvision
 import os
 
-def getDirectory():
-    return os.getcwd()
+print(mainvision.getDirectory())
+mainvision.setDirectory(mainvision.getDirectory() + "/Resources/test_frames")
 
-def setDirectory(x):
-    os.chdir(x)
-    print("Directory Changed to:" + os.getcwd())
+for filename in os.listdir(mainvision.getDirectory()):
+    if filename.endswith(".jpg") or filename.endswith(".png"):
+        print("\n")
+        print("Next File: " + filename)
+        mainvision.initialHSVsetup(filename)
+    else:
+        continue
