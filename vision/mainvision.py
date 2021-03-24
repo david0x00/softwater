@@ -101,7 +101,7 @@ def initialHSVsetup(mediaDirectory):
                 j = j + 1
                 if i > 3:
                     print("More than 3 contours detected: Edit Mask or HSV settings to eliminate noise/artifacts "
-                          "or check if there are more than 3 robot markers.\nBut first check your threshold value for "
+                          "or check if there are more than 3 robot markers.\nBut first, check your threshold value for "
                           "considering a contour.")
             centerFinal = (int(averageOne/3), int(averageTwo/3))
             pts.appendleft(centerFinal)
