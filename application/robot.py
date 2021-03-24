@@ -191,8 +191,7 @@ class WaterRobot:
     def start(self):
         print("Sensor Start")
         self.sensors_have_started = True
-        for i in self.pressure_sensors:
-            i.start()
+        self.run()
 
     def stop(self):
         print("Sensor Terminate")
@@ -201,8 +200,10 @@ class WaterRobot:
             i.terminate()
 
     def run(self):
-        while (self.to_exit == False):
+        if (self.to_exit == False):
             time.sleep(0.5)
+            for i in self.pressure_sensors:
+                i.read_sensor()
             self.saveState()
 
     def updateSensors(self):
