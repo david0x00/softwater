@@ -40,7 +40,8 @@ def main():
     def save_state():
         a.saveState()
 
-    IMAGE_PATH = 'application\images\my_robot.png'
+    #IMAGE_PATH = 'application\images\my_robot.png'
+    IMAGE_PATH = 'my_robot.png'
     WIDTH, HEIGHT = 1280,720
 
     root = Tk.Tk()
