@@ -3,15 +3,21 @@ import tkinter.font
 from functools import partial
 import threading
 from tkinter import ttk
-
+import os
 from PIL import Image, ImageTk
 from robot import WaterRobot
 import tkinter.ttk
+from tkinter import filedialog
+
 
 def main():
     '''
     SETTINGS
     '''
+    print("Current working directory: {0}".format(os.getcwd()))
+    os.chdir('application/')
+    print("Current working directory: {0}".format(os.getcwd()))
+
     num_sensors = 4
     num_actuators = 8
 
@@ -74,14 +80,12 @@ def main():
     yvals = [100, 100, 200, 200]
     xvala = [300, 600, 300, 600, 900, 1200, 900, 1200]
     yvala = [300, 300, 400, 400, 300, 300, 400, 400]
-
     for i in range(0, num_sensors):
 
         Tk.Button(master=root, text='Read Sensor ' + str(i), command=a.pressure_sensors[i].read_sensor).place(x = xvals[i], y = yvals[i], anchor=Tk.CENTER)
         #Tk.Label(master=root, text="").pack()   SPACING
 
     for j in range(0, num_actuators):
-
 
 
         s = "Pressurizer"
@@ -131,7 +135,6 @@ def main():
     Tk.Button(master=root, text='Quota', command=add_button).pack()
 
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
