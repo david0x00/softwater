@@ -3,9 +3,9 @@ import os
 import threading
 import time
 import random
-import tkinter as Tk
+from os import path
 
-values = []
+
 
 class Camera():
     print("")
@@ -13,30 +13,22 @@ class Camera():
     def capture(self):
         print("")
 
-
 class TwoWayGate(threading.Thread):
     to_exit = False
-    activated = 0
-    '''
-    KEY: 0 = OFF, 1 = MODE A, 2 = MODE B
-    '''
+    activatedA = False
+    activatedB = False
 
     def __init__(self, threadID):
         threading.Thread.__init__(self)
         self.threadID = threadID
 
-    def switch(self, direction: int):
-        self.activated = direction
-        print("Two Way Gate Turn " + str(self.activated))
-        if (self.activated == 0):
-            # DO ACTION
-            pass
-        if (self.activated == 1):
-            # DO ACTION
-            pass
-        if (self.activated == 2):
-            # DO ACTION
-            pass
+    def switch(self, gate: int):
+        if (gate == 0):
+            self.activatedA = not self.activatedA
+        else:
+            self.activatedB = not self.activatedB
+        print("Switch " + str(gate))
+
 
 class PressureSensor(threading.Thread):
     timer = 0
@@ -50,25 +42,31 @@ class PressureSensor(threading.Thread):
         self.timer = frequency
 
     def run(self):
-        while (self.to_exit == False):
-            time.sleep(0.5 + (0.5 * int(self.id)))
-            self.read_sensor()
+        pass
 
     def read_sensor(self):
+        if (self.id == 0):
+            # DO ACTION
+            pass
+        elif (self.id == 1):
+            # DO ACTION
+            pass
+        elif (self.id == 2):
+            # DO ACTION
+            pass
+        elif (self.id == 3):
+            # DO ACTION
+            pass
+
         x = random.uniform(0, 50)
-        values[self.id] = x
         print("Sensor " + str(self.id) + "reads: " + str(x))
         return x
 
     def getID(self):
         return self.threadID
 
-    def get_value(self):
-        return values[self.id]
-
     def terminate(self):
         self.to_exit = True
-
 
 class Actuator(threading.Thread):
     id = 0
@@ -84,7 +82,7 @@ class Actuator(threading.Thread):
     def run(self):
         print()
 
-    def switch(self, direction):
+    def switch(self):
         self.activated = not self.activated
         print("Actuator " + str(self.id) + " Move " + str(self.activated))
         if (self.is_depressurizer):
@@ -116,18 +114,18 @@ class Actuator(threading.Thread):
         return self.activated
 
 class WaterRobot(threading.Thread):
-    frequency = 0
+    frequency = 1
     pressure_sensors = []
     actuators = []
     two_way_gate = TwoWayGate(0)
     to_exit = False
     sensors_have_started = False
+    data_filepath = ''
+    values = []
     '''
     Part 1: Robot
     '''
-
     def __init__(self, timerHz, numSensors, numActuators):
-        super().__init__()
         threading.Thread.__init__(self)
         self.threadID = "ROBOTMAIN"
         print("Robot Init.")
@@ -140,17 +138,12 @@ class WaterRobot(threading.Thread):
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000)
             self.pressure_sensors.append(sensor)
-            values.append(0)
+            self.values.append(0)
         for j in range(0, numActuators):
             is_dep = False
             if (j >= 4):
                 is_dep = True
             self.actuators.append(Actuator(j, j, is_dep))
-
-        with open('data/dataset.csv', 'w', newline='') as file:
-            fieldnames = ['sensors', 'actuators']
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
 
     def getListOfParts(self):
         for i in self.pressure_sensors:
@@ -158,43 +151,33 @@ class WaterRobot(threading.Thread):
         for j in self.actuators:
             print("Actuator " + str(j.getID))
 
-    def start(self):
-        print("Sensor Start")
-        self.sensors_have_started = True
-        for i in self.pressure_sensors:
-            i.start()
+    def pause(self):
+        pass
 
     def stop(self):
-        print("Sensor Terminate")
-        self.sensors_have_started = False
-        for i in self.pressure_sensors:
-            i.terminate()
+        print("Sensor Shutdown")
+        self.to_exit = True
 
     def run(self):
-        print("A")
-        '''
         while (self.to_exit == False):
-            time.sleep(0.5)
-            for i in self.pressure_sensors:
-                i.read_sensor()
+            time.sleep(1 / self.frequency)
+            for i in range(0, len(self.values)):
+                self.values[i] = round(self.pressure_sensors[i].read_sensor(),3)
             self.saveState()
-        '''
 
     def saveState(self):
-        with open('data/dataset.csv', 'a', newline='') as file:
+        with open(self.data_filepath, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             actuatorvalues = []
             for i in self.actuators:
                 actuatorvalues.append(i.activated)
 
-            writer.writerow({'sensors': values, 'actuators': actuatorvalues})
-
+            writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
     def printOut(self, text):
         print(text)
 
 def main():
     print()
-
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,5 @@
+''''''
+''' THIS IS NOT ONE OF THE PYTHON FILES USED IN COMPILATION: IGNORE ME'''
 
 ''' WEEK 1'''
 # find an alternate way instead of sleep to "fire the methods or functions at a certain time"
