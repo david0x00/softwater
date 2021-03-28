@@ -3,8 +3,6 @@ import os
 import threading
 import time
 import random
-from os import path
-
 
 
 class Camera():
@@ -12,6 +10,7 @@ class Camera():
 
     def capture(self):
         print("")
+
 
 class TwoWayGate(threading.Thread):
     to_exit = False
@@ -68,6 +67,7 @@ class PressureSensor(threading.Thread):
     def terminate(self):
         self.to_exit = True
 
+
 class Actuator(threading.Thread):
     id = 0
     is_depressurizer = False
@@ -113,6 +113,7 @@ class Actuator(threading.Thread):
     def get_state(self):
         return self.activated
 
+
 class WaterRobot(threading.Thread):
     frequency = 1
     pressure_sensors = []
@@ -125,6 +126,7 @@ class WaterRobot(threading.Thread):
     '''
     Part 1: Robot
     '''
+
     def __init__(self, timerHz, numSensors, numActuators):
         threading.Thread.__init__(self)
         self.threadID = "ROBOTMAIN"
@@ -162,7 +164,7 @@ class WaterRobot(threading.Thread):
         while (self.to_exit == False):
             time.sleep(1 / self.frequency)
             for i in range(0, len(self.values)):
-                self.values[i] = round(self.pressure_sensors[i].read_sensor(),3)
+                self.values[i] = round(self.pressure_sensors[i].read_sensor(), 3)
             self.saveState()
 
     def saveState(self):
@@ -173,11 +175,14 @@ class WaterRobot(threading.Thread):
                 actuatorvalues.append(i.activated)
 
             writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
+
     def printOut(self, text):
         print(text)
 
+
 def main():
     print()
+
 
 if __name__ == "__main__":
     main()

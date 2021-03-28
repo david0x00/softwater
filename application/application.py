@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.font
 from functools import partial
-import threading
 from tkinter import ttk
 import os
 import os.path
@@ -9,7 +8,6 @@ from os import path
 from PIL import Image, ImageTk
 from robot import WaterRobot
 from tkinter import messagebox
-
 from tkinter.filedialog import asksaveasfile
 
 
@@ -50,7 +48,7 @@ class Application(tk.Tk):
         theme_frame = ttk.LabelFrame(self, text='Themes')
         theme_frame.pack()
 
-        #Start & Stop Buttons
+        # Start & Stop Buttons
         start_button = ttk.Button(master=self, text='Start', command=self._begin)  # the start button
         start_button.place(x=1164, y=15)
         quit_button = ttk.Button(master=self, text='Stop', command=self.a.stop)  # the quit button
@@ -63,11 +61,12 @@ class Application(tk.Tk):
         sensor_statuses = ttk.Label(master=self, text="Sensors: " + str(self.a.values))
         sensor_statuses.place(x=15, y=30)
 
-        #Read Sensors Buttons
+        # Read Sensors Buttons
         xvals = [100, 250, 100, 250]
         yvals = [100, 100, 150, 150]
         for i in range(0, self.num_sensors):
-            read_button = ttk.Button(master=self, text='Read Sensor ' + str(i), command=self.a.pressure_sensors[i].read_sensor)
+            read_button = ttk.Button(master=self, text='Read Sensor ' + str(i),
+                                     command=self.a.pressure_sensors[i].read_sensor)
             read_button.place(x=xvals[i], y=yvals[i], anchor=tk.CENTER)
 
         # Activate Solenoids Buttons
@@ -77,7 +76,8 @@ class Application(tk.Tk):
             button_label = "Pressurizer"
             if (self.a.actuators[j].get_is_depressurizer() == True):
                 button_label = "Depressurizer"
-            ttk.Label(master=self, text=button_label + " Actuator #" + str(j)).place(x=xvala[j], y=yvala[j] - 10, anchor=tk.CENTER)
+            ttk.Label(master=self, text=button_label + " Actuator #" + str(j)).place(x=xvala[j], y=yvala[j] - 10,
+                                                                                     anchor=tk.CENTER)
             switch_function = partial(self.a.actuators[j].switch)
             switch_button = ttk.Checkbutton(master=self, text="Switch", command=switch_function)
             switch_button.place(x=xvala[j], y=yvala[j] + 10, anchor=tk.CENTER)
@@ -89,8 +89,10 @@ class Application(tk.Tk):
             ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
             turn_a = partial(self.a.two_way_gate.switch, (0))
             turn_b = partial(self.a.two_way_gate.switch, (1))
-            ttk.Checkbutton(master=self, text="Switch Gate A", command=turn_a).place(x=pos[0], y=pos[1] + 32, anchor=tk.CENTER)
-            ttk.Checkbutton(master=self, text="Switch Gate B", command=turn_b).place(x=pos[0], y=pos[1] + 64, anchor=tk.CENTER)
+            ttk.Checkbutton(master=self, text="Switch Gate A", command=turn_a).place(x=pos[0], y=pos[1] + 32,
+                                                                                     anchor=tk.CENTER)
+            ttk.Checkbutton(master=self, text="Switch Gate B", command=turn_b).place(x=pos[0], y=pos[1] + 64,
+                                                                                     anchor=tk.CENTER)
 
         # Frequency Settings
         entryb1 = tk.StringVar(value=self.a.frequency)
@@ -126,7 +128,7 @@ class Application(tk.Tk):
     def print_content(self, input):
         content = input.get()
         try:
-            if(float(content) > 0):
+            if (float(content) > 0):
                 self.a.frequency = float(content)
                 print("Set Frequency to: " + str(self.a.frequency))
             else:
@@ -156,7 +158,7 @@ class Application(tk.Tk):
             self.destroy()
 
     def update_values(self):
-        sensor_statuses.configure(text= "Sensors" + str(self.a.values))
+        sensor_statuses.configure(text="Sensors" + str(self.a.values))
         self.after(self.update_speed, self.update_values)
 
 
