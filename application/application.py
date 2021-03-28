@@ -39,7 +39,8 @@ class Application(tk.Tk):
         canvas.pack()
 
         # Load Image Background
-        IMAGE_PATH = 'my_robot.png'
+        #IMAGE_PATH = 'my_robot.png'
+        IMAGE_PATH = 'alt.png'
         img = ImageTk.PhotoImage(Image.open(IMAGE_PATH).resize((WIDTH, HEIGHT), Image.ANTIALIAS))
         image_background = ttk.Label(self, image=img)
         image_background.img = img
@@ -50,27 +51,27 @@ class Application(tk.Tk):
 
         # Start & Stop Buttons
         start_button = ttk.Button(master=self, text='Start', command=self._begin)  # the start button
-        start_button.place(x=1164, y=15)
+        start_button.place(x=1070, y=9)
         quit_button = ttk.Button(master=self, text='Stop', command=self.a.stop)  # the quit button
-        quit_button.place(x=1164, y=45)
+        quit_button.place(x=1164, y=9)
 
         # Information Displays
         num_sensors_display = ttk.Label(master=self, text="Number of Sensors: " + str(len(self.a.pressure_sensors)))
-        num_sensors_display.place(x=15, y=15)
+        num_sensors_display.place(x=15, y=660)
         global sensor_statuses
         sensor_statuses = ttk.Label(master=self, text="Sensors: " + str(self.a.values))
-        sensor_statuses.place(x=15, y=30)
+        sensor_statuses.place(x=15, y=680)
 
         # Read Sensors Buttons
-        xvals = [100, 250, 100, 250]
-        yvals = [100, 100, 150, 150]
+        xvals = [100, 100, 100, 100]
+        yvals = [100, 132, 164, 196]
         for i in range(0, self.num_sensors):
             read_button = ttk.Button(master=self, text='Read Sensor ' + str(i),
                                      command=self.a.pressure_sensors[i].read_sensor)
             read_button.place(x=xvals[i], y=yvals[i], anchor=tk.CENTER)
 
         # Activate Solenoids Buttons
-        xvala = [300, 600, 300, 600, 900, 1200, 900, 1200]
+        xvala = [350, 550, 350, 550, 875, 1075, 875 ,1075]
         yvala = [300, 300, 400, 400, 300, 300, 400, 400]
         for j in range(0, self.num_actuators):
             button_label = "Pressurizer"
@@ -84,7 +85,7 @@ class Application(tk.Tk):
 
         # Two Gates Buttons
         for k in range(0, 1):
-            pos = [150, 300]
+            pos = [100, 500]
             button_label = "Two Gates Switch"
             ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
             turn_a = partial(self.a.two_way_gate.switch, (0))
@@ -96,15 +97,15 @@ class Application(tk.Tk):
 
         # Frequency Settings
         entryb1 = tk.StringVar(value=self.a.frequency)
-        ttk.Label(self, text="Frequency: ").place(x=515, y=35, anchor=tk.CENTER)
-        tk.Entry(self, textvariable=entryb1).place(x=635, y=35, anchor=tk.CENTER)
+        ttk.Label(self, text="Frequency: ").place(x=48, y=24, anchor=tk.CENTER)
+        tk.Entry(self, textvariable=entryb1).place(x=156, y=24, anchor=tk.CENTER)
         set_frequency = partial(self.print_content, (entryb1))
         b1 = ttk.Button(self, text="Set", command=set_frequency)
-        b1.place(x=765, y=35, anchor=tk.CENTER)
+        b1.place(x=280, y=24, anchor=tk.CENTER)
 
         # Save Dataset Functions
-        ttk.Button(master=self, text='Save To', command=self.createfile).place(x=960, y=30, anchor=tk.CENTER)
-        ttk.Button(master=self, text='Save Current State', command=self.save_state).place(x=960, y=60, anchor=tk.CENTER)
+        ttk.Button(master=self, text='Save To', command=self.createfile).place(x=579, y=24, anchor=tk.CENTER)
+        ttk.Button(master=self, text='Save Current State', command=self.save_state).place(x=692, y=24, anchor=tk.CENTER)
 
     def button_countdown(self, i, label):
         if i > 0:
