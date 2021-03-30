@@ -3,14 +3,25 @@ import os
 import threading
 import time
 import random
+import board
+import busio
+import numpy as np
 
+i2c = busio.I2C(board.SCL, board.SDA)
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+ads_0 = ADS.ADS1115(i2c)
+ads_1 = ADS.ADS1115(i2c, address=0x49)
+
+from adafruit_mcp230xx.mcp23008 import MCP23008
+mcp_0 = MCP23008(i2c)
+mcp_1 = MCP23008(i2c, address=0x21)
 
 class Camera():
     print("")
 
     def capture(self):
         print("")
-
 
 class TwoWayGate(threading.Thread):
     to_exit = False
@@ -42,6 +53,11 @@ class PressureSensor(threading.Thread):
 
     def run(self):
         pass
+    
+    def getValue(self):
+        chan = AnalogIn(ads_0, ADS.P1) #or can be ADS.P0
+        Va = chan.voltage
+        P = ((Va / 5.0) + 0.040) / 0.004
 
     def read_sensor(self):
         if (self.id == 0):
@@ -103,6 +119,16 @@ class Actuator(threading.Thread):
                 # DO ACTION
                 pass
             pass
+        
+    def open(self):
+        pin = mcp_0.get_pin(1)
+        pin.switch_to_output(value=True)
+        pin.value = True
+
+    def close(self):
+        pin = mcp_0.get_pin(1)
+        pin.switch_to_output(value=True)
+        pin.value = False
 
     def getID(self):
         return self.threadID
