@@ -6,7 +6,7 @@ import os
 import os.path
 from os import path
 from PIL import Image, ImageTk
-from robot import WaterRobot
+from robot import SoftWaterRobot
 from tkinter import messagebox
 from tkinter.filedialog import asksaveasfile
 
@@ -14,7 +14,9 @@ from tkinter.filedialog import asksaveasfile
 class Application(tk.Tk):
     num_sensors = 4
     num_actuators = 8
-    a = WaterRobot(15, num_sensors, num_actuators)
+    num_modules = 2
+    #a = WaterRobot(15, num_sensors, num_actuators)
+    a = SoftWaterRobot(15, num_modules)
     update_speed = 100
 
     def __init__(self):
