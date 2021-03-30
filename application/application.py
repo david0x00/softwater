@@ -24,7 +24,7 @@ class Application(tk.Tk):
         if (os.path.exists('application/')):
             print("MOVING WORKING DIRECTORY")
             os.chdir('application/')
-        print("Current working directory: {0}".format(os.getcwd()))
+            print("Current working directory: {0}".format(os.getcwd()))
 
         WIDTH, HEIGHT = 1280, 720
         self.title("Softwater Robot")
@@ -40,7 +40,7 @@ class Application(tk.Tk):
 
         # Load Image Background
         #IMAGE_PATH = 'my_robot.png'
-        IMAGE_PATH = 'alt.png'
+        IMAGE_PATH = 'alt2.png'
         img = ImageTk.PhotoImage(Image.open(IMAGE_PATH).resize((WIDTH, HEIGHT), Image.ANTIALIAS))
         image_background = ttk.Label(self, image=img)
         image_background.img = img
@@ -66,8 +66,9 @@ class Application(tk.Tk):
         xvals = [100, 100, 100, 100]
         yvals = [100, 132, 164, 196]
         for i in range(0, self.num_sensors):
+            read_function = partial(self.a.read_sensor , i)
             read_button = ttk.Button(master=self, text='Read Sensor ' + str(i),
-                                     command=self.a.pressure_sensors[i].read_sensor)
+                                     command=read_function)
             read_button.place(x=xvals[i], y=yvals[i], anchor=tk.CENTER)
 
         # Activate Solenoids Buttons
@@ -79,7 +80,7 @@ class Application(tk.Tk):
                 button_label = "Depressurizer"
             ttk.Label(master=self, text=button_label + " Actuator #" + str(j)).place(x=xvala[j], y=yvala[j] - 10,
                                                                                      anchor=tk.CENTER)
-            switch_function = partial(self.a.actuators[j].switch)
+            switch_function = partial(self.a.actuate_solenoid , j)
             switch_button = ttk.Checkbutton(master=self, text="Switch", command=switch_function)
             switch_button.place(x=xvala[j], y=yvala[j] + 10, anchor=tk.CENTER)
 

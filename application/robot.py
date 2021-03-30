@@ -160,6 +160,14 @@ class WaterRobot(threading.Thread):
         print("Sensor Shutdown")
         self.to_exit = True
 
+    def read_sensor(self, id : int):
+        if(id < len(self.pressure_sensors) and id >= 0):
+            self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
+
+    def actuate_solenoid(self, id : int):
+        if(id < len(self.actuators) and id >= 0):
+            self.actuators[id].switch()
+
     def run(self):
         while (self.to_exit == False):
             time.sleep(1 / self.frequency)
