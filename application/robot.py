@@ -12,15 +12,23 @@ try:
     i2c = busio.I2C(board.SCL, board.SDA)
     import adafruit_ads1x15.ads1115 as ADS
     from adafruit_ads1x15.analog_in import AnalogIn
-    ads_0 = ADS.ADS1115(i2c)
+    ads_0 = ADS.ADS1115(i2c, address=0x48)
     ads_1 = ADS.ADS1115(i2c, address=0x49)
 
     from adafruit_mcp230xx.mcp23008 import MCP23008
-    mcp_0 = MCP23008(i2c)
+    mcp_0 = MCP23008(i2c, address=0x20)
     mcp_1 = MCP23008(i2c, address=0x21)
     robot_detected = True
+    print("Robot Connected!")
 except NotImplementedError:
-    print("Robot not Connected")
+    print("Robot not Connected: Not Implemented Error")
+    ads_0 = -1
+    ads_1 = -1
+    mcp_0 = -1
+    mcp_1 = -1
+    robot_detected = False
+except ValueError:
+    print("Robot not Connected: Value Error")
     ads_0 = -1
     ads_1 = -1
     mcp_0 = -1
@@ -97,7 +105,7 @@ class PressureSensor(threading.Thread):
 class HardwareMapping:
 
     def __init__(self):
-        self.actuator_pin_order = [1,0,3,2]
+        self.actuator_pin_order = [3,2,1,0]
         self.actuator_boards = [mcp_0, mcp_1]
         self.sensor_pairs = [(ads_0, ADS.P0),(ads_0, ADS.P1),(ads_1, ADS.P0),(ads_1, ADS.P1)]
         self.setupPins()
@@ -138,7 +146,7 @@ class Actuator(threading.Thread):
     def switch(self):
         self.activated = not self.activated
         if self.hardware_mapper is not None:
-            self.hardware_mapper.actuate(self.id, self.activated)
+            self.hardware_mapper.actuateSolenoid(self.id, self.activated)
         print("Actuator " + str(self.id) + " Move " + str(self.activated))
         if (self.is_depressurizer):
             # DO ACTION
