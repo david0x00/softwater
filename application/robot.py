@@ -18,12 +18,14 @@ try:
     from adafruit_mcp230xx.mcp23008 import MCP23008
     mcp_0 = MCP23008(i2c)
     mcp_1 = MCP23008(i2c, address=0x21)
+    robot_detected = True
 except NotImplementedError:
     print("Robot not Connected")
     ads_0 = -1
     ads_1 = -1
     mcp_0 = -1
     mcp_1 = -1
+    robot_detected = False
 
 class Camera():
     print("")
@@ -53,21 +55,21 @@ class PressureSensor(threading.Thread):
     id = 0
     to_exit = False
 
-    def __init__(self, threadID, number, frequency):
+    def __init__(self, threadID, number, frequency, hardware_mapper=None):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.id = number
         self.timer = frequency
+        self.hardware_mapper = hardware_mapper
 
     def run(self):
         pass
     
-    def getValue(self):
-        chan = AnalogIn(ads_0, ADS.P1) #or can be ADS.P0
-        Va = chan.voltage
-        P = ((Va / 5.0) + 0.040) / 0.004
 
     def read_sensor(self):
+        if self.hardware_mapper is not None:
+            return self.hardware_mapper.readSensor(self.id)
+
         if (self.id == 0):
             # DO ACTION
             pass
@@ -81,7 +83,7 @@ class PressureSensor(threading.Thread):
             # DO ACTION
             pass
 
-        x = random.uniform(0, 50)
+        x = random.uniform(0, 10)
         print("Sensor " + str(self.id) + "reads: " + str(x))
         return x
 
@@ -90,24 +92,53 @@ class PressureSensor(threading.Thread):
 
     def terminate(self):
         self.to_exit = True
+    
 
+class HardwareMapping:
 
+    def __init__(self):
+        self.actuator_pin_order = [1,0,3,2]
+        self.actuator_boards = [mcp_0, mcp_1]
+        self.sensor_pairs = [(ads_0, ADS.P0),(ads_0, ADS.P1),(ads_1, ADS.P0),(ads_1, ADS.P1)]
+        self.setupPins()
+
+    def setupPins(self):
+        self.pins = []
+        for module in self.actuator_boards:
+            for pin_num in self.actuator_pin_order:
+                temp_pin = module.get_pin(pin_num)
+                temp_pin.switch_to_output(value=False)
+                self.pins.append(temp_pin)
+    
+    def actuateSolenoid(self, id, new_state):
+        self.pins[id].value = new_state
+    
+    def readSensor(self, id):
+        sensor_pair = self.sensor_pairs[id]
+        chan = AnalogIn(sensor_pair[0], sensor_pair[1])
+        Va = chan.voltage
+        P = ((Va / 5.0) + 0.040) / 0.004
+        return P
+    
 class Actuator(threading.Thread):
     id = 0
     is_depressurizer = False
     activated = False
 
-    def __init__(self, threadID, id, is_depressurizer):
+    def __init__(self, threadID, id, is_depressurizer, hardware_mapper=None):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.id = id
         self.is_depressurizer = is_depressurizer
+        self.hardware_mapper = hardware_mapper
 
     def run(self):
         print()
 
     def switch(self):
         self.activated = not self.activated
+        if self.hardware_mapper is not None:
+            self.hardware_mapper.actuate(self.id, self.activated)
         print("Actuator " + str(self.id) + " Move " + str(self.activated))
         if (self.is_depressurizer):
             # DO ACTION
@@ -128,15 +159,6 @@ class Actuator(threading.Thread):
                 pass
             pass
         
-    def open(self):
-        pin = mcp_0.get_pin(1)
-        pin.switch_to_output(value=True)
-        pin.value = True
-
-    def close(self):
-        pin = mcp_0.get_pin(1)
-        pin.switch_to_output(value=True)
-        pin.value = False
 
     def getID(self):
         return self.threadID
@@ -146,126 +168,6 @@ class Actuator(threading.Thread):
 
     def get_state(self):
         return self.activated
-
-class Actuations:
-    open_valve = True
-    close_valve = False
-
-class ModuleState:
-    left_in_valve = Actuations.close_valve
-    left_out_valve = Actuations.close_valve
-    right_in_valve = Actuations.close_valve
-    right_out_valve = Actuations.close_valve
-    left_pressure = 0
-    right_pressure = 0
-
-class RobotModule:
-
-    def __init__(self, pressure_reader, valve_driver):
-        self.pressure_reader = pressure_reader
-        self.valve_driver = valve_driver
-        self.state = ModuleState()
-    
-    def execute(self):
-        self.valve_driver.execute(self.state)
-    
-    def updateLeftPressureReading(self):
-        self.state.left_pressure = self.pressure_reader.left()
-    
-    def updateRightPressureReading(self):
-        self.state.right_pressure = self.pressure_reader.right()
-    
-    def openLeftInValve(self):
-        self.state.left_in_valve = Actuations.open_valve
-
-    def closeLeftInValve(self):
-        self.state.left_in_valve = Actuations.close_valve
-
-    def openLeftOutValve(self):
-        self.state.left_out_valve = Actuations.open_valve
-
-    def closeLeftOutValve(self):
-        self.state.left_out_valve = Actuations.close_valve
-
-    def openRightInValve(self):
-        self.state.right_in_valve = Actuations.open_valve
-
-    def closeRightInValve(self):
-        self.state.right_in_valve = Actuations.close_valve
-
-    def openRightOutValve(self):
-        self.state.right_out_valve = Actuations.open_valve
-
-    def closeRightOutValve(self):
-        self.state.right_out_valve = Actuations.close_valve
-
-class SoftWaterRobot(threading.Thread):
-    frequency = 1
-    pressure_sensors = []
-    actuators = []
-    two_way_gate = TwoWayGate(0)
-    to_exit = False
-    sensors_have_started = False
-    data_filepath = ''
-    values = []
-    '''
-    Part 1: Robot
-    '''
-
-    def __init__(self, timerHz, num_modules):
-        threading.Thread.__init__(self)
-        self.threadID = "ROBOTMAIN"
-        print("Robot Init.")
-
-        current_directory = os.getcwd()
-        final_directory = os.path.join(current_directory, r'data')
-        if not os.path.exists(final_directory):
-            os.makedirs(final_directory)
-        
-        self.num_modules = num_modules
-        modules = []
-        modules.append(RobotModule(ads_0, mcp_0))
-        modules.append(RobotModule(ads_1, mcp_1))
-
-    def getListOfParts(self):
-        for i in self.pressure_sensors:
-            print("Pressure Sensor " + str(i.getID))
-        for j in self.actuators:
-            print("Actuator " + str(j.getID))
-
-    def pause(self):
-        pass
-
-    def stop(self):
-        print("Sensor Shutdown")
-        self.to_exit = True
-
-    def read_sensor(self, id : int):
-        if(id < len(self.pressure_sensors) and id >= 0):
-            self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
-
-    def actuate_solenoid(self, id : int):
-        if(id < len(self.actuators) and id >= 0):
-            self.actuators[id].switch()
-
-    def run(self):
-        while (self.to_exit == False):
-            time.sleep(1 / self.frequency)
-            for i in range(0, len(self.values)):
-                self.values[i] = round(self.pressure_sensors[i].read_sensor(), 3)
-            self.saveState()
-
-    def saveState(self):
-        with open(self.data_filepath, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
-            actuatorvalues = []
-            for i in self.actuators:
-                actuatorvalues.append(i.activated)
-
-            writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
-
-    def printOut(self, text):
-        print(text)
 
 class WaterRobot(threading.Thread):
     frequency = 1
@@ -280,7 +182,7 @@ class WaterRobot(threading.Thread):
     Part 1: Robot
     '''
 
-    def __init__(self, timerHz, numSensors, numActuators, numberOfModules):
+    def __init__(self, timerHz, numSensors, numActuators):
         threading.Thread.__init__(self)
         self.threadID = "ROBOTMAIN"
         print("Robot Init.")
@@ -290,15 +192,20 @@ class WaterRobot(threading.Thread):
         if not os.path.exists(final_directory):
             os.makedirs(final_directory)
 
+        if robot_detected:
+            self.hardware_mapper = HardwareMapping()
+        else:
+            self.hardware_mapper = None
+
         for i in range(0, numSensors):
-            sensor = PressureSensor(i, i, 1000)
+            sensor = PressureSensor(i, i, 1000, hardware_mapper=self.hardware_mapper)
             self.pressure_sensors.append(sensor)
             self.values.append(0)
         for j in range(0, numActuators):
             is_dep = False
             if (j >= 4):
                 is_dep = True
-            self.actuators.append(Actuator(j, j, is_dep))
+            self.actuators.append(Actuator(j, j, is_dep, hardware_mapper=self.hardware_mapper))
 
     def getListOfParts(self):
         for i in self.pressure_sensors:
