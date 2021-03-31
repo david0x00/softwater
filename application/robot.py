@@ -203,7 +203,7 @@ class WaterRobot(threading.Thread):
             self.values.append(0)
         for j in range(0, numActuators):
             is_dep = False
-            if (j >= 4):
+            if (j % 2):
                 is_dep = True
             self.actuators.append(Actuator(j, j, is_dep, hardware_mapper=self.hardware_mapper))
 
