@@ -107,8 +107,9 @@ class HardwareMapping:
     def __init__(self):
         self.actuator_pin_order = [3,2,1,0]
         self.actuator_boards = [mcp_0, mcp_1]
-        self.sensor_pairs = [(ads_0, ADS.P0),(ads_0, ADS.P1),(ads_1, ADS.P0),(ads_1, ADS.P1)]
         self.setupPins()
+
+        self.sensor_pairs = [(ads_0, ADS.P0),(ads_0, ADS.P1),(ads_1, ADS.P0),(ads_1, ADS.P1)]
 
     def setupPins(self):
         self.pins = []
