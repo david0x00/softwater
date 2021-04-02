@@ -18,6 +18,12 @@ try:
     from adafruit_mcp230xx.mcp23008 import MCP23008
     mcp_0 = MCP23008(i2c, address=0x20)
     mcp_1 = MCP23008(i2c, address=0x21)
+
+    from hat.Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
+    mh = Raspi_MotorHAT(addr=0x6f)
+    pump = mh.getMotor(1)
+    gate_valve = mh.getMotor(2)
+
     robot_detected = True
     print("Robot Connected!")
 except NotImplementedError:
@@ -41,22 +47,33 @@ class Camera():
     def capture(self):
         print("")
 
-class TwoWayGate(threading.Thread):
+class PumpAndGate(threading.Thread):
     to_exit = False
-    activatedA = False
-    activatedB = False
+    pump_activated = False
+    gate_valve_activated = False
 
-    def __init__(self, threadID):
+    def __init__(self, threadID, hardware_mapper=None):
         threading.Thread.__init__(self)
         self.threadID = threadID
+        self.hardware_mapper = hardware_mapper
 
-    def switch(self, gate: int):
-        if (gate == 0):
-            self.activatedA = not self.activatedA
-        else:
-            self.activatedB = not self.activatedB
-        print("Switch " + str(gate))
+    def switchPump(self):
+        self.pump_activated = not self.pump_activated
+        if self.hardware_mapper is not None:
+            if self.pump_activated:
+                self.hardware_mapper.turnOnPump()
+            else:
+                self.hardware_mapper.turnOffPump()
+        print("Switch Pump " + str(self.pump_activated))
 
+    def switchGateValve(self):
+        self.gate_valve_activated = not self.gate_valve_activated
+        if self.hardware_mapper is not None:
+            if self.gate_valve_activated:
+                self.hardware_mapper.openGateValve()
+            else:
+                self.hardware_mapper.closeGateValve()
+        print("Switch Gate Valve " + str(self.gate_valve_activated))
 
 class PressureSensor(threading.Thread):
     timer = 0
@@ -128,6 +145,22 @@ class HardwareMapping:
         Va = chan.voltage
         P = ((Va / 5.0) + 0.040) / 0.004
         return P
+
+    def turnOnPump(self):
+        pump.run(Raspi_MotorHAT.BACKWARD)
+        pump.setSpeed(100)
+
+    def turnOffPump(self):
+        pump.run(Raspi_MotorHAT.RELEASE)
+        pump.setSpeed(0)
+    
+    def openGateValve(self):
+        gate_valve.run(Raspi_MotorHAT.FORWARD)
+        gate_valve.setSpeed(100)
+
+    def closeGateValve(self):
+        gate_valve.run(Raspi_MotorHAT.RELEASE)
+        gate_valve.setSpeed(0)
     
 class Actuator(threading.Thread):
     id = 0
@@ -182,7 +215,6 @@ class WaterRobot(threading.Thread):
     frequency = 1
     pressure_sensors = []
     actuators = []
-    two_way_gate = TwoWayGate(0)
     to_exit = False
     sensors_have_started = False
     data_filepath = ''
@@ -215,6 +247,8 @@ class WaterRobot(threading.Thread):
             if (j % 2):
                 is_dep = True
             self.actuators.append(Actuator(j, j, is_dep, hardware_mapper=self.hardware_mapper))
+        
+        self.pump_and_gate = PumpAndGate(0, self.hardware_mapper)
 
     def getListOfParts(self):
         for i in self.pressure_sensors:

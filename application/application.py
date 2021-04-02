@@ -86,16 +86,16 @@ class Application(tk.Tk):
             switch_button = ttk.Checkbutton(master=self, text="Switch", command=switch_function)
             switch_button.place(x=xvala[j], y=yvala[j] + 10, anchor=tk.CENTER)
 
-        # Two Gates Buttons
+        # Pump and Gate Valve
         for k in range(0, 1):
             pos = [100, 500]
-            button_label = "Two Gates Switch"
+            button_label = "Pump and Gate Valve"
             ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
-            turn_a = partial(self.a.two_way_gate.switch, (0))
-            turn_b = partial(self.a.two_way_gate.switch, (1))
-            ttk.Checkbutton(master=self, text="Switch Gate A", command=turn_a).place(x=pos[0], y=pos[1] + 32,
+            pump_func = self.a.pump_and_gate.switchPump
+            gate_valve_func = self.a.pump_and_gate.switchGateValve
+            ttk.Checkbutton(master=self, text="Turn On Pump", command=pump_func).place(x=pos[0], y=pos[1] + 32,
                                                                                      anchor=tk.CENTER)
-            ttk.Checkbutton(master=self, text="Switch Gate B", command=turn_b).place(x=pos[0], y=pos[1] + 64,
+            ttk.Checkbutton(master=self, text="Open Gate Valve", command=gate_valve_func).place(x=pos[0], y=pos[1] + 64,
                                                                                      anchor=tk.CENTER)
 
         # Frequency Settings
