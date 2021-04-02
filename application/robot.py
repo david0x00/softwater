@@ -26,6 +26,8 @@ try:
     pump = mh.getMotor(1)
     gate_valve = mh.getMotor(2)
 
+    from picamera import PiCamera
+
     robot_detected = True
     print("Robot Connected!")
 
@@ -47,10 +49,13 @@ except ValueError:
 
 
 class Camera():
-    print("")
+
+    def __init__(self,directory):
+        self.camera = PiCamera()
 
     def capture(self):
-        print("")
+        camera.capture('/home/pi/temp_photos/picturefocus.jpg')
+        print("Captured")
 
 
 class PumpAndGate(threading.Thread):
