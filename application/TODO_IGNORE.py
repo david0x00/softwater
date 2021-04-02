@@ -35,3 +35,9 @@
 # For the switch buttons have a open/close status
 # Wrap up code make it pretty;
 # Add save to path functions
+
+
+'''WEEK 6'''
+# fix save file
+# change csv to new types of headers
+# Take a photo and save it to a folder of users choice.

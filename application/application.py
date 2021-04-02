@@ -15,7 +15,7 @@ class Application(tk.Tk):
     num_sensors = 4
     num_actuators = 8
     num_modules = 2
-    a = WaterRobot(15, num_sensors, num_actuators)
+    a = WaterRobot(num_sensors, num_actuators)
     #a = SoftWaterRobot(15, num_modules)
     update_speed = 100
 
@@ -58,6 +58,9 @@ class Application(tk.Tk):
         quit_button.place(x=1164, y=9)
 
         # Information Displays
+        num_sensors_display = ttk.Label(master=self, text="Robot Connected: " + str(self.a.detected_status))
+        num_sensors_display.place(x=15, y=640)
+
         num_sensors_display = ttk.Label(master=self, text="Number of Sensors: " + str(len(self.a.pressure_sensors)))
         num_sensors_display.place(x=15, y=660)
         global sensor_statuses
@@ -88,7 +91,7 @@ class Application(tk.Tk):
 
         # Pump and Gate Valve
         for k in range(0, 1):
-            pos = [100, 500]
+            pos = [90, 500]
             button_label = "Pump and Gate Valve"
             ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
             pump_func = self.a.pump_and_gate.switchPump
