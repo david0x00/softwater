@@ -54,7 +54,7 @@ class Camera():
         self.camera = PiCamera()
 
     def capture(self):
-        camera.capture('/home/pi/temp_photos/picturefocus.jpg')
+        self.camera.capture('/home/pi/temp_photos/picturefocus.jpg')
         print("Captured")
 
 
@@ -107,7 +107,7 @@ class PressureSensor(threading.Thread):
             print("Sensor " + str(self.id) + "reads: " + str(self.hardware_mapper.readSensor(self.id)))
             return self.hardware_mapper.readSensor(self.id)
         else:
-            randomnum = random.uniform(102, 112)
+            randomnum = random.uniform(0, 10)
             print("Sensor " + str(self.id) + "reads: " + str(randomnum))
             return randomnum
 
@@ -121,11 +121,11 @@ class PressureSensor(threading.Thread):
 class HardwareMapping:
 
     def __init__(self):
-        self.actuator_pin_order = [3, 2, 1, 0]
+        self.actuator_pin_order = [2, 3, 1, 0]
         self.actuator_boards = [mcp_0, mcp_1]
         self.setupPins()
 
-        self.sensor_pairs = [(ads_0, ADS.P0), (ads_0, ADS.P1), (ads_1, ADS.P0), (ads_1, ADS.P1)]
+        self.sensor_pairs = [(ads_0, ADS.P1), (ads_0, ADS.P0), (ads_1, ADS.P1), (ads_1, ADS.P0)]
 
     def setupPins(self):
         self.pins = []
