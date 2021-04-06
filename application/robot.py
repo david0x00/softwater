@@ -3,6 +3,7 @@ import os
 import threading
 import time
 import random
+import datetime
 
 try:
     import board
@@ -48,13 +49,15 @@ except ValueError:
     robot_detected = False
 
 
-class Camera():
+class Camera:
 
     def __init__(self,directory):
         self.camera = PiCamera()
+        self.directory = directory
 
-    def capture(self):
-        self.camera.capture('/home/pi/temp_photos/picturefocus.jpg')
+    def capture(self, count):
+        file_name = self.directory + "/" + str(count) + ".jpg"
+        self.camera.capture(file_name)
         print("Captured")
 
 
@@ -202,6 +205,7 @@ class WaterRobot(threading.Thread):
     data_filepath = ''
     detected_status = robot_detected
     values = []
+    csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT"]
 
     def __init__(self, numSensors, numActuators):
         threading.Thread.__init__(self)
@@ -209,12 +213,15 @@ class WaterRobot(threading.Thread):
         print("Robot Init.")
 
         current_directory = os.getcwd()
+        print(current_directory)
         final_directory = os.path.join(current_directory, r'data')
+        print(final_directory)
         if not os.path.exists(final_directory):
             os.makedirs(final_directory)
 
         if robot_detected:
             self.hardware_mapper = HardwareMapping()
+            self.camera = Camera("/")
         else:
             self.hardware_mapper = None
 
@@ -252,6 +259,13 @@ class WaterRobot(threading.Thread):
             self.actuators[id].switch()
 
     def run(self):
+        with open(self.data_filepath, 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self.csv_headers)
+            writer.writeheader()
+        
+        self.sample_count = 0
+        self.start_time = datetime.datetime.now()
+
         while (self.to_exit == False):
             time.sleep(1 / self.frequency)
             for i in range(0, len(self.values)):
@@ -260,12 +274,27 @@ class WaterRobot(threading.Thread):
 
     def saveState(self):
         with open(self.data_filepath, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
+            #writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
+            writer = csv.DictWriter(file, fieldnames=self.csv_headers)
+
+            current_time = datetime.datetime.now()
+            elapsed_time = round((current_time - self.start_time).total_seconds(),3)
+
             actuatorvalues = []
             for i in self.actuators:
-                actuatorvalues.append(i.activated)
+                actuatorvalues.append(i.activated * 1)
+            
+            row_dict = {}
+            for idx, h in enumerate(self.csv_headers):
+                if idx == 0:
+                    row_dict[h] = elapsed_time
+                elif idx > 0 and idx < 5:
+                    row_dict[h] = self.values[idx - 1]
+                else:
+                    row_dict[h] = actuatorvalues[idx - 5]
 
-            writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
+            #writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
+            writer.writerow(row_dict)
 
     def printOut(self, text):
         print(text)
