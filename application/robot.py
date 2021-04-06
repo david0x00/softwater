@@ -4,6 +4,8 @@ import threading
 import time
 import random
 import datetime
+import queue
+from functools import partial
 
 try:
     from picamera import PiCamera
@@ -115,6 +117,7 @@ class PressureSensor(threading.Thread):
         self.id = number
         self.timer = frequency
         self.hardware_mapper = hardware_mapper
+        self.num_of_tries = 5
 
     def run(self):
         pass
@@ -122,10 +125,15 @@ class PressureSensor(threading.Thread):
     def read_sensor(self):
         if self.hardware_mapper is not None:
             #print("Sensor " + str(self.id) + "reads: " + str(self.hardware_mapper.readSensor(self.id)))
-            return self.hardware_mapper.readSensor(self.id)
+            for i in range(self.num_of_tries):
+                try:
+                    return self.hardware_mapper.readSensor(self.id)
+                except OSError:
+                    print("try: " + str(i))
+            return -1
         else:
             randomnum = random.uniform(0, 10)
-            #print("Sensor " + str(self.id) + "reads: " + str(randomnum))
+            print("Sensor " + str(self.id) + "reads: " + str(randomnum))
             return randomnum
 
     def getID(self):
@@ -219,6 +227,8 @@ class WaterRobot(threading.Thread):
     data_filepath = ''
     detected_status = robot_detected
     values = []
+    is_taking_data = False
+    actuator_command_queue = queue.Queue()
     csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT", "PUMP", "GATE"]
 
     def __init__(self, numSensors, numActuators):
@@ -266,16 +276,45 @@ class WaterRobot(threading.Thread):
     def stop(self):
         print("Sensor Shutdown")
         self.to_exit = True
+    
+    def switchPump(self):
+        if self.is_taking_data:
+            self.actuator_command_queue.put(self.pump_and_gate.switchPump)
+        else:
+            self.pump_and_gate.switchPump()
+    
+    def switchGateValve(self):
+        if self.is_taking_data:
+            self.actuator_command_queue.put(self.pump_and_gate.switchGateValve)
+        else:
+            self.pump_and_gate.switchGateValve()
+        pass
+
+    def __read_sensor(self, id):
+        self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
 
     def read_sensor(self, id: int):
         if (id < len(self.pressure_sensors) and id >= 0):
-            self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
+            self.__read_sensor(id)
+
+    def __actuate_solenoid(self, id):
+        self.actuators[id].switch()
 
     def actuate_solenoid(self, id: int):
         if (id < len(self.actuators) and id >= 0):
-            self.actuators[id].switch()
+            if self.is_taking_data:
+                self.actuator_command_queue.put(partial(self.__actuate_solenoid, id))
+            else:
+                self.__actuate_solenoid(id)
+    
+    def runActuatorCommands(self):
+        while not self.actuator_command_queue.empty():
+            func = self.actuator_command_queue.get()
+            func()
 
     def run(self):
+        self.is_taking_data = True
+
         if self.camera is not None:
             self.images_directory = "/".join(self.data_filepath.split("/")[:-1]) + "/" + self.data_filepath.split("/")[-1].split(".")[0] + "/"
             if not os.path.exists(self.images_directory):
@@ -291,8 +330,11 @@ class WaterRobot(threading.Thread):
 
         while (self.to_exit == False):
             time.sleep(1 / self.frequency)
+            self.runActuatorCommands()
             self.saveState()
         
+        self.is_taking_data = False
+        self.actuator_command_queue = queue.Queue()
         print("Experiment Summary")
         print("Total time: " + str(self.elapsed_time))
         print("Total samples: " + str(self.sample_count))

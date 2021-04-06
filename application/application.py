@@ -94,8 +94,8 @@ class Application(tk.Tk):
             pos = [90, 500]
             button_label = "Pump and Gate Valve"
             ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
-            pump_func = self.a.pump_and_gate.switchPump
-            gate_valve_func = self.a.pump_and_gate.switchGateValve
+            pump_func = self.a.switchPump
+            gate_valve_func = self.a.switchGateValve
             ttk.Checkbutton(master=self, text="Turn On Pump", command=pump_func).place(x=pos[0], y=pos[1] + 32,
                                                                                      anchor=tk.CENTER)
             ttk.Checkbutton(master=self, text="Open Gate Valve", command=gate_valve_func).place(x=pos[0], y=pos[1] + 64,
