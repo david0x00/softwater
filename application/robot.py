@@ -211,7 +211,7 @@ class WaterRobot(threading.Thread):
     data_filepath = ''
     detected_status = robot_detected
     values = []
-    csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT"]
+    csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT", "PUMP", "GATE"]
 
     def __init__(self, numSensors, numActuators):
         threading.Thread.__init__(self)
@@ -312,8 +312,12 @@ class WaterRobot(threading.Thread):
                     row_dict[h] = self.elapsed_time
                 elif idx > 0 and idx < 5:
                     row_dict[h] = self.values[idx - 1]
-                else:
+                elif idx >= 5 and idx < 13:
                     row_dict[h] = actuatorvalues[idx - 5]
+                elif idx == 13:
+                    row_dict[h] = self.pump_and_gate.pump_activated * 1
+                elif idx == 14:
+                    row_dict[h] = self.pump_and_gate.gate_valve_activated * 1
 
             #writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
             writer.writerow(row_dict)
