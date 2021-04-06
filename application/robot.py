@@ -6,6 +6,14 @@ import random
 import datetime
 
 try:
+    from picamera import PiCamera
+    print("Camera detected!")
+    camera_detected = True
+except ModuleNotFoundError:
+    print("No camera module detected")
+    camera_detected = False
+
+try:
     import board
     import busio
 
@@ -26,8 +34,6 @@ try:
     mh = Raspi_MotorHAT(addr=0x6f)
     pump = mh.getMotor(1)
     gate_valve = mh.getMotor(2)
-
-    from picamera import PiCamera
 
     robot_detected = True
     print("Robot Connected!")
@@ -51,7 +57,7 @@ except ValueError:
 
 class Camera:
 
-    def __init__(self,directory):
+    def __init__(self,directory=""):
         self.camera = PiCamera()
         self.directory = directory
 
@@ -213,17 +219,20 @@ class WaterRobot(threading.Thread):
         print("Robot Init.")
 
         current_directory = os.getcwd()
-        print(current_directory)
         final_directory = os.path.join(current_directory, r'data')
-        print(final_directory)
         if not os.path.exists(final_directory):
             os.makedirs(final_directory)
 
         if robot_detected:
             self.hardware_mapper = HardwareMapping()
-            self.camera = Camera("/")
         else:
             self.hardware_mapper = None
+        
+        if camera_detected:
+            self.camera = Camera()
+        else:
+            self.camera = None
+
 
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000, hardware_mapper=self.hardware_mapper)
@@ -259,6 +268,12 @@ class WaterRobot(threading.Thread):
             self.actuators[id].switch()
 
     def run(self):
+        if self.camera is not None:
+            self.images_directory = "/".join(self.data_filepath.split("/")[:-1]) + "/" + self.data_filepath.split("/")[-1].split(".")[0] + "/"
+            if not os.path.exists(self.images_directory):
+                os.makedirs(self.images_directory)
+            self.camera.directory = self.images_directory
+
         with open(self.data_filepath, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.csv_headers)
             writer.writeheader()
@@ -271,14 +286,21 @@ class WaterRobot(threading.Thread):
             for i in range(0, len(self.values)):
                 self.values[i] = round(self.pressure_sensors[i].read_sensor(), 3)
             self.saveState()
+        
+        print("Experiment Summary")
+        print("Total time: " + str(self.elapsed_time))
+        print("Total samples: " + str(self.sample_count))
 
     def saveState(self):
         with open(self.data_filepath, 'a', newline='') as file:
             #writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             writer = csv.DictWriter(file, fieldnames=self.csv_headers)
 
+            if self.camera is not None:
+                self.camera.capture(self.sample_count)
+
             current_time = datetime.datetime.now()
-            elapsed_time = round((current_time - self.start_time).total_seconds(),3)
+            self.elapsed_time = round((current_time - self.start_time).total_seconds(),3)
 
             actuatorvalues = []
             for i in self.actuators:
@@ -287,7 +309,7 @@ class WaterRobot(threading.Thread):
             row_dict = {}
             for idx, h in enumerate(self.csv_headers):
                 if idx == 0:
-                    row_dict[h] = elapsed_time
+                    row_dict[h] = self.elapsed_time
                 elif idx > 0 and idx < 5:
                     row_dict[h] = self.values[idx - 1]
                 else:
@@ -295,6 +317,7 @@ class WaterRobot(threading.Thread):
 
             #writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
             writer.writerow(row_dict)
+            self.sample_count += 1
 
     def printOut(self, text):
         print(text)
