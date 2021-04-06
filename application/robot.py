@@ -7,6 +7,7 @@ import datetime
 
 try:
     from picamera import PiCamera
+    import cv2
     print("Camera detected!")
     camera_detected = True
 except ModuleNotFoundError:
@@ -58,14 +59,21 @@ except ValueError:
 class Camera:
 
     def __init__(self,directory=""):
-        self.camera = PiCamera()
+        self.camera = PiCamera(sensor_mode=5, framerate=30)
+        #self.camera = cv2.VideoCapture(0)
         self.directory = directory
 
     def capture(self, count):
         file_name = self.directory + "/" + str(count) + ".jpg"
-        self.camera.capture(file_name)
+        self.camera.capture(file_name, use_video_port=True)
+        #ret, frame = self.camera.read()
+        #cv2.imwrite(file_name, frame)
         print("Captured")
-
+    
+    def preview(self):
+        self.camera.start_preview()
+        time.sleep(5)
+        self.camera.stop_preview()
 
 class PumpAndGate(threading.Thread):
     to_exit = False
@@ -113,11 +121,11 @@ class PressureSensor(threading.Thread):
 
     def read_sensor(self):
         if self.hardware_mapper is not None:
-            print("Sensor " + str(self.id) + "reads: " + str(self.hardware_mapper.readSensor(self.id)))
+            #print("Sensor " + str(self.id) + "reads: " + str(self.hardware_mapper.readSensor(self.id)))
             return self.hardware_mapper.readSensor(self.id)
         else:
             randomnum = random.uniform(0, 10)
-            print("Sensor " + str(self.id) + "reads: " + str(randomnum))
+            #print("Sensor " + str(self.id) + "reads: " + str(randomnum))
             return randomnum
 
     def getID(self):
@@ -203,7 +211,7 @@ class Actuator(threading.Thread):
 
 
 class WaterRobot(threading.Thread):
-    frequency = 1
+    frequency = 2
     pressure_sensors = []
     actuators = []
     to_exit = False
@@ -283,24 +291,35 @@ class WaterRobot(threading.Thread):
 
         while (self.to_exit == False):
             time.sleep(1 / self.frequency)
-            for i in range(0, len(self.values)):
-                self.values[i] = round(self.pressure_sensors[i].read_sensor(), 3)
             self.saveState()
         
         print("Experiment Summary")
         print("Total time: " + str(self.elapsed_time))
         print("Total samples: " + str(self.sample_count))
+    
+    def startTimer(self):
+        self.test_begin_time = datetime.datetime.now()
+
+    def endTimer(self, message):
+        self.test_end_time = datetime.datetime.now()
+        self.test_elapsed_time = (self.test_end_time-self.test_begin_time).total_seconds()
+        print(message + ": " + str(self.test_elapsed_time))
 
     def saveState(self):
         with open(self.data_filepath, 'a', newline='') as file:
             #writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             writer = csv.DictWriter(file, fieldnames=self.csv_headers)
 
+            self.startTimer()
             if self.camera is not None:
                 self.camera.capture(self.sample_count)
-
+            self.endTimer("Camera Capture")
+            self.startTimer()
             current_time = datetime.datetime.now()
             self.elapsed_time = round((current_time - self.start_time).total_seconds(),3)
+
+            for i in range(0, len(self.values)):
+                self.values[i] = round(self.pressure_sensors[i].read_sensor(), 3)
 
             actuatorvalues = []
             for i in self.actuators:
@@ -322,6 +341,7 @@ class WaterRobot(threading.Thread):
             #writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
             writer.writerow(row_dict)
             self.sample_count += 1
+            self.endTimer("everything else")
 
     def printOut(self, text):
         print(text)
