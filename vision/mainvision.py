@@ -37,7 +37,7 @@ def initialHSVsetup(mediaDirectory):
     cv2.createTrackbar("Val Max","TrackBars",255,255,empty)
 
     #deque setup
-    #only for video files
+    #only for video file
     ap = argparse.ArgumentParser()
     ap.add_argument("-b", "--buffer", type=int, default=16,
         help="max buffer size")
