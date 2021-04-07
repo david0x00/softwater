@@ -26,15 +26,25 @@ def initialHSVsetup(mediaDirectory):
 
 
 
-    #trackbar for HSV
-    cv2.namedWindow("TrackBars")
-    cv2.resizeWindow("TrackBars", 640, 240)
-    cv2.createTrackbar("Hue Min","TrackBars",113,179,empty)
-    cv2.createTrackbar("Hue Max","TrackBars",179,179,empty)
-    cv2.createTrackbar("Sat Min","TrackBars",119,255,empty)
-    cv2.createTrackbar("Sat Max","TrackBars",255,255,empty)
-    cv2.createTrackbar("Val Min","TrackBars",116,255,empty)
-    cv2.createTrackbar("Val Max","TrackBars",255,255,empty)
+    #trackbar for Red HSV
+    cv2.namedWindow("TrackBarsRed")
+    cv2.resizeWindow("TrackBarsRed", 640, 240)
+    cv2.createTrackbar("Hue Min","TrackBarsRed",0,179,empty)
+    cv2.createTrackbar("Hue Max","TrackBarsRed",179,179,empty)
+    cv2.createTrackbar("Sat Min","TrackBarsRed",169,255,empty)
+    cv2.createTrackbar("Sat Max","TrackBarsRed",248,255,empty)
+    cv2.createTrackbar("Val Min","TrackBarsRed",202,255,empty)
+    cv2.createTrackbar("Val Max","TrackBarsRed",255,255,empty)
+
+    # trackbar for Blue HSV
+    cv2.namedWindow("TrackBarsBlue")
+    cv2.resizeWindow("TrackBarsBlue", 640, 240)
+    cv2.createTrackbar("Hue Min", "TrackBarsBlue", 111, 179, empty)
+    cv2.createTrackbar("Hue Max", "TrackBarsBlue", 136, 179, empty)
+    cv2.createTrackbar("Sat Min", "TrackBarsBlue", 103, 255, empty)
+    cv2.createTrackbar("Sat Max", "TrackBarsBlue", 255, 255, empty)
+    cv2.createTrackbar("Val Min", "TrackBarsBlue", 148, 255, empty)
+    cv2.createTrackbar("Val Max", "TrackBarsBlue", 255, 255, empty)
 
     #deque setup
     #only for video file
@@ -51,24 +61,40 @@ def initialHSVsetup(mediaDirectory):
         success, img = cap.read()
         capHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
-        #update trackbar values
-        h_min = cv2.getTrackbarPos("Hue Min","TrackBars")
-        h_max = cv2.getTrackbarPos("Hue Max","TrackBars")
-        s_min = cv2.getTrackbarPos("Sat Min","TrackBars")
-        s_max = cv2.getTrackbarPos("Sat Max","TrackBars")
-        v_min = cv2.getTrackbarPos("Val Min","TrackBars")
-        v_max = cv2.getTrackbarPos("Val Max","TrackBars")
-        print(h_min,h_max,s_min,s_max,v_min,v_max)
-        lower = np.array([h_min,s_min,v_min])
-        upper = np.array([h_max,s_max,v_max])
+        #update Red trackbar values
+        h_minR = cv2.getTrackbarPos("Hue Min","TrackBarsRed")
+        h_maxR = cv2.getTrackbarPos("Hue Max","TrackBarsRed")
+        s_minR = cv2.getTrackbarPos("Sat Min","TrackBarsRed")
+        s_maxR = cv2.getTrackbarPos("Sat Max","TrackBarsRed")
+        v_minR = cv2.getTrackbarPos("Val Min","TrackBarsRed")
+        v_maxR = cv2.getTrackbarPos("Val Max","TrackBarsRed")
+        print(h_minR,h_maxR,s_minR,s_maxR,v_minR,v_maxR)
+        lowerRed = np.array([h_minR,s_minR,v_minR])
+        upperRed = np.array([h_maxR,s_maxR,v_maxR])
+
+        # update Blue trackbar values
+        h_minB = cv2.getTrackbarPos("Hue Min", "TrackBarsBlue")
+        h_maxB = cv2.getTrackbarPos("Hue Max", "TrackBarsBlue")
+        s_minB = cv2.getTrackbarPos("Sat Min", "TrackBarsBlue")
+        s_maxB = cv2.getTrackbarPos("Sat Max", "TrackBarsBlue")
+        v_minB = cv2.getTrackbarPos("Val Min", "TrackBarsBlue")
+        v_maxB = cv2.getTrackbarPos("Val Max", "TrackBarsBlue")
+        print(h_minB, h_maxB, s_minB, s_maxB, v_minB, v_maxB)
+        lowerBlue = np.array([h_minB, s_minB, v_minB])
+        upperBlue = np.array([h_maxB, s_maxB, v_maxB])
 
         #blur hsv, construct mask, remove artifacts/noise, combine mask with original image
         capHSV = cv2.GaussianBlur(capHSV, (25, 25), 0)
-        mask = cv2.inRange(capHSV,lower,upper)
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
+        maskRed = cv2.inRange(capHSV,lowerRed,upperRed)
+        maskBlue = cv2.inRange(capHSV, lowerBlue, upperBlue)
+        maskRed = cv2.erode(maskRed, None, iterations=2)
+        maskRed = cv2.dilate(maskRed, None, iterations=2)
+        maskBlue = cv2.erode(maskBlue, None, iterations=2)
+        maskBlue = cv2.dilate(maskBlue, None, iterations=2)
+        mask = maskRed | maskBlue
         imgResult = cv2.bitwise_and(img,img,mask=mask)
-        imgCanny = cv2.Canny(mask, 30, 200)
+
+
 
 
 
@@ -157,8 +183,8 @@ def initialHSVsetup(mediaDirectory):
             cv2.line(img, pts[i - 1], pts[i], (255, 0, 255), thickness)
 
         # resize video window based on monitor size
-        resizeOne = 0.3
-        resizeTwo = 0.4
+        resizeOne = 0.2
+        resizeTwo = 0.2
         isolatedMarkerImg = cv2.resize(imgResult, None, None, resizeOne, resizeOne, None)
         finalImg = cv2.resize(img, None, None, resizeTwo, resizeTwo, None)
         finalHSVImg = cv2.resize(capHSV, None, None, resizeOne, resizeOne, None)
