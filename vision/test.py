@@ -4,4 +4,4 @@ import mainvision
 
 
 
-mainvision.initialHSVsetup("Resources/test_video.mp4")
+mainvision.initialHSVsetup("Resources/Image from iOS.jpg")
