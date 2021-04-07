@@ -83,7 +83,7 @@ def initialHSVsetup(mediaDirectory):
         lowerBlue = np.array([h_minB, s_minB, v_minB])
         upperBlue = np.array([h_maxB, s_maxB, v_maxB])
 
-        #blur hsv, construct mask, remove artifacts/noise, combine mask with original image
+        #blur hsv, construct mask, remove artifacts/noise, combine mask with original images
         capHSV = cv2.GaussianBlur(capHSV, (25, 25), 0)
         maskRed = cv2.inRange(capHSV,lowerRed,upperRed)
         maskBlue = cv2.inRange(capHSV, lowerBlue, upperBlue)
