@@ -1,131 +1,175 @@
-import tkinter as Tk
+import tkinter as tk
 import tkinter.font
 from functools import partial
-import threading
+from tkinter import ttk
+import os
+import os.path
+from os import path
 from PIL import Image, ImageTk
 from robot import WaterRobot
+from tkinter import messagebox
+from tkinter.filedialog import asksaveasfile
 
 
-def main():
-    '''
-    SETTINGS
-    '''
+class Application(tk.Tk):
     num_sensors = 4
     num_actuators = 8
+    num_modules = 2
+    a = WaterRobot(num_sensors, num_actuators)
+    #a = SoftWaterRobot(15, num_modules)
+    update_speed = 100
 
-    a = WaterRobot(15, num_sensors, num_actuators)
+    def __init__(self):
+        super().__init__()
 
-    def _begin():
-        a.start()
+        print("Current working directory: {0}".format(os.getcwd()))
+        if (os.path.exists('application/')):
+            print("MOVING WORKING DIRECTORY")
+            os.chdir('application/')
+            print("Current working directory: {0}".format(os.getcwd()))
 
-    def _quit():
-        print("Exit")
-        a.to_exit = True
-        a.stop()
-        root.quit()
-        root.destroy()
+        WIDTH, HEIGHT = 1280, 720
+        self.title("Softwater Robot")
+        self.geometry('{}x{}'.format(WIDTH, HEIGHT))
+        self.resizable(False, False)
+        self.style = ttk.Style(self)
+        self.tk.call('source', 'themes/breeze.tcl')
+        self.style.theme_use('Breeze')
+        self.protocol("WM_DELETE_WINDOW", self._quit)
 
-    def button_countdown(i, label):
+        canvas = tk.Canvas(self, width=WIDTH, height=HEIGHT)
+        canvas.pack()
+
+        # Load Image Background
+        #IMAGE_PATH = 'my_robot.png'
+        IMAGE_PATH = 'alt2.png'
+        img = ImageTk.PhotoImage(Image.open(IMAGE_PATH).resize((WIDTH, HEIGHT), Image.ANTIALIAS))
+        image_background = ttk.Label(self, image=img)
+        image_background.img = img
+        image_background.place(relx=0.5, rely=0.5, anchor='center')
+        self.selected_theme = tk.StringVar()
+        theme_frame = ttk.LabelFrame(self, text='Themes')
+        theme_frame.pack()
+
+        # Start & Stop Buttons
+        start_button = ttk.Button(master=self, text='Start', command=self._begin)  # the start button
+        start_button.place(x=1070, y=9)
+        quit_button = ttk.Button(master=self, text='Stop', command=self.a.stop)  # the quit button
+        quit_button.place(x=1164, y=9)
+
+        # Information Displays
+        num_sensors_display = ttk.Label(master=self, text="Robot Connected: " + str(self.a.detected_status))
+        num_sensors_display.place(x=15, y=640)
+
+        num_sensors_display = ttk.Label(master=self, text="Number of Sensors: " + str(len(self.a.pressure_sensors)))
+        num_sensors_display.place(x=15, y=660)
+        global sensor_statuses
+        sensor_statuses = ttk.Label(master=self, text="Sensors: " + str(self.a.values))
+        sensor_statuses.place(x=15, y=680)
+
+        # Read Sensors Buttons
+        xvals = [100, 100, 100, 100]
+        yvals = [100, 132, 164, 196]
+        for i in range(0, self.num_sensors):
+            read_function = partial(self.a.read_sensor , i)
+            read_button = ttk.Button(master=self, text='Read Sensor ' + str(i),
+                                     command=read_function)
+            read_button.place(x=xvals[i], y=yvals[i], anchor=tk.CENTER)
+
+        # Activate Solenoids Buttons
+        xvala = [350, 550, 350, 550, 875, 1075, 875 ,1075]
+        yvala = [300, 300, 400, 400, 300, 300, 400, 400]
+        for j in range(0, self.num_actuators):
+            button_label = "Pressurizer"
+            if (self.a.actuators[j].get_is_depressurizer() == True):
+                button_label = "Depressurizer"
+            ttk.Label(master=self, text=button_label + " Actuator #" + str(j)).place(x=xvala[j], y=yvala[j] - 10,
+                                                                                     anchor=tk.CENTER)
+            switch_function = partial(self.a.actuate_solenoid , j)
+            switch_button = ttk.Checkbutton(master=self, text="Switch", command=switch_function)
+            switch_button.place(x=xvala[j], y=yvala[j] + 10, anchor=tk.CENTER)
+
+        # Pump and Gate Valve
+        for k in range(0, 1):
+            pos = [90, 500]
+            button_label = "Pump and Gate Valve"
+            ttk.Label(master=self, text=button_label).place(x=pos[0], y=pos[1], anchor=tk.CENTER)
+            pump_func = self.a.pump_and_gate.switchPump
+            gate_valve_func = self.a.pump_and_gate.switchGateValve
+            ttk.Checkbutton(master=self, text="Turn On Pump", command=pump_func).place(x=pos[0], y=pos[1] + 32,
+                                                                                     anchor=tk.CENTER)
+            ttk.Checkbutton(master=self, text="Open Gate Valve", command=gate_valve_func).place(x=pos[0], y=pos[1] + 64,
+                                                                                     anchor=tk.CENTER)
+
+        # Frequency Settings
+        entryb1 = tk.StringVar(value=self.a.frequency)
+        ttk.Label(self, text="Frequency: ").place(x=48, y=24, anchor=tk.CENTER)
+        tk.Entry(self, textvariable=entryb1).place(x=156, y=24, anchor=tk.CENTER)
+        set_frequency = partial(self.print_content, (entryb1))
+        b1 = ttk.Button(self, text="Set", command=set_frequency)
+        b1.place(x=280, y=24, anchor=tk.CENTER)
+
+        # Save Dataset Functions
+        ttk.Button(master=self, text='Save To', command=self.createfile).place(x=579, y=24, anchor=tk.CENTER)
+        ttk.Button(master=self, text='Save Current State', command=self.save_state).place(x=692, y=24, anchor=tk.CENTER)
+
+    def button_countdown(self, i, label):
         if i > 0:
             i -= 1
             label.set(i)
-            root.after(1000, lambda: button_countdown(i, label))
+            self.after(1000, lambda: self.button_countdown(i, label))
 
-    def add_button():
-        Tk.Label(master=root, text="New Quota").pack()
-        Tk.Button(master=root, text='QuotaNew', command=_quit).pack()
+    def add_button(self):
+        ttk.Label(master=self, text="New Quota").pack()
+        ttk.Button(master=self, text='QuotaNew', command=self._quit).pack()
 
-    def save_state():
-        a.saveState()
+    def save_state(self):
+        self.a.saveState(self.data_filepath)
 
-    IMAGE_PATH = 'application\images\my_robot.png'
-    WIDTH, HEIGHT = 1280,720
+    def createfile(self):
+        files = [('CSV Files', '*.csv')]
+        file = asksaveasfile(filetypes=files, defaultextension='*.csv')
+        if (file != None and path.exists(file.name)):
+            self.a.data_filepath = file.name
 
-    root = Tk.Tk()
-    root.geometry('{}x{}'.format(WIDTH, HEIGHT))
-    root.resizable(False, False)
-    #root.overrideredirect(1)
-    def __callback():
-        pass
-    root.protocol("WM_DELETE_WINDOW", __callback)
-
-    canvas = Tk.Canvas(root, width=WIDTH, height=HEIGHT)
-    canvas.pack()
-
-    img = ImageTk.PhotoImage(Image.open(IMAGE_PATH).resize((WIDTH, HEIGHT), Image.ANTIALIAS))
-    lbl = Tk.Label(root, image=img)
-    lbl.img = img
-    lbl.place(relx=0.5, rely=0.5, anchor='center')
-
-    StartButton = Tk.Button(master=root, text='Start', command=_begin)  # the start button
-    StartButton.place(x=1190, y=15)
-    QuitButton = Tk.Button(master=root, text='Quit', command=_quit)  # the quit button
-    QuitButton.place(x=1235, y=15)
-    T = Tk.Label(master=root, text="Number of Sensors: " + str(len(a.pressure_sensors)))
-    T.place(x=15, y=15)
-
-    xvals = [100, 200, 100, 200]
-    yvals = [100, 100, 200, 200]
-    xvala = [300, 600, 300, 600, 900, 1200, 900, 1200]
-    yvala = [300, 300, 400, 400, 300, 300, 400, 400]
-
-    for i in range(0, num_sensors):
-
-        Tk.Button(master=root, text='Read Sensor ' + str(i), command=a.pressure_sensors[i].read_sensor).place(x = xvals[i], y = yvals[i], anchor=Tk.CENTER)
-        #Tk.Label(master=root, text="").pack()   SPACING
-
-    for j in range(0, num_actuators):
-
-
-
-        s = "Pressurizer"
-        if (a.actuators[j].get_is_depressurizer() == True):
-            s = "Depressurizer"
-        Tk.Label(master=root, text=s + " Actuator #" + str(j)).place(x = xvala[j], y = yvala[j]-10, anchor=Tk.CENTER)
-        move_up = partial(a.actuators[j].switch, (""))
-        Tk.Button(master=root, text="Switch", command=move_up).place(x = xvala[j], y = yvala[j]+10, anchor=Tk.CENTER)
-        #Tk.Label(master=root, text="").pack()   SPACING
-
-    for k in range(0, 1):
-        pos = [150, 300]
-        s = "Two Way Switch"
-        Tk.Label(master=root, text=s).pack()
-        turn_off = partial(a.two_way_gate.switch, (0))
-        turn_a = partial(a.two_way_gate.switch, (1))
-        turn_b = partial(a.two_way_gate.switch, (2))
-        Tk.Button(master=root, text="OFF", command=turn_off).place(x = pos[0], y = pos[1], anchor=Tk.CENTER)
-        Tk.Button(master=root, text="A", command=turn_a).place(x = pos[0], y = pos[1] + 32, anchor=Tk.CENTER)
-        Tk.Button(master=root, text="B", command=turn_b).place(x = pos[0], y = pos[1] + 64, anchor=Tk.CENTER)
-        #Tk.Label(master=root, text="").pack()   SPACING
-
-    entryb1 = Tk.StringVar(value=a.frequency)
-    Tk.Label(root, text="Frequency: ").place(x = 635, y = 15, anchor=Tk.CENTER)
-    Tk.Entry(root, textvariable=entryb1).place(x = 635, y = 35, anchor=Tk.CENTER)
-
-    def print_content():
-        content = entryb1.get()
+    def print_content(self, input):
+        content = input.get()
         try:
-            a.frequency = float(content)
-            print("Set Frequency to: " + str(a.frequency))
+            if (float(content) > 0):
+                self.a.frequency = float(content)
+                print("Set Frequency to: " + str(self.a.frequency))
+            else:
+                tk.messagebox.showwarning(title=None, message="Frequency must be a positive number (greater than 0)")
+                print("ERROR: Frequency input out of expected range")
+
         except:
+            tk.messagebox.showwarning(title=None, message="ERROR: Frequency input not numeric")
             print("ERROR: Frequency input not numeric")
 
-    b1 = Tk.Button(root, text="Set", command=print_content)
-    b1.place(x = 635, y = 60, anchor=Tk.CENTER)
-    Tk.Button(master=root, text='Save State', command=save_state).place(x = 960, y = 30, anchor=Tk.CENTER)
+    def __callback(self):
+        pass
 
-    vaal = (a.pressure_sensors[0]).get_value()
-    counter = 10
-    button_label = Tk.StringVar()
-    button_label.set(counter)
-    Tk.Button(root, textvariable=button_label).pack()
-    R = Tk.Label(master=root, textvariable=button_label)
-    R.pack(side=Tk.RIGHT)
-    button_countdown(counter, button_label)
-    Tk.Button(master=root, text='Quota', command=add_button).pack()
+    def _begin(self):
+        while (self.a.data_filepath == None or not (path.exists(self.a.data_filepath))):
+            self.createfile()
+            if (self.a.data_filepath == None or not (path.exists(self.a.data_filepath))):
+                tk.messagebox.showwarning(title=None, message="Please declare a dataset file to a valid path", )
+        self.a.start()
 
-    root.mainloop()
+    def _quit(self):
+        if messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
+            print("Exit")
+            self.a.to_exit = True
+            self.a.stop()
+            self.quit()
+            self.destroy()
+
+    def update_values(self):
+        sensor_statuses.configure(text="Sensors" + str(self.a.values))
+        self.after(self.update_speed, self.update_values)
 
 
 if __name__ == "__main__":
-    main()
+    app = Application()
+    app.update_values()
+    app.mainloop()
