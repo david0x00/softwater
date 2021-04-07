@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import argparse
 import os
+import math
 print("Package Imported")
 
 
@@ -23,6 +24,8 @@ def setDirectory(x):
 def initialHSVsetup(mediaDirectory):
     cap = cv2.VideoCapture(mediaDirectory)
 
+
+
     #trackbar for HSV
     cv2.namedWindow("TrackBars")
     cv2.resizeWindow("TrackBars", 640, 240)
@@ -41,6 +44,8 @@ def initialHSVsetup(mediaDirectory):
     args = vars(ap.parse_args())
     pts = deque(maxlen=args["buffer"])
 
+
+
     #open video file and apply masks
     while True:
         success, img = cap.read()
@@ -53,7 +58,7 @@ def initialHSVsetup(mediaDirectory):
         s_max = cv2.getTrackbarPos("Sat Max","TrackBars")
         v_min = cv2.getTrackbarPos("Val Min","TrackBars")
         v_max = cv2.getTrackbarPos("Val Max","TrackBars")
-        # print(h_min,h_max,s_min,s_max,v_min,v_max)
+        print(h_min,h_max,s_min,s_max,v_min,v_max)
         lower = np.array([h_min,s_min,v_min])
         upper = np.array([h_max,s_max,v_max])
 
@@ -74,25 +79,37 @@ def initialHSVsetup(mediaDirectory):
         #initialize center of ball - (x,y)
         edged = mask.copy()
         contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        center = None
+
 
 
         if len(contours) > 0:
             i = 0
             j = 0
             print("# of Contours Detected = " + str(len(contours)))
-            averageOne = 0
-            averageTwo = 0
+            averageX = 0
+            averageY = 0
+            x1 = 0
+            y1 = 0
+            x2 = 0
+            y2 = 0
+            b = max(contours, key=cv2.contourArea)
+            G = cv2.moments(b)
             for a in contours:
                 M = cv2.moments(a)
-                if M['m00'] > 4000:
+                if M['m00'] > (G['m00'] / 2):
                     ((x, y), radius) = cv2.minEnclosingCircle(a)
                     center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
                     cv2.circle(img, (int(x), int(y)), int(radius), (0,255,68), 10)
                     cv2.circle(img, center, 2, (255, 0, 255), 10)
                     #for deque tracker
-                    averageOne = averageOne + int(M["m10"] / M["m00"])
-                    averageTwo = averageTwo + int(M["m01"] / M["m00"])
+                    averageX = averageX + int(M["m10"] / M["m00"])
+                    averageY = averageY + int(M["m01"] / M["m00"])
+                    if i == 0:
+                        x1 = int(M["m10"] / M["m00"])
+                        y1 = int(M["m01"] / M["m00"])
+                    if i == 2:
+                        x2 = int(M["m10"] / M["m00"])
+                        y2 = int(M["m01"] / M["m00"])
                     i = i + 1
                 if i == 0:
                     print("Contour " + str(j) + " < " + "threshold")
@@ -103,7 +120,24 @@ def initialHSVsetup(mediaDirectory):
                     print("More than 3 contours detected: Edit Mask or HSV settings to eliminate noise/artifacts "
                           "or check if there are more than 3 robot markers.\nBut first, check your threshold value for "
                           "considering a contour.")
-            centerFinal = (int(averageOne/3), int(averageTwo/3))
+            centerFinal = (int(averageX/3), int(averageY/3))
+            cv2.putText(img, str(centerFinal), (int(averageX/3) - 85, int(averageY/3) - 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+            #calculation of angle
+            changeInX = x2 - x1
+            changeInY = y2 - y1
+            print(x1, y1)
+            print(x2, y2)
+            print(changeInX, changeInY)
+
+            ratio = changeInY/changeInX
+            angleRadians = math.atan(ratio)
+            angleDegrees = math.degrees(angleRadians)
+            print(ratio)
+            print(angleDegrees)
+
+            cv2.putText(img, "Angle: " + str(angleDegrees), (int(averageX / 3) - 140, int(averageY / 3) + 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            print("Average of Circle Center Points: " + str(centerFinal))
             pts.appendleft(centerFinal)
 
 
@@ -123,11 +157,13 @@ def initialHSVsetup(mediaDirectory):
             cv2.line(img, pts[i - 1], pts[i], (255, 0, 255), thickness)
 
         # resize video window based on monitor size
-        isolatedMarkerImg = cv2.resize(imgResult, None, None, 0.3, 0.3, None)
-        finalImg = cv2.resize(img, None, None, 0.3, 0.3, None)
-        finalHSVImg = cv2.resize(capHSV, None, None, 0.3, 0.3, None)
-        finalMask = cv2.resize(mask, None, None, 0.3, 0.3, None)
-        contouredImg = cv2.resize(edged, None, None, 0.3, 0.3, None)
+        resizeOne = 0.3
+        resizeTwo = 0.4
+        isolatedMarkerImg = cv2.resize(imgResult, None, None, resizeOne, resizeOne, None)
+        finalImg = cv2.resize(img, None, None, resizeTwo, resizeTwo, None)
+        finalHSVImg = cv2.resize(capHSV, None, None, resizeOne, resizeOne, None)
+        finalMask = cv2.resize(mask, None, None, resizeOne, resizeOne, None)
+        contouredImg = cv2.resize(edged, None, None, resizeOne, resizeOne, None)
 
         #open video windows
         cv2.imshow("Mask + Original = Isolated Marker",isolatedMarkerImg)
@@ -138,7 +174,7 @@ def initialHSVsetup(mediaDirectory):
         cv2.imshow("Contour Tracked", contouredImg)
 
 
-
-        #quit and control video length
+        #quit and control video/frame length
+        # set waitkey to 0 for individual photo input and anywhere above 20 for video input
         if cv2.waitKey(0) & 0xFF == ord('q'):
             break
