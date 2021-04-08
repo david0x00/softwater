@@ -1,5 +1,7 @@
 import csv
 import os
+import cv2
+import mainvision
 
 csv_headers = ["M1X", "M1Y", "M1T", 
                "M2X", "M2Y", "M2T",
@@ -31,7 +33,10 @@ def imageCount(directory):
 
 # The Key function: analyzes images and gets positions and angles
 def analyzeImage(img_name):
-    marker_dict = {}
+    img = cv2.imread(img_name)
+    cv2.imshow("raw", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 # Computer vision marker analyzer
@@ -53,5 +58,7 @@ def analyzeImages(directory):
 
 if __name__ == "__main__":
     directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple"
-    analyzeImages(directory)
+    #analyzeImages(directory)
+    img_name = directory + "/1.jpg"
+    analyzeImage(img_name)
 
