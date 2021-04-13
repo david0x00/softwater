@@ -83,3 +83,4 @@ def markers(mediaDirectory):
         cv2.imshow("Mask", mask)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
