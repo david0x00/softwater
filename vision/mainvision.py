@@ -31,20 +31,20 @@ def initialHSVsetup(mediaDirectory):
     cv2.resizeWindow("TrackBarsRed", 640, 240)
     cv2.createTrackbar("Hue Min","TrackBarsRed",0,179,empty)
     cv2.createTrackbar("Hue Max","TrackBarsRed",179,179,empty)
-    cv2.createTrackbar("Sat Min","TrackBarsRed",169,255,empty)
-    cv2.createTrackbar("Sat Max","TrackBarsRed",248,255,empty)
-    cv2.createTrackbar("Val Min","TrackBarsRed",202,255,empty)
+    cv2.createTrackbar("Sat Min","TrackBarsRed",100,255,empty)
+    cv2.createTrackbar("Sat Max","TrackBarsRed",255,255,empty)
+    cv2.createTrackbar("Val Min","TrackBarsRed",165,255,empty)
     cv2.createTrackbar("Val Max","TrackBarsRed",255,255,empty)
 
     # trackbar for Blue HSV
     cv2.namedWindow("TrackBarsBlue")
     cv2.resizeWindow("TrackBarsBlue", 640, 240)
-    cv2.createTrackbar("Hue Min", "TrackBarsBlue", 111, 179, empty)
-    cv2.createTrackbar("Hue Max", "TrackBarsBlue", 136, 179, empty)
-    cv2.createTrackbar("Sat Min", "TrackBarsBlue", 103, 255, empty)
-    cv2.createTrackbar("Sat Max", "TrackBarsBlue", 255, 255, empty)
-    cv2.createTrackbar("Val Min", "TrackBarsBlue", 148, 255, empty)
-    cv2.createTrackbar("Val Max", "TrackBarsBlue", 255, 255, empty)
+    cv2.createTrackbar("Hue Min", "TrackBarsBlue", 81, 179, empty)
+    cv2.createTrackbar("Hue Max", "TrackBarsBlue", 124, 179, empty)
+    cv2.createTrackbar("Sat Min", "TrackBarsBlue", 110, 255, empty)
+    cv2.createTrackbar("Sat Max", "TrackBarsBlue", 231, 255, empty)
+    cv2.createTrackbar("Val Min", "TrackBarsBlue", 114, 255, empty)
+    cv2.createTrackbar("Val Max", "TrackBarsBlue", 174, 255, empty)
 
     #deque setup
     #only for video file
@@ -59,6 +59,8 @@ def initialHSVsetup(mediaDirectory):
     #open video file and apply masks
     while True:
         success, img = cap.read()
+        if success:
+            img = img[0:1200, 500:1300]
         capHSV = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
         #update Red trackbar values
@@ -87,10 +89,10 @@ def initialHSVsetup(mediaDirectory):
         capHSV = cv2.GaussianBlur(capHSV, (25, 25), 0)
         maskRed = cv2.inRange(capHSV,lowerRed,upperRed)
         maskBlue = cv2.inRange(capHSV, lowerBlue, upperBlue)
-        maskRed = cv2.erode(maskRed, None, iterations=2)
-        maskRed = cv2.dilate(maskRed, None, iterations=2)
-        maskBlue = cv2.erode(maskBlue, None, iterations=2)
-        maskBlue = cv2.dilate(maskBlue, None, iterations=2)
+        maskRed = cv2.erode(maskRed, None, iterations=3)
+        maskRed = cv2.dilate(maskRed, None, iterations=3)
+        maskBlue = cv2.erode(maskBlue, None, iterations=4)
+        maskBlue = cv2.dilate(maskBlue, None, iterations=4)
         mask = maskRed | maskBlue
         imgResult = cv2.bitwise_and(img,img,mask=mask)
 
@@ -104,7 +106,7 @@ def initialHSVsetup(mediaDirectory):
         #determine countours(test between using mask, isolated marker image, and Canny)
         #initialize center of ball - (x,y)
         edged = mask.copy()
-        contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
 
@@ -120,9 +122,11 @@ def initialHSVsetup(mediaDirectory):
             y2 = 0
             b = max(contours, key=cv2.contourArea)
             G = cv2.moments(b)
+            print("G: " + str(G['m00']))
+            print("G: " + str(G['m00']/7))
             for a in contours:
                 M = cv2.moments(a)
-                if M['m00'] > (G['m00'] / 2):
+                if M['m00'] > (G['m00']/8):
                     ((x, y), radius) = cv2.minEnclosingCircle(a)
                     center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
                     cv2.circle(img, (int(x), int(y)), int(radius), (0,255,68), 10)
@@ -142,7 +146,7 @@ def initialHSVsetup(mediaDirectory):
                 else:
                     print("Contour " + str(j) + ":" + "passed area threshold")
                 j = j + 1
-                if i > 3:
+                if i > 33:
                     print("More than 3 contours detected: Edit Mask or HSV settings to eliminate noise/artifacts "
                           "or check if there are more than 3 robot markers.\nBut first, check your threshold value for "
                           "considering a contour.")
@@ -156,15 +160,15 @@ def initialHSVsetup(mediaDirectory):
             print(x2, y2)
             print(changeInX, changeInY)
 
-            ratio = changeInY/changeInX
-            angleRadians = math.atan(ratio)
-            angleDegrees = math.degrees(angleRadians)
-            print(ratio)
-            print(angleDegrees)
+            #ratio = changeInY/changeInX
+            #angleRadians = math.atan(ratio)
+            #angleDegrees = math.degrees(angleRadians)
+            #print(ratio)
+           # print(angleDegrees)
 
-            cv2.putText(img, "Angle: " + str(angleDegrees), (int(averageX / 3) - 140, int(averageY / 3) + 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            print("Average of Circle Center Points: " + str(centerFinal))
-            pts.appendleft(centerFinal)
+            #cv2.putText(img, "Angle: " + str(angleDegrees), (int(averageX / 3) - 140, int(averageY / 3) + 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+           # print("Average of Circle Center Points: " + str(centerFinal))
+            #pts.appendleft(centerFinal)
 
 
 
@@ -183,19 +187,19 @@ def initialHSVsetup(mediaDirectory):
             cv2.line(img, pts[i - 1], pts[i], (255, 0, 255), thickness)
 
         # resize video window based on monitor size
-        resizeOne = 0.2
-        resizeTwo = 0.2
+        resizeOne = 0.4
+        resizeTwo = 0.6
         isolatedMarkerImg = cv2.resize(imgResult, None, None, resizeOne, resizeOne, None)
         finalImg = cv2.resize(img, None, None, resizeTwo, resizeTwo, None)
         finalHSVImg = cv2.resize(capHSV, None, None, resizeOne, resizeOne, None)
-        finalMask = cv2.resize(mask, None, None, resizeOne, resizeOne, None)
+        finalMask = cv2.resize(mask, None, None, resizeTwo, resizeTwo, None)
         contouredImg = cv2.resize(edged, None, None, resizeOne, resizeOne, None)
 
         #open video windows
         cv2.imshow("Mask + Original = Isolated Marker",isolatedMarkerImg)
         cv2.imshow("Original", finalImg)
         cv2.imshow("HSV", finalHSVImg)
-        #cv2.imshow("Mask", finalMask)
+        cv2.imshow("Mask", finalMask)
         #cv2.imshow("Canny", one)
         cv2.imshow("Contour Tracked", contouredImg)
 
