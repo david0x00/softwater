@@ -14,4 +14,3 @@ for filename in os.listdir(MoreMarkers.getDirectory()):
     else:
         continue
 
-
