@@ -1,13 +1,17 @@
-import mainvision
+import MoreMarkers
 import os
 
-print(mainvision.getDirectory())
-mainvision.setDirectory(mainvision.getDirectory() + "/Resources/test_frames")
+print(MoreMarkers.getDirectory())
+MoreMarkers.setDirectory(MoreMarkers.getDirectory() + "/Resources/initialTest")
 
-for filename in os.listdir(mainvision.getDirectory()):
+for filename in os.listdir(MoreMarkers.getDirectory()):
+
     if filename.endswith(".jpg") or filename.endswith(".png"):
+
         print("\n")
         print("Next File: " + filename)
-        mainvision.initialHSVsetup(filename)
+        MoreMarkers.markers(filename)
     else:
         continue
+
+
