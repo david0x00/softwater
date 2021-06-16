@@ -187,6 +187,8 @@ def calculatePoly(marker_dict):
 def analyzeImages(directory):
     marker_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_markers.csv"
     poly_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_poly.csv"
+    os.remove(marker_file_name)
+    os.remove(poly_file_name)
 
     poly_headers = []
     for i in range(poly_order+1):
@@ -208,7 +210,7 @@ def analyzeImages(directory):
         writeRow(poly_file_name, poly_dict, poly_headers)
 
 if __name__ == "__main__":
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple"
+    directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
     #analyzeImage(img_name)
