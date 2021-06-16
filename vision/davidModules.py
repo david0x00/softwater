@@ -1,6 +1,7 @@
 import csv
 import os
 import cv2
+from numpy.lib.polynomial import poly
 import mainvision
 import numpy as np
 
@@ -16,15 +17,17 @@ csv_headers = ["M0X", "M0Y", "M0T",
                "M9X", "M9Y", "M9T",
                "M10X", "M10Y", "M10T"]
 
-def writeHeaders(file_name):
+poly_order = 5
+
+def writeHeaders(file_name, fieldnames):
     with open(file_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=csv_headers)
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
 
-def writeRow(file_name, marker_dict):
+def writeRow(file_name, row_dict, fieldnames):
     with open(file_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=csv_headers)
-        writer.writerow(marker_dict)
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writerow(row_dict)
 
 def imageCount(directory):
     img_list = os.listdir(directory)
@@ -122,13 +125,76 @@ def analyzeImage(img_name):
     #         cv2.circle(img, center, 2, (255,0,255), 10)
 
 
+def leastSquaresPolynomial(x, y, order):
+    n = len(x)
+    M = np.zeros((order+1, order+1))
+    b = np.zeros((order+1, 1))
+    #build up the M matrix
+    M[0][0] = n
+    for k in range(1,(2*order)+1):
+        #print("break")
+        total = 0
+        for i in range(n):
+            total += x[i]**k
+        r = 0
+        c = k
+        while r <= k and c >= 0:
+            #print(str(r) + ", " + str(c))
+            if r <= order and r >= 0 and c <= order and c >=0:
+                M[r][c] = total
+            r += 1
+            c -= 1
+    
+    #build the b matrix
+    for k in range(order+1):
+        total = 0
+        for i in range(n):
+            total += y[i] * (x[i]**k)
+        b[k][0] = total
+    
+    a = []
+    det_M = np.linalg.det(M)
+    
+    for k in range(0, order+1):
+        Mi = M.copy()
+        Mi[:, k] = b[:, 0]
+        det_Mi = np.linalg.det(Mi)
+        a_k = det_Mi / det_M
+        a.append(a_k)
+    # a.reverse()
+    return a
+
+def calculatePoly(marker_dict):
+    x = []
+    y = []
+    for i in range(11):
+        # Switch the X and Y.
+        x.append(marker_dict["M" + str(i) + "X"])
+        y.append(marker_dict["M" + str(i) + "Y"])
+    a = leastSquaresPolynomial(y, x, poly_order)
+
+    poly_dict = {}
+    for i in range(poly_order + 1):
+        poly_dict["a" + str(i)] = a[i]
+    
+    return poly_dict
+
+
+
 # Computer vision marker analyzer
 # INPUT: directory with ordered list of photos: 1.jpg, 2.jpg, ...
 # OUTPUT: CSV file with the position and angle of all markers.
 def analyzeImages(directory):
-    file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_markers.csv"
+    marker_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_markers.csv"
+    poly_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_poly.csv"
 
-    writeHeaders(file_name)
+    poly_headers = []
+    for i in range(poly_order+1):
+        poly_headers.append("a" + str(i))
+    print(poly_headers)
+
+    writeHeaders(marker_file_name, csv_headers)
+    writeHeaders(poly_file_name, poly_headers)
 
     image_count = imageCount(directory)
 
@@ -136,11 +202,13 @@ def analyzeImages(directory):
         img_name = directory + "/" + str(i+1) + ".jpg"
 
         marker_dict = analyzeImage(img_name)
+        poly_dict = calculatePoly(marker_dict)
 
-        writeRow(file_name, marker_dict)
+        writeRow(marker_file_name, marker_dict, csv_headers)
+        writeRow(poly_file_name, poly_dict, poly_headers)
 
 if __name__ == "__main__":
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
+    directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
     #analyzeImage(img_name)
