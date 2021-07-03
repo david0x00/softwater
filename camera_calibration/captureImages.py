@@ -7,7 +7,7 @@ camera.start_preview()
 directory = "/home/pi/softwater/camera_calibration/chessboard_images/"
 for i in range(50):
     time.sleep(2)
-    file_name = directory + str(i) + "c.jpg"
+    file_name = directory + str(i) + "d.jpg"
     camera.capture(file_name, use_video_port=True)
 
 camera.stop_preview()
