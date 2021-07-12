@@ -17,6 +17,22 @@ csv_headers = ["M0X", "M0Y", "M0T",
                "M9X", "M9Y", "M9T",
                "M10X", "M10Y", "M10T"]
 
+mtx = np.array([
+    [1535.10668, 0, 954.393136],
+    [0, 1530.80529, 543.030187],
+    [0,0,1]
+])
+
+newcameramtx = np.array([
+    [1559.8905, 0, 942.619458],
+    [0, 1544.98389, 543.694259],
+    [0,0,1]
+])
+
+dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
+
+roi = (4, 11, 1907, 1059)
+
 poly_order = 5
 
 def writeHeaders(file_name, fieldnames):
@@ -40,8 +56,11 @@ def showImage(title, img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+#This setting worked for module_2_single_actuator_right
+#lower = np.array([120,97,148])
+#upper = np.array([255,255,255])
 def getRedMask(image):
-    lower = np.array([120,97,148])
+    lower = np.array([43,61,158])
     upper = np.array([255,255,255])
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
@@ -54,7 +73,9 @@ def getRedMask(image):
 def analyzeImage(img_name):
     error_detected = False
     img = cv2.imread(img_name)
-    red_mask = getRedMask(img)
+    undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+
+    red_mask = getRedMask(undistorted_img)
 
     edged = red_mask.copy()
     contours, hierarchy = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -62,15 +83,15 @@ def analyzeImage(img_name):
     num_of_points = len(contours)
 
     if num_of_points != 11:
-        print("Error detected initially.")
-        print(img_name)
-        print(num_of_points)
+        #print("Error detected initially.")
+        #print(img_name)
+        #print(num_of_points)
         error_detected = True
 
     center_list = []
     for c in contours:
         ((x,y), radius) = cv2.minEnclosingCircle(c)
-        if x > 250:
+        if x > 300 and x < 1750:
             center_list.append((x,y))
         
     center_list.sort(key = lambda x: x[1])
@@ -82,32 +103,36 @@ def analyzeImage(img_name):
         print(num_of_points)
         error_detected = True
     elif len(center_list) == 11 and error_detected == True:
-        print("error corrected")
+        #print("error corrected")
         error_detected = False
+
+    #if error_detected:
+    #    return {}
 
     base_point = center_list[0]
     x_base = base_point[0]
     y_base = base_point[1]
 
     row_dict = {}
-    for idx, center_point in enumerate(center_list):
+    for idx in range(11):
         x_key = "M" + str(idx) + "X"
         y_key = "M" + str(idx) + "Y"
         t_key = "M" + str(idx) + "T"
 
-        x_val = center_point[0] - x_base
-        y_val = y_base - center_point[1]
-        t_val = 0
+        if error_detected:
+            x_val = 0
+            y_val = 0
+            t_val = 0
+        else:
+            x_val = center_list[idx][0] - x_base
+            y_val = y_base - center_list[idx][1]
+            t_val = 0
 
         row_dict[x_key] = x_val
         row_dict[y_key] = y_val
         row_dict[t_key] = t_val
 
-    if error_detected:
-        return {}
-    
     return row_dict
-
 
 
     #print("Contours Detected: " + str(len(contours)))
@@ -187,8 +212,10 @@ def calculatePoly(marker_dict):
 def analyzeImages(directory):
     marker_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_markers.csv"
     poly_file_name = "/".join(directory.split("/")[:-1]) + "/" + directory.split("/")[-1] + "_poly.csv"
-    os.remove(marker_file_name)
-    os.remove(poly_file_name)
+    if os.path.exists(marker_file_name):
+        os.remove(marker_file_name)
+    if os.path.exists(poly_file_name):
+        os.remove(poly_file_name)
 
     poly_headers = []
     for i in range(poly_order+1):
@@ -210,7 +237,8 @@ def analyzeImages(directory):
         writeRow(poly_file_name, poly_dict, poly_headers)
 
 if __name__ == "__main__":
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
+    #directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
+    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module1_fullext1"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
     #analyzeImage(img_name)

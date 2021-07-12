@@ -37,6 +37,8 @@ roi = (4, 11, 1907, 1059)
 img = cv2.imread("chessboard_images/48d.jpg")
 dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
 
+cv2.imwrite("undistorted_uncut.jpg", dst)
+
 x, y, w, h = roi
 dst = dst[y:y+h, x:x+w]
 cv2.imwrite('undistorted_img.jpg', dst)
