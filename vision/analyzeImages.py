@@ -216,6 +216,7 @@ def calculatePoly(marker_dict):
     poly_dict = {}
     for i in range(poly_order + 1):
         poly_dict["a" + str(i)] = a[i]
+    poly_dict["d"] = y[-1]
     
     return poly_dict
 
@@ -235,6 +236,7 @@ def analyzeImages(directory):
     poly_headers = []
     for i in range(poly_order+1):
         poly_headers.append("a" + str(i))
+    poly_headers.append("d")
     print(poly_headers)
 
     writeHeaders(marker_file_name, csv_headers)
@@ -255,7 +257,7 @@ def analyzeImages(directory):
 
 if __name__ == "__main__":
     #directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
-    # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module1_fullext1"
+    # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module2_fullext4"
     directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/s_curve2"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
