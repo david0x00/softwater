@@ -29,9 +29,13 @@ newcameramtx = np.array([
     [0,0,1]
 ])
 
+inv_camera_mtx = np.linalg.inv(newcameramtx)
+
 dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
 
 roi = (4, 11, 1907, 1059)
+
+camera_to_markers_dist = 57.055 #cm
 
 poly_order = 5
 
@@ -47,20 +51,24 @@ def writeRow(file_name, row_dict, fieldnames):
 
 def imageCount(directory):
     img_list = os.listdir(directory)
-    for idx, img_name in enumerate(img_list):
-        img_list[idx] = int(img_name.split(".")[0])
-    return max(img_list)
+    return len(img_list)
+    # for idx, img_name in enumerate(img_list):
+    #     img_list[idx] = int(img_name.split(".")[0])
+    # return max(img_list)
 
 def showImage(title, img):
     cv2.imshow(title, img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-#This setting worked for module_2_single_actuator_right
-#lower = np.array([120,97,148])
-#upper = np.array([255,255,255])
+# This setting worked for module_2_single_actuator_right
+# lower = np.array([120,97,148])
+# upper = np.array([255,255,255])
+# This worked for module1_fullext1
+# lower = np.array([43,61,158])
+# upper = np.array([255,255,255])
 def getRedMask(image):
-    lower = np.array([43,61,158])
+    lower = np.array([43,61,159])
     upper = np.array([255,255,255])
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
@@ -108,8 +116,15 @@ def analyzeImage(img_name):
 
     #if error_detected:
     #    return {}
+    center_list_3d = []
+    for center in center_list:
+        coord_2d = np.array([[center[0]],
+                             [center[1]],
+                             [1]])
+        coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
+        center_list_3d.append((coord_3d[0][0], coord_3d[1][0]))
 
-    base_point = center_list[0]
+    base_point = center_list_3d[0]
     x_base = base_point[0]
     y_base = base_point[1]
 
@@ -124,8 +139,8 @@ def analyzeImage(img_name):
             y_val = 0
             t_val = 0
         else:
-            x_val = center_list[idx][0] - x_base
-            y_val = y_base - center_list[idx][1]
+            x_val = center_list_3d[idx][0] - x_base
+            y_val = y_base - center_list_3d[idx][1]
             t_val = 0
 
         row_dict[x_key] = x_val
@@ -227,8 +242,10 @@ def analyzeImages(directory):
 
     image_count = imageCount(directory)
 
+    print(image_count)
+
     for i in range(image_count):
-        img_name = directory + "/" + str(i+1) + ".jpg"
+        img_name = directory + "/" + str(i) + ".jpg"
 
         marker_dict = analyzeImage(img_name)
         poly_dict = calculatePoly(marker_dict)
@@ -238,7 +255,8 @@ def analyzeImages(directory):
 
 if __name__ == "__main__":
     #directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module1_fullext1"
+    # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module1_fullext1"
+    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/s_curve2"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
     #analyzeImage(img_name)
