@@ -37,6 +37,7 @@ roi = (4, 11, 1907, 1059)
 
 camera_to_markers_dist = 57.055 #cm
 
+poly_order_min  = 3
 poly_order = 5
 
 def writeHeaders(file_name, fieldnames):
@@ -77,13 +78,32 @@ def getRedMask(image):
     red_mask = cv2.dilate(red_mask, None, iterations=3)
     return red_mask
 
+
+def getBlueMask(image):
+    lower = np.array([99,37,90])
+    upper = np.array([139,140,180])
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
+    blue_mask = cv2.inRange(blur_img, lower, upper)
+    blue_mask = cv2.erode(blue_mask, None, iterations=3)
+    blue_mask = cv2.dilate(blue_mask, None, iterations=3)
+    #if input("Show image? ") == "y":
+    #    cv2.imshow("blue mask", image)
+    #    cv2.waitKey()
+    return blue_mask
+
 # The Key function: analyzes images and gets positions and angles
 def analyzeImage(img_name):
     error_detected = False
+    error_detected_blue = False
     img = cv2.imread(img_name)
     undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
 
     red_mask = getRedMask(undistorted_img)
+    #blue_mask = getBlueMask(undistorted_img)
+    #if "/128.jpg" in img_name:
+    #    print("image printed!")
+    #    cv2.imwrite("bluemask128.jpg", blue_mask)
 
     edged = red_mask.copy()
     contours, hierarchy = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -113,9 +133,51 @@ def analyzeImage(img_name):
     elif len(center_list) == 11 and error_detected == True:
         #print("error corrected")
         error_detected = False
+    
+    #if not error_detected:
+    #    edged = blue_mask.copy()
+    #    contours, hierarchy = cv2.findContours(blue_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #    num_of_points = len(contours)
+
+    #    if num_of_points != 22:
+    #        #print("Error detected initially.")
+    #        #print(img_name)
+    #        #print(num_of_points)
+    #        error_detected_blue = True
+
+    #    center_list_blue = []
+    #    for c in contours:
+    #        ((x,y), radius) = cv2.minEnclosingCircle(c)
+    #        if x > 300 and x < 1500 and (x > 525 or y < 951) and (x < 1300 or y > 150):
+    #            center_list_blue.append((x,y))
+    #    rm = []
+    #    for i in range(0, len(center_list_blue)-2):
+    #        new_list = sorted(center_list_blue[i:i+3])
+    #        one = new_list[0][1]
+    #        two = new_list[1][1]
+    #        three = new_list[2][1]
+    #        diff = 25
+    #        if (abs(one - two) < diff) and (abs(one - three) < diff) and (abs(two - three) < diff):
+    #            rm.append(new_list[1])
+    #    if len(rm) != 0:
+    #        for r in rm:
+    #            center_list_blue.remove(r)
+
+    #    center_list_blue.sort(key = lambda x: x[1])
+    #    center_list_blue.reverse()
+
+    #    if len(center_list_blue) != 22:
+    #        print("Error Blue still detected.")
+    #        print(img_name)
+    #        print(len(center_list_blue))
+    #        error_detected_blue = True
+    #    elif len(center_list_blue) == 22 and error_detected_blue == True:
+    #        #print("error corrected")
+    #        error_detected_blue = False
 
     #if error_detected:
     #    return {}
+    #center_list_theta_3d = []
     center_list_3d = []
     for center in center_list:
         coord_2d = np.array([[center[0]],
@@ -123,10 +185,39 @@ def analyzeImage(img_name):
                              [1]])
         coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
         center_list_3d.append((coord_3d[0][0], coord_3d[1][0]))
+        #center_list_theta_3d.append([[coord_3d[0][0]], [coord_3d[1][0]]])
+    
+    #if not error_detected and not error_detected_blue:
+    #    for i in range(11):
+    #        idx1 = i*2 
+    #        idx2 = i*2 + 1
+    #        center1 = center_list_blue[idx1]
+    #        center2 = center_list_blue[idx2]
+    #        coord1_2d = np.array([[center1[0]],
+    #                             [center1[1]],
+    #                             [1]])
+    #        coord2_2d = np.array([[center2[0]],
+    #                             [center2[1]],
+    #                             [1]])
+    #        coord1_3d = np.matmul(inv_camera_mtx, coord1_2d) * camera_to_markers_dist
+    #        coord2_3d = np.matmul(inv_camera_mtx, coord2_2d) * camera_to_markers_dist
+    #        center_list_theta_3d[i][0].append(coord1_3d[0][0])
+    #        center_list_theta_3d[i][1].append(coord1_3d[1][0])
+    #        center_list_theta_3d[i][0].append(coord2_3d[0][0])
+    #        center_list_theta_3d[i][1].append(coord2_3d[1][0])
+
+    #theta_list = []
+    #if not error_detected and not error_detected_blue:
+    #    for clist in center_list_theta_3d:
+    #        mb = np.polyfit(clist[0], clist[1], 1)
+    #        theta_list.append(np.arctan(mb[0]))
+    #else:
+    #    theta_list.append(0)
 
     base_point = center_list_3d[0]
     x_base = base_point[0]
     y_base = base_point[1]
+    #t_base = theta_list[0]
 
     row_dict = {}
     for idx in range(11):
@@ -134,13 +225,14 @@ def analyzeImage(img_name):
         y_key = "M" + str(idx) + "Y"
         t_key = "M" + str(idx) + "T"
 
-        if error_detected:
+        if error_detected or error_detected_blue:
             x_val = 0
             y_val = 0
             t_val = 0
         else:
             x_val = center_list_3d[idx][0] - x_base
             y_val = y_base - center_list_3d[idx][1]
+            #t_val = theta_list[idx] - t_base
             t_val = 0
 
         row_dict[x_key] = x_val
@@ -211,11 +303,11 @@ def calculatePoly(marker_dict):
         # Switch the X and Y.
         x.append(marker_dict["M" + str(i) + "X"])
         y.append(marker_dict["M" + str(i) + "Y"])
-    a = leastSquaresPolynomial(y, x, poly_order)
-
     poly_dict = {}
-    for i in range(poly_order + 1):
-        poly_dict["a" + str(i)] = a[i]
+    for o in range(poly_order_min, poly_order+1):
+        a = leastSquaresPolynomial(y, x, poly_order)
+        for i in range(o + 1):
+            poly_dict[str(o) + "a" + str(i)] = a[i]
     poly_dict["d"] = y[-1]
     
     return poly_dict
@@ -234,8 +326,9 @@ def analyzeImages(directory):
         os.remove(poly_file_name)
 
     poly_headers = []
-    for i in range(poly_order+1):
-        poly_headers.append("a" + str(i))
+    for o in range(poly_order_min, poly_order+1):
+        for i in range(o+1):
+            poly_headers.append(str(o) + "a" + str(i))
     poly_headers.append("d")
     print(poly_headers)
 
@@ -257,8 +350,8 @@ def analyzeImages(directory):
 
 if __name__ == "__main__":
     #directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
-    # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module2_fullext4"
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/s_curve2"
+    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module2_fullext4"
+    # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/s_curve1"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
     #analyzeImage(img_name)
