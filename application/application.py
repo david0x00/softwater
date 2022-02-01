@@ -3,6 +3,7 @@ import tkinter.font
 from functools import partial
 from tkinter import ttk
 import os
+import numpy as np
 import os.path
 from os import path
 from PIL import Image, ImageTk
@@ -56,6 +57,14 @@ class Application(tk.Tk):
         start_button.place(x=1070, y=9)
         quit_button = ttk.Button(master=self, text='Stop', command=self.a.stop)  # the quit button
         quit_button.place(x=1164, y=9)
+
+        # Tune CV parameters Button
+        tune_button = ttk.Button(master=self, text='Tune', command=self._tune)  # the start button
+        tune_button.place(x=770, y=9)
+
+        # Control button
+        control_button = ttk.Button(master=self, text='Control', command=self._control)  # the start button
+        control_button.place(x=870, y=9)
 
         # Information Displays
         num_sensors_display = ttk.Label(master=self, text="Robot Connected: " + str(self.a.detected_status))
@@ -145,6 +154,12 @@ class Application(tk.Tk):
         except:
             tk.messagebox.showwarning(title=None, message="ERROR: Frequency input not numeric")
             print("ERROR: Frequency input not numeric")
+
+    def _tune(self):
+        self.a.tune_cv()
+
+    def _control(self):
+        pass
 
     def __callback(self):
         pass
