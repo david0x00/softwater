@@ -8,7 +8,7 @@ import queue
 import numpy as np
 from functools import partial
 
-#import autompc as ampc
+import autompc as ampc
 import pickle
 
 try:
@@ -80,9 +80,13 @@ dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]]
 class Camera:
 
     def __init__(self,directory=""):
-        self.camera = PiCamera(sensor_mode=5, framerate=30)
+        #self.camera = PiCamera(sensor_mode=5, framerate=30)
         #self.camera = cv2.VideoCapture(0)
         self.directory = directory
+        self.cap = cv2.VideoCapture(0)
+
+    def read(self):
+        return self.cap.read()
 
     def capture(self, count):
         file_name = self.directory + "/" + str(count) + ".jpg"
@@ -294,8 +298,14 @@ class WaterRobot(threading.Thread):
         red_mask = cv2.dilate(red_mask, None, iterations=3)
         return red_mask
 
+    def getMarkerLocations(self):
+        return_val, img = self.camera.read()
+        print(return_val)
+        cv2.imwrite("opencv.jpg", img)
+         
+
     def control(self):
-        pass
+        self.getMarkerLocations()
         #obs = np.zeros(24)
         #with open("controller_2.pkl", "rb") as f:
         #    controller = pickle.load(f)
@@ -343,15 +353,9 @@ class WaterRobot(threading.Thread):
             for j in range(40, 50):
                 print(j)
                 for k in range(125, 130):
-                    print("Get Red Mask")
-                    print(datetime.datetime.now())
                     lower = np.array([i, j, k])
                     upper = np.array([255, 255, 255])
                     red_mask = self.getRedMask(undistorted_img, lower, upper)
-                    print(datetime.datetime.now())
-                    print("done")
-                    print("Get Centers")
-                    print(datetime.datetime.now())
                     edged = red_mask.copy()
                     contours, hierarchy = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -360,11 +364,6 @@ class WaterRobot(threading.Thread):
                         ((x,y), radius) = cv2.minEnclosingCircle(c)
                         if x > 300 and x < 1750:
                             center_list.append((x,y,radius))
-                    print(datetime.datetime.now())
-                    print("done")
-                    print("look through all centers")
-                    print(datetime.datetime.now())
-                        
                     center_list.sort(key = lambda x: x[1])
                     center_list.reverse()
                     if len(center_list) == 11:
@@ -374,8 +373,6 @@ class WaterRobot(threading.Thread):
                         if ave_radius > largest_radius:
                             largest_radius = ave_radius
                             best_lower_threshold = lower
-                    print(datetime.datetime.now())
-                    print("done")
         print(largest_radius)
         print(best_lower_threshold)
 
