@@ -159,6 +159,7 @@ class Application(tk.Tk):
         self.a.tune_cv()
 
     def _control(self):
+        self.a.control()
         pass
 
     def __callback(self):
