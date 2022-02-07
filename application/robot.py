@@ -305,6 +305,14 @@ class WaterRobot(threading.Thread):
          
 
     def control(self):
+        # Algorithm:
+        # Initalize control loop
+        # every .5 sec do the following
+        #   get marker locations
+        #   get pressure sensor values
+        #   compute control vector
+        #   implement control vector
+        #   Save data
         self.getMarkerLocations()
         #obs = np.zeros(24)
         #with open("controller_2.pkl", "rb") as f:
