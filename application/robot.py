@@ -5,7 +5,11 @@ import time
 import random
 import datetime
 import queue
+import numpy as np
 from functools import partial
+
+import autompc as ampc
+import pickle
 
 try:
     from picamera import PiCamera
@@ -57,13 +61,32 @@ except ValueError:
     mcp_1 = -1
     robot_detected = False
 
+mtx = np.array([
+    [1535.10668, 0, 954.393136],
+    [0, 1530.80529, 543.030187],
+    [0,0,1]
+])
+
+newcameramtx = np.array([
+    [1559.8905, 0, 942.619458],
+    [0, 1544.98389, 543.694259],
+    [0,0,1]
+])
+
+inv_camera_mtx = np.linalg.inv(newcameramtx)
+
+dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
 
 class Camera:
 
     def __init__(self,directory=""):
-        self.camera = PiCamera(sensor_mode=5, framerate=30)
+        #self.camera = PiCamera(sensor_mode=5, framerate=30)
         #self.camera = cv2.VideoCapture(0)
         self.directory = directory
+        self.cap = cv2.VideoCapture(0)
+
+    def read(self):
+        return self.cap.read()
 
     def capture(self, count):
         file_name = self.directory + "/" + str(count) + ".jpg"
@@ -71,6 +94,9 @@ class Camera:
         #ret, frame = self.camera.read()
         #cv2.imwrite(file_name, frame)
         print("Captured")
+
+    def snap(self, filename):
+        self.camera.capture(filename, use_video_port=True)
     
     def preview(self):
         self.camera.start_preview()
@@ -263,6 +289,100 @@ class WaterRobot(threading.Thread):
             self.actuators.append(Actuator(j, j, is_dep, hardware_mapper=self.hardware_mapper))
 
         self.pump_and_gate = PumpAndGate(0, self.hardware_mapper)
+
+    def getRedMask(self, image, lower, upper):
+        hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
+        red_mask = cv2.inRange(blur_img, lower, upper)
+        red_mask = cv2.erode(red_mask, None, iterations=3)
+        red_mask = cv2.dilate(red_mask, None, iterations=3)
+        return red_mask
+
+    def getMarkerLocations(self):
+        return_val, img = self.camera.read()
+        print(return_val)
+        cv2.imwrite("opencv.jpg", img)
+         
+
+    def control(self):
+        # Algorithm:
+        # Initalize control loop
+        # every .5 sec do the following
+        #   get marker locations
+        #   get pressure sensor values
+        #   compute control vector
+        #   implement control vector
+        #   Save data
+        self.getMarkerLocations()
+        #obs = np.zeros(24)
+        #with open("controller_2.pkl", "rb") as f:
+        #    controller = pickle.load(f)
+        #system = controller.system
+        #task = controller.controller.task
+        ## create tajectory for history
+        #traj = ampc.zeros(system, 1)
+        #traj[0].obs[:] = task.get_init_obs()
+        ## generate the controller state
+        #constate = controller.traj_to_state(traj)
+        ## to run controller, pass current controller state, as well
+        ## as most recent observation. This returns control and new
+        ## controller state.
+        #most_recent_obs = traj[0].obs
+        #controller.controller.model._device = "cpu"
+        #u, new_constate = controller.run(constate, most_recent_obs)
+        ## u is control
+        ## system.observations
+        ## system.controls
+
+    # This setting worked for module_2_single_actuator_right
+    # lower = np.array([120,97,148])
+    # upper = np.array([255,255,255])
+    # This worked for module1_fullext1
+    # lower = np.array([43,61,158])
+    # upper = np.array([255,255,255])
+    def tune_cv(self):
+        # Get image
+        img_name = "tuning.jpg"
+        print("Take Photo")
+        print(datetime.datetime.now())
+        self.camera.snap(img_name)
+        print(datetime.datetime.now())
+        print("done")
+        img = cv2.imread(img_name)
+
+        # Undistort it
+        undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+
+        # Find Best Red Mask Parameters
+        largest_radius = 0
+        best_lower_threshold = [0,0,0]
+        for i in range(43, 50):
+            print(i)
+            for j in range(40, 50):
+                print(j)
+                for k in range(125, 130):
+                    lower = np.array([i, j, k])
+                    upper = np.array([255, 255, 255])
+                    red_mask = self.getRedMask(undistorted_img, lower, upper)
+                    edged = red_mask.copy()
+                    contours, hierarchy = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+                    center_list = []
+                    for c in contours:
+                        ((x,y), radius) = cv2.minEnclosingCircle(c)
+                        if x > 300 and x < 1750:
+                            center_list.append((x,y,radius))
+                    center_list.sort(key = lambda x: x[1])
+                    center_list.reverse()
+                    if len(center_list) == 11:
+                        ave_radius = 0
+                        for c in center_list:
+                            ave_radius += c[2] / 11
+                        if ave_radius > largest_radius:
+                            largest_radius = ave_radius
+                            best_lower_threshold = lower
+        print(largest_radius)
+        print(best_lower_threshold)
 
     def getListOfParts(self):
         for i in self.pressure_sensors:
