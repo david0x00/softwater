@@ -1,3 +1,4 @@
+from msilib.schema import Class
 import cv2
 import numpy as np
 import datetime
@@ -23,6 +24,42 @@ roi = (4, 11, 1907, 1059)
 
 camera_to_markers_dist = 57.055 #cm
 
+bounding_box_pixel_length = 65
+
+
+# TODO: Get marker positions using colvolution.
+#       Need to create a good "kernel" when is basically
+#       what one red marker looks like.
+def analyze_image_convolution(img_name):
+    pass
+
+# TODO: get marker positions by first getting the bottom marker
+#       then taking a guess at where the next one will be and 
+#       searching that space, and so on.
+def analyze_image_localized_guess(img_name):
+    pass
+
+def get_time():
+    return datetime.datetime.now()
+
+def print_time_diff(start, end):
+    print((end - start).total_seconds())
+
+
+# Init
+# original image that describes original state
+# red mask tuned parameters line 38
+
+# Image method computes the new positions of the markers.
+# Set bounding box to have sidelength of the length of the blue pixels
+
+
+# colorthreshold is a tuple (lower, upper)
+class MarkerDetector:
+    def __init__(self, init_image, colorthreshold):
+        self.lower = colorthreshold[0]
+        self.upper = colorthreshold[1]
+        self.currentStates = analyze_image_threshold_pixel_coords_sweeping(init_image)
 
 # NOTE: This function takes and image and filters for red
 #       dots in the image. Below are threshold settings that have
@@ -34,19 +71,42 @@ camera_to_markers_dist = 57.055 #cm
 # This worked for module1_fullext1
 # lower = np.array([43,61,158])
 # upper = np.array([255,255,255])
-def get_red_mask(image):
-    lower = np.array([43,61,159])
-    upper = np.array([255,255,255])
+def get_red_mask(self, image):
+    #lower = np.array([43,61,159])
+    #upper = np.array([255,255,255])
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
-    red_mask = cv2.inRange(blur_img, lower, upper)
+    red_mask = cv2.inRange(blur_img, self.lower, self.upper)
     red_mask = cv2.erode(red_mask, None, iterations=3)
     red_mask = cv2.dilate(red_mask, None, iterations=3)
     return red_mask
 
+# Must be fed consequtive images
+def analyze_image_threshold_fast(self, img_name):
+    pixelCoords = analyze_image_threshold_pixel_coords_fast(img_name)
+    return convertPixeltoWorldCoordinates(pixelCoords)
+
+def analyze_image_threshold_pixel_coords_fast(self, img_name):
+    img = cv2.imread(img_name)
+    undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+
+    # crop based on pervious positions
+
+    # run through red mask
+
+    # get positions of pixels
+
+    # apply offset to get original pixels
+
 # Note: Analyzes images by using basic pixel thresholding method.
 #       Then, it computes marker locations (cm) and returns.
-def analyze_image_threshold(img_name):
+def analyze_image_threshold_sweeping(self, img_name):
+    pixelCoords = analyze_image_threshold_pixel_coords_sweeping(img_name)
+    return convertPixeltoWorldCoordinates(pixelCoords)
+
+# Note: Analyzes images by using basic pixel thresholding method.
+#       Computes marker locations (pixels) and returns.
+def analyze_image_threshold_pixel_coords_sweeping(self, img_name):
     # Get image and undistort.
     img = cv2.imread(img_name)
     undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
@@ -71,8 +131,12 @@ def analyze_image_threshold(img_name):
     # Check for error.
     if len(center_list) != 11:
         print("Incorrect Marker Detection...")
+        # TODO: Make program run the full sweep if it loses markers
         return
+    
+    return center_list
 
+def convertPixeltoWorldCoordinates(self, center_list):
     # Convert pixel coordinates to world coordinates.
     center_list.sort(key = lambda x: x[1])
     center_list.reverse()
@@ -106,28 +170,10 @@ def analyze_image_threshold(img_name):
 
     return row_dict
 
-# TODO: Get marker positions using colvolution.
-#       Need to create a good "kernel" when is basically
-#       what one red marker looks like.
-def analyze_image_convolution(img_name):
-    pass
-
-# TODO: get marker positions by first getting the bottom marker
-#       then taking a guess at where the next one will be and 
-#       searching that space, and so on.
-def analyze_image_localized_guess(img_name):
-    pass
-
-def get_time():
-    return datetime.datetime.now()
-
-def print_time_diff(start, end):
-    print((end - start).total_seconds())
-
 if __name__ == "__main__":
+    colorthreshold = (np.array([43,61,159]), np.array([255,255,255]))
+    detector = MarkerDetector("imgs/42.jpg", colorthreshold)
     start_threshold = get_time()
-    marker_locations = analyze_image_threshold("40.jpg")
+    marker_locations = detector.analyze_image_threshold_sweeping("imgs/42.jpg")
     end_threshold = get_time()
     print_time_diff(start_threshold, end_threshold)
-
-
