@@ -1,4 +1,3 @@
-#from msilib.schema import Class
 import cv2
 import numpy as np
 import datetime
