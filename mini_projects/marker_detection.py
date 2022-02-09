@@ -74,14 +74,20 @@ class MarkerDetector:
     # This worked for module1_fullext1
     # lower = np.array([43,61,158])
     # upper = np.array([255,255,255])
-    def get_red_mask(self, image):
+    def get_red_mask(self, image, blur):
         #lower = np.array([43,61,159])
         #upper = np.array([255,255,255])
+        #cv2.imwrite("red_mask/original.jpg", image)
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
+        #cv2.imwrite("red_mask/hsv.jpg", hsv_img)
+        blur_img = cv2.GaussianBlur(hsv_img, blur, 0)
+        #cv2.imwrite("red_mask/blur.jpg", blur_img)
         red_mask = cv2.inRange(blur_img, self.lower, self.upper)
+        #cv2.imwrite("red_mask/range.jpg", red_mask)
         red_mask = cv2.erode(red_mask, None, iterations=3)
+        #cv2.imwrite("red_mask/erode.jpg", red_mask)
         red_mask = cv2.dilate(red_mask, None, iterations=3)
+        #cv2.imwrite("red_mask/dilate.jpg", red_mask)
         return red_mask
 
     # Must be fed consequtive images
@@ -95,6 +101,7 @@ class MarkerDetector:
         imageX, imageY, _ = undistorted_img.shape
 
         newCenters = []
+        state = 0
         for marker in self.currentStates:
             x = math.floor(marker[0])
             y = math.floor(marker[1])
@@ -107,17 +114,20 @@ class MarkerDetector:
             markerGuess = undistorted_img[y1:y2, x1:x2]
             #cv2.imwrite("test.jpg", markerGuess)
 
-            red_mask = self.get_red_mask(markerGuess)
+            red_mask = self.get_red_mask(markerGuess, (3,3))
             edged = red_mask.copy()
             contours, hierarchy = cv2.findContours(red_mask,
                                             cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_SIMPLE)
 
             circle = cv2.minEnclosingCircle(contours[0])
-            newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
+            self.currentStates[state] = circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])
+            state = state + 1
+            #newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
         
-        self.currentStates = newCenters
-        return newCenters
+        return self.currentStates
+        #self.currentStates = newCenters
+        #return newCenters
 
     # Note: Analyzes images by using basic pixel thresholding method.
     #       Then, it computes marker locations (cm) and returns.
@@ -133,7 +143,7 @@ class MarkerDetector:
         undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
 
         # Mask out all non-red pixels.
-        red_mask = self.get_red_mask(undistorted_img)
+        red_mask = self.get_red_mask(undistorted_img, (25,25))
         #cv2.imwrite("40_masked.jpg", red_mask)
 
         # Draw circles around clusters of red pixels.
@@ -194,16 +204,19 @@ class MarkerDetector:
 if __name__ == "__main__":
     colorthreshold = (np.array([43,61,159]), np.array([255,255,255]))
     detector = MarkerDetector("mini_projects/imgs/42.jpg", colorthreshold)
-    runs = 100
+    runs = 10
     start_threshold = get_time()
     for i in range(runs):
         marker_locations1 = detector.analyze_image_threshold_pixel_coords_sweeping("mini_projects/imgs/42.jpg")
     end_threshold = get_time()
     print_time_diff(start_threshold, end_threshold)
+    time1 = (end_threshold - start_threshold).total_seconds()
     start_threshold = get_time()
     for i in range(runs):
         marker_locations2 = detector.analyze_image_threshold_pixel_coords_fast("mini_projects/imgs/42.jpg")
     end_threshold = get_time()
+    time2 = (end_threshold - start_threshold).total_seconds()
     print_time_diff(start_threshold, end_threshold)
+    print("Improvement: " + str(1 - time2 / time1) + " %")
     #print(str(marker_locations1) + "\n")
     #print(marker_locations2)
