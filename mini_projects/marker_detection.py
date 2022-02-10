@@ -62,7 +62,14 @@ class MarkerDetector:
     def __init__(self, init_image, colorthreshold):
         self.lower = colorthreshold[0]
         self.upper = colorthreshold[1]
+        self.init_undistort(init_image)
         self.currentStates = self.analyze_image_threshold_pixel_coords_sweeping(init_image)
+
+    def init_undistort(self, init_image):
+        img = cv2.imread(init_image)
+        h = img.shape[0]
+        w = img.shape[1]
+        self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), cv2.CV_32FC1)
 
     # NOTE: This function takes and image and filters for red
     #       dots in the image. Below are threshold settings that have
@@ -124,7 +131,7 @@ class MarkerDetector:
             self.currentStates[state] = circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])
             state = state + 1
             #newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
-        
+
         return self.currentStates
         #self.currentStates = newCenters
         #return newCenters
@@ -139,8 +146,15 @@ class MarkerDetector:
     #       Computes marker locations (pixels) and returns.
     def analyze_image_threshold_pixel_coords_sweeping(self, img_name):
         # Get image and undistort.
+
         img = cv2.imread(img_name)
         undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+        ud2 = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
+        cv2.imwrite("ud1.jpg", undistorted_img)
+        cv2.imwrite("ud2.jpg", ud2)
+        print(undistorted_img)
+        print(ud2)
+        print(np.array_equal(undistorted_img, ud2))
 
         # Mask out all non-red pixels.
         red_mask = self.get_red_mask(undistorted_img, (25,25))
@@ -203,17 +217,17 @@ class MarkerDetector:
 
 if __name__ == "__main__":
     colorthreshold = (np.array([43,61,159]), np.array([255,255,255]))
-    detector = MarkerDetector("mini_projects/imgs/42.jpg", colorthreshold)
-    runs = 10
+    detector = MarkerDetector("imgs/42.jpg", colorthreshold)
+    runs = 1
     start_threshold = get_time()
     for i in range(runs):
-        marker_locations1 = detector.analyze_image_threshold_pixel_coords_sweeping("mini_projects/imgs/42.jpg")
+        marker_locations1 = detector.analyze_image_threshold_pixel_coords_sweeping("imgs/42.jpg")
     end_threshold = get_time()
     print_time_diff(start_threshold, end_threshold)
     time1 = (end_threshold - start_threshold).total_seconds()
     start_threshold = get_time()
     for i in range(runs):
-        marker_locations2 = detector.analyze_image_threshold_pixel_coords_fast("mini_projects/imgs/42.jpg")
+        marker_locations2 = detector.analyze_image_threshold_pixel_coords_fast("imgs/42.jpg")
     end_threshold = get_time()
     time2 = (end_threshold - start_threshold).total_seconds()
     print_time_diff(start_threshold, end_threshold)
