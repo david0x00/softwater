@@ -217,6 +217,6 @@ if __name__ == "__main__":
     end_threshold = get_time()
     time2 = (end_threshold - start_threshold).total_seconds()
     print_time_diff(start_threshold, end_threshold)
-    print("Improvement: " + str(1 - time2 / time1) + " %")
+    print("Improvement: " + str((1 - time2 / time1) * 100) + " %")
     #print(str(marker_locations1) + "\n")
     #print(marker_locations2)
