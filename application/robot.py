@@ -16,6 +16,7 @@ import pickle
 
 try:
     from picamera import PiCamera
+    from picamera.array import PiRGBArray
     import cv2
     print("Camera detected!")
     camera_detected = True
@@ -80,6 +81,8 @@ inv_camera_mtx = np.linalg.inv(newcameramtx)
 
 dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
 
+camera_to_markers_dist = 57.055 #cm
+
 def clamp(minimum, x, maximum):
     return max(minimum, min(x, maximum))
 
@@ -90,7 +93,8 @@ class Camera:
         #self.camera = cv2.VideoCapture(0)
         self.directory = directory
         #self.cap = cv2.VideoCapture(0)
-        self.stream = io.BytesIO()
+        #self.stream = io.BytesIO()
+        self.cv_image = PiRGBArray(self.camera)
 
     def read(self):
         return self.cap.read()
@@ -103,10 +107,11 @@ class Camera:
         print("Captured")
 
     def get_opencv_img(self):
-        self.camera.capture(self.stream, use_video_port=True)
-        data = np.fromstring(self.stream.getvalue(), dtype=np.uint8)
-        image = cv2.imdecode(data, 1)
-        return image
+        self.cv_image.truncate(0)
+        self.camera.capture(self.cv_image, "bgr", use_video_port=True)
+        #data = np.fromstring(self.stream.getvalue(), dtype=np.uint8)
+        #image = cv2.imdecode(data, 1)
+        return self.cv_image.array
 
     def snap(self, filename):
         self.camera.capture(filename, use_video_port=True)
@@ -126,7 +131,7 @@ class MarkerDetector:
         self.lower = colorthreshold[0]
         self.upper = colorthreshold[1]
         self.init_undistort(init_img)
-        self.currentStates = self.analyze_thresh(init_img)
+        self.currentStates = self.analyze_thresh_pix(init_img)
     
     def init_undistort(self, init_img):
         # OLD WAY
@@ -158,7 +163,8 @@ class MarkerDetector:
 
         # Mask out all non-red pixels.
         red_mask = self.get_red_mask(undistorted_img, (25, 25))
-        #cv2.imwrite("40_masked.jpg", red_mask)
+        cv2.imwrite("test_undistort.jpg", undistorted_img)
+        cv2.imwrite("test_masked.jpg", red_mask)
 
         # Draw circles around clusters of red pixels.
         contours, hierarchy = cv2.findContours(red_mask,
@@ -176,13 +182,13 @@ class MarkerDetector:
         if len(center_list) != 11:
             print("Incorrect Marker Detection...")
             # TODO: Make program run the full sweep if it loses markers
-            return
+            return None
         
         return center_list
 
     def analyze_threshold_fast(self, img):
-        pixelCoords = self.analyze_threshold_fast_pix(img)
-        return self.pix2world(pixelCoords)
+        pixel_coords = self.analyze_threshold_fast_pix(img)
+        return self.pix2world(pixel_coords)
 
     def analyze_threshold_fast_pix(self, img):
         #img = cv2.imread(img_name)
@@ -192,7 +198,9 @@ class MarkerDetector:
 
         newCenters = []
         state = 0
+        print(type(self.currentStates))
         for marker in self.currentStates:
+            print(marker)
             x = math.floor(marker[0])
             y = math.floor(marker[1])
             # crop based on pervious positions [y1:y2, x1:x2] making top left (x1, y1) to bottom right (x2, y2)
@@ -204,7 +212,7 @@ class MarkerDetector:
             markerGuess = undistorted_img[y1:y2, x1:x2]
             #cv2.imwrite("test.jpg", markerGuess)
 
-            red_mask = self.get_red_mask(markerGuess, (25,25))
+            red_mask = self.get_red_mask(markerGuess, (3,3))
             edged = red_mask.copy()
             contours, hierarchy = cv2.findContours(red_mask,
                                             cv2.RETR_EXTERNAL,
@@ -469,7 +477,14 @@ class WaterRobot(threading.Thread):
         self.md = MarkerDetector(init_img, color_threshold)
 
         self.obs = np.zeros(24)
+
+        st = datetime.datetime.now()
         self.get_observations()
+        et = datetime.datetime.now()
+        print("total time for observations: " + str((et - st).total_seconds()))
+        print(self.obs)
+
+        return 
 
         # Initialize autompc
         with open("controller_2.pkl", "rb") as f:
@@ -520,57 +535,8 @@ class WaterRobot(threading.Thread):
         ## system.observations
         ## system.controls
 
-    # This setting worked for module_2_single_actuator_right
-    # lower = np.array([120,97,148])
-    # upper = np.array([255,255,255])
-    # This worked for module1_fullext1
-    # lower = np.array([43,61,158])
-    # upper = np.array([255,255,255])
     def tune_cv(self):
-        # Get image
-        img_name = "tuning.jpg"
-        print("Take Photo")
-        print(datetime.datetime.now())
-        self.camera.snap(img_name)
-        print(datetime.datetime.now())
-        print("done")
-        img = cv2.imread(img_name)
-
-        # Undistort it
-        undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
-
-        # Find Best Red Mask Parameters
-        largest_radius = 0
-        best_lower_threshold = [0,0,0]
-        for i in range(43, 50):
-            print(i)
-            for j in range(40, 50):
-                print(j)
-                for k in range(125, 130):
-                    lower = np.array([i, j, k])
-                    upper = np.array([255, 255, 255])
-                    red_mask = self.getRedMask(undistorted_img, lower, upper)
-                    edged = red_mask.copy()
-                    contours, hierarchy = \
-                        cv2.findContours(red_mask,
-                                         cv2.RETR_EXTERNAL,
-                                         cv2.CHAIN_APPROX_SIMPLE)
-                    center_list = []
-                    for c in contours:
-                        ((x,y), radius) = cv2.minEnclosingCircle(c)
-                        if x > 300 and x < 1750:
-                            center_list.append((x,y,radius))
-                    center_list.sort(key = lambda x: x[1])
-                    center_list.reverse()
-                    if len(center_list) == 11:
-                        ave_radius = 0
-                        for c in center_list:
-                            ave_radius += c[2] / 11
-                        if ave_radius > largest_radius:
-                            largest_radius = ave_radius
-                            best_lower_threshold = lower
-        print(largest_radius)
-        print(best_lower_threshold)
+        pass
 
     def getListOfParts(self):
         for i in self.pressure_sensors:
