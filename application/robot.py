@@ -458,16 +458,31 @@ class WaterRobot(threading.Thread):
         return red_mask
 
     def get_observations(self):
+        st = datetime.datetime.now()
         img = self.camera.get_opencv_img()
+        et = datetime.datetime.now()
+        print("total time take picture: " + str((et - st).total_seconds()))
+
+        st = datetime.datetime.now()
         init_markers = self.md.analyze_threshold_fast(img)
         marker_keys = list(init_markers.keys())
+        et = datetime.datetime.now()
+        print("total time for marker detect: " + str((et - st).total_seconds()))
+
+        st = datetime.datetime.now()
         for i in range(4):
             self.obs[i] = round(self.pressure_sensors[i].read_sensor(), 3)
+        et = datetime.datetime.now()
+        print("total time for pressure read: " + str((et - st).total_seconds()))
+
+        st = datetime.datetime.now()
         for i in range(10):
             key1 = marker_keys[i*2]
             key2 = marker_keys[i*2 + 1]
             self.obs[i*2 + 4] = init_markers[key1]
             self.obs[i*2 + 5] = init_markers[key2]
+        et = datetime.datetime.now()
+        print("total time for write: " + str((et - st).total_seconds()))
 
     def control(self):
         # Algorithm:
