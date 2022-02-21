@@ -32,7 +32,7 @@ def change(event):
 sliders = [
     #Hue Lower Bound
     ttk.Scale( 
-        sliderFrame,
+        master = sliderFrame,
         from_ = lowHue,
         to = maxHue,
         variable= hueLower,
@@ -40,7 +40,7 @@ sliders = [
     ),
     #Saturation Lower Bound
     ttk.Scale(
-        sliderFrame, 
+        master = sliderFrame, 
         to = maxSL,
         from_ = lowSL,
         variable=satLower,
@@ -48,7 +48,7 @@ sliders = [
     ),
     #Luminance Lower Bound
     ttk.Scale(
-        sliderFrame, 
+        master = sliderFrame, 
         to = maxSL,
         from_ = lowSL,
         variable = lumLower,
@@ -56,7 +56,7 @@ sliders = [
     ),
     #Hue Upper Bound
     ttk.Scale(
-        sliderFrame,
+        master = sliderFrame,
         to = maxHue,
         from_ = lowHue,
         variable = hueHigher,
@@ -64,7 +64,7 @@ sliders = [
     ),
     #Saturation Upper Bound
     ttk.Scale(
-        sliderFrame, 
+        master = sliderFrame, 
         to = maxSL,
         from_ = lowSL,
         variable = satHigher,
@@ -72,7 +72,7 @@ sliders = [
     ),
     #Luminance Upper Bound
     ttk.Scale(
-        sliderFrame, 
+        master = sliderFrame, 
         to = maxSL,
         from_ = lowSL,
         variable = lumHigher,
@@ -97,11 +97,13 @@ for i in sliders[3:]:
     )
     counter += 1
 
+imageFrame = tk.Frame()
 image = Image.open("./ud2.jpg")
 image = image.resize((640,480))
 imageFromFile = ImageTk.PhotoImage(image)
-imagePanel = tk.Label(image=imageFromFile)
+imagePanel = tk.Label(master = imageFrame, image=imageFromFile)
 imagePanel.pack()
+imageFrame.pack()
 
 sliderFrame.pack()
 labelFrame = tk.Frame()
@@ -118,5 +120,27 @@ labelSatHigher.pack()
 labelLumHigher = tk.Label(master = labelFrame, text = "Lum Higher Bound: 0.0")
 labelLumHigher.pack()
 labelFrame.pack()
+
+def renderImage():
+    image = Image.open("./ud1.jpg")
+    image = image.resize((640, 480))
+    imageFromFile = ImageTk.PhotoImage(image)
+    imagePanel.config(image = imageFromFile)
+    imagePanel.image = imageFromFile
+    print("called")
+    imagePanel.pack()
+    imageFrame.pack()
+
+buttonFrame = tk.Frame()
+renderButton = tk.Button(buttonFrame, text="Render Image from Robot", command = renderImage)
+# renderButton.grid(
+#     column=4,
+#     row = 4,
+#     sticky= 'e'
+# )
+renderButton.pack()
+buttonFrame.pack(
+    side = tk.RIGHT
+)
 
 root.mainloop()
