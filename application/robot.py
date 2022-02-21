@@ -442,6 +442,12 @@ class WaterRobot(threading.Thread):
     is_taking_data = False
     actuator_command_queue = queue.Queue()
     csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT", "PUMP", "GATE"]
+    control_headers = ["TIME", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN",
+                       "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN",
+                       "M2-AR-OUT", "PUMP", "GATE", "M1-PL", "M1-PR", "M2-PL",
+                       "M2-PR", "M1X", "M1Y", "M2X", "M2Y", "M3X", "M3Y",
+                       "M4X", "M4Y", "M5X", "M5Y", "M6X", "M6Y", "M7X", "M7Y",
+                       "M8X", "M8Y", "M9X", "M9Y", "M10X", "M10Y"]
 
     def __init__(self, numSensors, numActuators):
         threading.Thread.__init__(self)
@@ -521,6 +527,11 @@ class WaterRobot(threading.Thread):
         # generate the controller state
         constate = controller.traj_to_state(traj)
         controller.controller.model._device = "cpu"
+
+        os.remove("data/control_test.csv")
+        with open('data/control_test.csv', 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self.control_headers)
+            writer.writeheader()
         
         self.u, new_constate = controller.run(constate, self.obs)
         constate = new_constate
@@ -529,7 +540,7 @@ class WaterRobot(threading.Thread):
         start_time = datetime.datetime.now()
         loop_number = 0
         loop_period = 0.5
-        timer = 5
+        timer = 100
         while 1:
             curr_time = datetime.datetime.now()
             elapsed_time = (curr_time - start_time).total_seconds()
@@ -545,18 +556,41 @@ class WaterRobot(threading.Thread):
                 self.u, new_constate = controller.run(constate, self.obs)
                 constate = new_constate
                 self.implement_controls()
-                # save state
+                self.save_control_state(start_time)
+            
+        self.u = np.zeros(10)
+        self.implement_controls()
+        print("Done!")
+        
+    def save_control_state(self, st):
+        with open('data/control_test.csv', 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self.control_headers)
+
+            current_time = datetime.datetime.now()
+            elapsed_time = round((current_time - st).total_seconds(),3)
+
+            row_dict = {}
+            for idx, h in enumerate(self.control_headers):
+                if idx == 0:
+                    row_dict[h] = elapsed_time
+                elif idx > 0 and idx < 11:
+                    row_dict[h] = self.u[idx - 1]
+                elif idx >= 11 and idx < 35:
+                    row_dict[h] = self.obs[idx - 11]
+
+            writer.writerow(row_dict)
+
 
     def implement_controls(self):
         print(self.u)
-        return
-        for i, u_val in self.u:
+        for i in range(len(self.u)):
+            u_val = bool(self.u[i])
             if i < 8:
-                self.set_solenoid(bool(u_val))
+                self.set_solenoid(i, u_val)
             if i == 8:
-                self.set_pump(bool(u_val))
+                self.set_pump(u_val)
             if i == 9:
-                self.set_gate_valve(bool(u_val))
+                self.set_gate_valve(u_val)
 
     def tune_cv(self):
         pass
