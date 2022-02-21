@@ -198,9 +198,8 @@ class MarkerDetector:
 
         newCenters = []
         state = 0
-        print(type(self.currentStates))
         for marker in self.currentStates:
-            print(marker)
+            #print(marker)
             x = math.floor(marker[0])
             y = math.floor(marker[1])
             # crop based on pervious positions [y1:y2, x1:x2] making top left (x1, y1) to bottom right (x2, y2)
@@ -212,7 +211,7 @@ class MarkerDetector:
             markerGuess = undistorted_img[y1:y2, x1:x2]
             #cv2.imwrite("test.jpg", markerGuess)
 
-            red_mask = self.get_red_mask(markerGuess, (3,3))
+            red_mask = self.get_red_mask(markerGuess, (25,25))
             edged = red_mask.copy()
             contours, hierarchy = cv2.findContours(red_mask,
                                             cv2.RETR_EXTERNAL,
@@ -271,6 +270,24 @@ class PumpAndGate(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.hardware_mapper = hardware_mapper
+    
+    def set_pump(self, val):
+        if val == False:
+            if self.pump_activated:
+                self.hardware_mapper.turnOffPump()
+        else:
+            if not self.pump_activated:
+                self.hardware_mapper.turnOnPump()
+        self.pump_activated = val
+    
+    def set_gate(self, val):
+        if val == False:
+            if self.gate_valve_activated:
+                self.hardware_mapper.closeGateValve()
+        else:
+            if not self.gate_valve_activated:
+                self.hardware_mapper.openGateValve()
+        self.gate_valve_activated = val
 
     def switchPump(self):
         self.pump_activated = not self.pump_activated
@@ -318,7 +335,7 @@ class PressureSensor(threading.Thread):
             return -1
         else:
             randomnum = random.uniform(0, 10)
-            print("Sensor " + str(self.id) + "reads: " + str(randomnum))
+            #print("Sensor " + str(self.id) + "reads: " + str(randomnum))
             return randomnum
 
     def getID(self):
@@ -386,6 +403,16 @@ class Actuator(threading.Thread):
 
     def run(self):
         print()
+    
+    def set_val(self, val):
+        if val == False:
+            if self.activated:
+                self.hardware_mapper.actuateSolenoid(self.id, val)
+        else:
+            if not self.activated:
+                self.hardware_mapper.actuateSolenoid(self.id, val)
+        self.activated = val
+
 
     def switch(self):
         self.activated = not self.activated
@@ -458,31 +485,19 @@ class WaterRobot(threading.Thread):
         return red_mask
 
     def get_observations(self):
-        st = datetime.datetime.now()
         img = self.camera.get_opencv_img()
-        et = datetime.datetime.now()
-        print("total time take picture: " + str((et - st).total_seconds()))
 
-        st = datetime.datetime.now()
         init_markers = self.md.analyze_threshold_fast(img)
         marker_keys = list(init_markers.keys())
-        et = datetime.datetime.now()
-        print("total time for marker detect: " + str((et - st).total_seconds()))
 
-        st = datetime.datetime.now()
         for i in range(4):
             self.obs[i] = round(self.pressure_sensors[i].read_sensor(), 3)
-        et = datetime.datetime.now()
-        print("total time for pressure read: " + str((et - st).total_seconds()))
 
-        st = datetime.datetime.now()
-        for i in range(10):
-            key1 = marker_keys[i*2]
-            key2 = marker_keys[i*2 + 1]
-            self.obs[i*2 + 4] = init_markers[key1]
-            self.obs[i*2 + 5] = init_markers[key2]
-        et = datetime.datetime.now()
-        print("total time for write: " + str((et - st).total_seconds()))
+        for i in range(1, 11):
+            key1 = marker_keys[i*3]
+            key2 = marker_keys[i*3 + 1]
+            self.obs[(i - 1)*2 + 4] = init_markers[key1]
+            self.obs[(i - 1)*2 + 5] = init_markers[key2]
 
     def control(self):
         # Algorithm:
@@ -493,13 +508,7 @@ class WaterRobot(threading.Thread):
 
         self.obs = np.zeros(24)
 
-        st = datetime.datetime.now()
         self.get_observations()
-        et = datetime.datetime.now()
-        print("total time for observations: " + str((et - st).total_seconds()))
-        print(self.obs)
-
-        return 
 
         # Initialize autompc
         with open("controller_2.pkl", "rb") as f:
@@ -514,41 +523,40 @@ class WaterRobot(threading.Thread):
         controller.controller.model._device = "cpu"
         
         self.u, new_constate = controller.run(constate, self.obs)
+        constate = new_constate
+        self.implement_controls()
 
         start_time = datetime.datetime.now()
         loop_number = 0
         loop_period = 0.5
+        timer = 5
         while 1:
             curr_time = datetime.datetime.now()
             elapsed_time = (curr_time - start_time).total_seconds()
+
+            if elapsed_time > timer:
+                break
+
             proposed_loop_number = int(elapsed_time / loop_period)
             if proposed_loop_number > loop_number:
+                print(elapsed_time)
                 loop_number = proposed_loop_number
-
                 self.get_observations()
-                u, new_constate = controller.run(constate, self.obs)
-
+                self.u, new_constate = controller.run(constate, self.obs)
                 constate = new_constate
+                self.implement_controls()
+                # save state
 
-
-
-
-        # every .5 sec do the following
-        #   get marker locations
-        #   get pressure sensor values
-        #   compute control vector
-        #   implement control vector
-        #   Save data
-        self.getMarkerLocations()
-        ## to run controller, pass current controller state, as well
-        ## as most recent observation. This returns control and new
-        ## controller state.
-        #most_recent_obs = traj[0].obs
-        #controller.controller.model._device = "cpu"
-        #u, new_constate = controller.run(constate, most_recent_obs)
-        ## u is control
-        ## system.observations
-        ## system.controls
+    def implement_controls(self):
+        print(self.u)
+        return
+        for i, u_val in self.u:
+            if i < 8:
+                self.set_solenoid(bool(u_val))
+            if i == 8:
+                self.set_pump(bool(u_val))
+            if i == 9:
+                self.set_gate_valve(bool(u_val))
 
     def tune_cv(self):
         pass
@@ -588,6 +596,15 @@ class WaterRobot(threading.Thread):
 
     def __actuate_solenoid(self, id):
         self.actuators[id].switch()
+    
+    def set_solenoid(self, id, val):
+        self.actuators[id].set_val(val)
+    
+    def set_gate_valve(self, val):
+        self.pump_and_gate.set_gate(val)
+    
+    def set_pump(self, val):
+        self.pump_and_gate.set_pump(val)
 
     def actuate_solenoid(self, id: int):
         if (id < len(self.actuators) and id >= 0):
