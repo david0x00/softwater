@@ -3,6 +3,16 @@ from tkinter import IntVar, ttk
 from PIL import ImageTk, Image
 from numpy import var
 
+color_threshold = (np.array([43, 61, 145]), np.array([255, 255, 255]))
+lower = color_threshold[0]
+upper = # same
+def get_red_mask(self, image, blur):
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    blur_img = cv2.GaussianBlur(hsv_img, (25, 25), 0) # (3,3) blur
+    red_mask = cv2.inRange(blur_img, self.lower, self.upper)
+    red_mask = cv2.erode(red_mask, None, iterations=3)
+    red_mask = cv2.dilate(red_mask, None, iterations=3)
+    return red_mask
 
 # root window
 root = tk.Tk()

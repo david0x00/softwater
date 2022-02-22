@@ -143,8 +143,8 @@ class MarkerDetector:
         self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), cv2.CV_32FC1)
 
     def get_red_mask(self, image, blur):
-        hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        blur_img = cv2.GaussianBlur(hsv_img, blur, 0)
+        # hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        blur_img = cv2.GaussianBlur(image, blur, 0)
         red_mask = cv2.inRange(blur_img, self.lower, self.upper)
         red_mask = cv2.erode(red_mask, None, iterations=3)
         red_mask = cv2.dilate(red_mask, None, iterations=3)
@@ -162,7 +162,7 @@ class MarkerDetector:
         undistorted_img = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
 
         # Mask out all non-red pixels.
-        red_mask = self.get_red_mask(undistorted_img, (25, 25))
+        red_mask = self.get_red_mask(undistorted_img, (3, 3))
         cv2.imwrite("test_undistort.jpg", undistorted_img)
         cv2.imwrite("test_masked.jpg", red_mask)
 
@@ -197,8 +197,7 @@ class MarkerDetector:
         imageX, imageY, _ = undistorted_img.shape
 
         newCenters = []
-        state = 0
-        for marker in self.currentStates:
+        for i, marker in enumerate(self.currentStates):
             #print(marker)
             x = math.floor(marker[0])
             y = math.floor(marker[1])
@@ -209,17 +208,18 @@ class MarkerDetector:
             x2 = clamp(0, x + self.bounding_box_dim, imageX)
 
             markerGuess = undistorted_img[y1:y2, x1:x2]
-            #cv2.imwrite("test.jpg", markerGuess)
+            # cv2.imwrite("box/box" + str(i) + ".jpg", markerGuess)
 
-            red_mask = self.get_red_mask(markerGuess, (25,25))
+            red_mask = self.get_red_mask(markerGuess, (3,3))
+            # cv2.imwrite("box/box_mask" + str(i) + ".jpg", red_mask)
             edged = red_mask.copy()
             contours, hierarchy = cv2.findContours(red_mask,
                                             cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_SIMPLE)
 
-            circle = cv2.minEnclosingCircle(contours[0])
-            self.currentStates[state] = circle[0] + np.array([x - self.bounding_box_dim,y - self.bounding_box_dim])
-            state = state + 1
+            if len(contours) > 0:
+                circle = cv2.minEnclosingCircle(contours[0])
+                self.currentStates[i] = circle[0] + np.array([x - self.bounding_box_dim,y - self.bounding_box_dim])
             #newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
 
         return self.currentStates
@@ -441,6 +441,7 @@ class WaterRobot(threading.Thread):
     values = []
     is_taking_data = False
     actuator_command_queue = queue.Queue()
+    gate_mask = np.array([1, 0, 1, 0, 1, 0, 1, 0])
     csv_headers = ["TIME", "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT", "PUMP", "GATE"]
     control_headers = ["TIME", "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN",
                        "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN",
@@ -508,7 +509,8 @@ class WaterRobot(threading.Thread):
     def control(self):
         # Algorithm:
         # Initalize control loop
-        color_threshold = (np.array([43, 61, 159]), np.array([255, 255, 255]))
+        # color_threshold = (np.array([40, 61, 157]), np.array([255, 255, 255]))
+        color_threshold = (np.array([0, 0, 150]), np.array([130, 130, 255]))
         init_img = self.camera.get_opencv_img()
         self.md = MarkerDetector(init_img, color_threshold)
 
@@ -517,24 +519,24 @@ class WaterRobot(threading.Thread):
         self.get_observations()
 
         # Initialize autompc
-        with open("controller_2.pkl", "rb") as f:
+        with open("controller.pkl", "rb") as f:
             controller = pickle.load(f)
         system = controller.system
-        task = controller.controller.task
         # create tajectory for history
         traj = ampc.zeros(system, 1)
         traj[0].obs[:] = self.obs
         # generate the controller state
-        constate = controller.traj_to_state(traj)
-        controller.controller.model._device = "cpu"
+        # constate = controller.traj_to_state(traj)
+        controller.model._device = "cpu"
+        print(system.observations)
+        print(system.controls)
 
         os.remove("data/control_test.csv")
         with open('data/control_test.csv', 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
             writer.writeheader()
         
-        self.u, new_constate = controller.run(constate, self.obs)
-        constate = new_constate
+        self.u = controller.run(self.obs)
         self.implement_controls()
 
         start_time = datetime.datetime.now()
@@ -553,13 +555,11 @@ class WaterRobot(threading.Thread):
                 print(elapsed_time)
                 loop_number = proposed_loop_number
                 self.get_observations()
-                self.u, new_constate = controller.run(constate, self.obs)
-                constate = new_constate
+                self.u = controller.run(self.obs)
                 self.implement_controls()
                 self.save_control_state(start_time)
             
-        self.u = np.zeros(10)
-        self.implement_controls()
+        self.turn_off_robot()
         print("Done!")
         
     def save_control_state(self, st):
@@ -573,24 +573,41 @@ class WaterRobot(threading.Thread):
             for idx, h in enumerate(self.control_headers):
                 if idx == 0:
                     row_dict[h] = elapsed_time
-                elif idx > 0 and idx < 11:
+                elif idx > 0 and idx < 9:
                     row_dict[h] = self.u[idx - 1]
+                elif idx == 9:
+                    row_dict[h] = 1
+                elif idx == 10:
+                    x = (self.u * self.gate_mask).sum()
+                    if x:
+                        row_dict[h] = 1
+                    else:
+                        row_dict[h] = 0
                 elif idx >= 11 and idx < 35:
                     row_dict[h] = self.obs[idx - 11]
 
             writer.writerow(row_dict)
 
+    def turn_off_robot(self):
+        self.set_pump(False)
+        self.set_gate_valve(False)
+        for i in range(8):
+            self.set_solenoid(i, False)
+
 
     def implement_controls(self):
         print(self.u)
+        self.set_pump(True)
+
+        x = (self.u * self.gate_mask).sum()
+        if x:
+            self.set_gate_valve(True)
+        else:
+            self.set_gate_valve(False)
+
         for i in range(len(self.u)):
             u_val = bool(self.u[i])
-            if i < 8:
-                self.set_solenoid(i, u_val)
-            if i == 8:
-                self.set_pump(u_val)
-            if i == 9:
-                self.set_gate_valve(u_val)
+            self.set_solenoid(i, u_val)
 
     def tune_cv(self):
         pass
