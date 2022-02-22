@@ -108,7 +108,7 @@ for i in sliders[3:]:
     counter += 1
 
 imageFrame = tk.Frame()
-image = Image.open("./ud2.jpg")
+image = Image.open("./ud1.jpg")
 image = image.resize((640,480))
 imageFromFile = ImageTk.PhotoImage(image)
 imagePanel = tk.Label(master = imageFrame, image=imageFromFile)
@@ -132,9 +132,11 @@ labelLumHigher.pack()
 labelFrame.pack()
 
 def renderImage():
-    image = Image.open("./ud1.jpg")
+    global image,imageFromFile
+    image = Image.open("./ud2.jpg")
     image = image.resize((640, 480))
     imageFromFile = ImageTk.PhotoImage(image)
+
     imagePanel.config(image = imageFromFile)
     imagePanel.image = imageFromFile
     print("called")
