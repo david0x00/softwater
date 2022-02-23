@@ -50,10 +50,18 @@ class ControlGUI(tk.Tk):
         self.robotViewer = Canvas(self, width=self.cameraViewSize[0], height=self.cameraViewSize[1])
         im = self.getImages()
         self.image_on_canvas = self.robotViewer.create_image(0, 0, anchor='nw', image=im)
+        self.circleRadius = 2 # Pixels
+        x = int(self.cameraViewSize[0] / 2)
+        y = int(self.cameraViewSize[1] * .9)
+        self.targetMarker = self.robotViewer.create_oval(x-self.circleRadius, y-self.circleRadius, x+self.circleRadius, y+self.circleRadius, width=5, outline="red", fill="red")
 
         # Needs to be scaled back to original pixel coordinates
         def setTarget(event):
-            target = (event.x * 2, event.y * 2) # 1080p from half resolution scaling
+            x = event.x
+            y = event.y
+            self.robotViewer.coords(self.targetMarker, x-self.circleRadius, y-self.circleRadius, x+self.circleRadius, y+self.circleRadius)
+            self.updateRobotImage()
+            target = (x * 2, y * 2) # 1080p from half resolution scaling
             self.updateTarget(target)
         self.robotViewer.bind('<Button-1>', setTarget)
 
