@@ -29,7 +29,7 @@ class ControlGUI(tk.Tk):
         self.testbedDisplay.itemconfig(self.image_on_canvas, image=im)
         #self.testbedDisplay.delete('all')
         #self.testbedDisplay.create_image(0, 0, anchor='nw', image=self.getImage())
-        self.testbedDisplay.after(self.updateRate, self.updateRobotImage)
+        #self.testbedDisplay.after(self.updateRate, self.updateRobotImage)
         print("updating image")
         self.testbedDisplay.update()
 
