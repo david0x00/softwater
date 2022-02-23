@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import *
-from turtle import update
 from PIL import ImageTk, Image
 import cv2
 
@@ -9,7 +8,7 @@ import cv2
 Requires:
 start, stop, and reset functions
 updateTarget functions
-update rate in seconds
+update rate in milli seconds
 opencv camera feed object
 """
 class ControlGUI(tk.Tk):
@@ -23,49 +22,49 @@ class ControlGUI(tk.Tk):
         self.updateTarget = updateTarget
         self.cameraViewSize = (int(1920/2), int(1080/2))
 
+    # Updates canvas with new image from the camera
     def updateRobotImage(self):
-        global im
+        global im # Global so that when passed to the canvas, it doesn't get deleted by garbage collector
         im = self.getImages()
-        self.testbedDisplay.itemconfig(self.image_on_canvas, image=im)
-        #self.testbedDisplay.delete('all')
-        #self.testbedDisplay.create_image(0, 0, anchor='nw', image=self.getImage())
-        #self.testbedDisplay.after(self.updateRate, self.updateRobotImage)
-        print("updating image")
-        self.testbedDisplay.update()
+        self.robotViewer.itemconfig(self.image_on_canvas, image=im)
+        #self.robotViewer.delete('all')
+        #self.robotViewer.create_image(0, 0, anchor='nw', image=self.getImage())
+        #self.robotViewer.after(self.updateRate, self.updateRobotImage)
+        #print("Updating Robot Image")
+        self.robotViewer.update() # TODO: Test if this line is needed
 
+    # Returns tkinter PhotoImage from the camera feed resized to fit canvas
     def getImages(self):
         ret, cv_img = self.cameraFeed.read()
         resized_down = cv2.resize(cv_img, self.cameraViewSize, interpolation=cv2.INTER_LINEAR)
-        b,g,r = cv2.split(resized_down)
+        b,g,r = cv2.split(resized_down) # Apparently the cv2 object has a different coloring order than tk's images
         img = cv2.merge((r,g,b))
-        cv2.imwrite("delete.png", img)
-        print("got image")
         photo = ImageTk.PhotoImage(Image.fromarray(img))
-        #photo.write("bruh.gif", format="gif")
         return photo
 
     def open(self):
-        self.resizable(False, False)
-        # Needs to scale back to original pixel coordinates
-        def setTarget(event):
-            target = (event.x * 2, event.y * 2)
-            self.updateTarget(target)
-
         self.title('Control Target Selector')
-        self.testbedDisplay = Canvas(self, width=self.cameraViewSize[0], height=self.cameraViewSize[1])
+        self.resizable(False, False)
+
+        # Robot View Canvas
+        self.robotViewer = Canvas(self, width=self.cameraViewSize[0], height=self.cameraViewSize[1])
         im = self.getImages()
-        print(type(im))
-        self.image_on_canvas = self.testbedDisplay.create_image(0, 0, anchor='nw', image=im)
-        print("bruh wtf")
-        #self.testbedDisplay.after(self.updateRate * 5, self.updateRobotImage)
-        self.testbedDisplay.bind('<Button-1>', setTarget)
+        self.image_on_canvas = self.robotViewer.create_image(0, 0, anchor='nw', image=im)
+
+        # Needs to be scaled back to original pixel coordinates
+        def setTarget(event):
+            target = (event.x * 2, event.y * 2) # 1080p from half resolution scaling
+            self.updateTarget(target)
+        self.robotViewer.bind('<Button-1>', setTarget)
 
         startButton = Button(self, text="Start", command=self.start, padx=10, pady=10)
         stopButton = Button(self, text="Stop", command=self.stop, padx=10, pady=10)
         resetButton = Button(self, text="Reset", command=self.reset, padx=10, pady=10)
         updateImages = Button(self, text="Capture", command=self.updateRobotImage, padx=10, pady=10)
+        
+        #self.robotViewer.after(self.updateRate * 5, self.updateRobotImage)
 
-        self.testbedDisplay.grid(row=0,column=1)
+        self.robotViewer.grid(row=0,column=1)
         startButton.grid(row=1,column=0)
         stopButton.grid(row=1,column=1)
         resetButton.grid(row=1,column=2)
@@ -86,6 +85,6 @@ if __name__ == "__main__":
     def updateTarget(target):
         print(target[0], ",", target[1])
     cameraCap = cv2.VideoCapture(0)
-    print(cameraCap.isOpened())
+    #print(cameraCap.isOpened())
     gui = ControlGUI(start, stop, reset, updateTarget, cameraFeed=cameraCap)
     gui.open()
