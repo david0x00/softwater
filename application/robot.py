@@ -12,6 +12,7 @@ from functools import partial
 import io
 
 import autompc as ampc
+from autompc.costs import ThresholdCost
 import pickle
 
 try:
@@ -522,6 +523,15 @@ class WaterRobot(threading.Thread):
         with open("controller.pkl", "rb") as f:
             controller = pickle.load(f)
         system = controller.system
+
+        target = [-7.0, 29.0]
+        ocp = ampc.OCP(system)
+        ocp.set_cost(ThresholdCost(system=system, goal=target, threshold=2.0, observations=["M10X", "M10Y"]))
+        for ctrl in system.controls:
+            ocp.set_ctrl_bound(ctrl, 0, 1)
+        controller.set_ocp(ocp)
+        controller.reset()
+
         # create tajectory for history
         traj = ampc.zeros(system, 1)
         traj[0].obs[:] = self.obs
@@ -531,8 +541,12 @@ class WaterRobot(threading.Thread):
         print(system.observations)
         print(system.controls)
 
-        os.remove("data/control_test.csv")
-        with open('data/control_test.csv', 'a', newline='') as file:
+        fname = "data/controltarg_" + str(int(target[0]))+ "_" + str(int(target[1])) + ".csv"
+        try:
+            os.remove(fname)
+        except:
+            pass
+        with open(fname, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
             writer.writeheader()
         
