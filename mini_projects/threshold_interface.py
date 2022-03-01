@@ -1,15 +1,17 @@
+from fileinput import filename
 import tkinter as tk
 from tkinter import IntVar, ttk
 from PIL import ImageTk, Image
-from numpy import var
+import cv2
+import numpy as np
 
-color_threshold = (np.array([43, 61, 145]), np.array([255, 255, 255]))
-lower = color_threshold[0]
-upper = # same
-def get_red_mask(self, image, blur):
+# color_threshold = (np.array([43, 61, 145]), np.array([255, 255, 255]))
+# lower = color_threshold[0]
+# upper = None# same
+def get_red_mask(image, blur, lower, upper):
     hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    blur_img = cv2.GaussianBlur(hsv_img, (25, 25), 0) # (3,3) blur
-    red_mask = cv2.inRange(blur_img, self.lower, self.upper)
+    blur_img = cv2.GaussianBlur(hsv_img, blur, 0) # (3,3) blur
+    red_mask = cv2.inRange(blur_img, lower, upper)
     red_mask = cv2.erode(red_mask, None, iterations=3)
     red_mask = cv2.dilate(red_mask, None, iterations=3)
     return red_mask
@@ -107,12 +109,44 @@ for i in sliders[3:]:
     )
     counter += 1
 
+def renderImage(filename = None, cv2Obj = None):
+    global image,imageFromFile, red_mask
+    if filename:
+        image = Image.open(filename)
+        image = image.resize((640, 480))
+        imageFromFile = ImageTk.PhotoImage(image)
+
+        cv2Image = cv2.imread(filename)
+        # red_mask = get_red_mask(cv2Image, (3,3), np.array([hueLower.get(), satLower.get(), lumLower.get()]), np.array([hueHigher.get(), satHigher.get(), lumHigher.get()]))
+        red_mask = get_red_mask(cv2Image, (3,3), np.array([43, 61, 145]), np.array([255, 255, 255]))
+        red_mask = Image.fromarray(red_mask)
+        red_mask = red_mask.resize((640, 480))
+        red_mask = ImageTk.PhotoImage(red_mask)
+
+    elif cv2Obj:
+        pass
+    imagePanel.config(image = imageFromFile)
+    imagePanel.image = imageFromFile
+    maskPanel.config(image = red_mask)
+    maskPanel.image = red_mask
+    print("called")
+    imagePanel.pack()
+    maskPanel.pack()
+    imageFrame.pack()
+
 imageFrame = tk.Frame()
-image = Image.open("./ud1.jpg")
-image = image.resize((640,480))
-imageFromFile = ImageTk.PhotoImage(image)
-imagePanel = tk.Label(master = imageFrame, image=imageFromFile)
-imagePanel.pack()
+# image = Image.open("./ud1.jpg")
+# image = image.resize((640,480))
+# imageFromFile = ImageTk.PhotoImage(image)
+imagePanel = tk.Label(master = imageFrame)
+maskPanel = tk.Label(master = imageFrame)
+renderImage(filename = "./ud1.jpg")
+imagePanel.pack(
+    side = tk.LEFT
+)
+maskPanel.pack(
+    side = tk.RIGHT
+)
 imageFrame.pack()
 
 sliderFrame.pack()
@@ -130,18 +164,6 @@ labelSatHigher.pack()
 labelLumHigher = tk.Label(master = labelFrame, text = "Lum Higher Bound: 0.0")
 labelLumHigher.pack()
 labelFrame.pack()
-
-def renderImage():
-    global image,imageFromFile
-    image = Image.open("./ud2.jpg")
-    image = image.resize((640, 480))
-    imageFromFile = ImageTk.PhotoImage(image)
-
-    imagePanel.config(image = imageFromFile)
-    imagePanel.image = imageFromFile
-    print("called")
-    imagePanel.pack()
-    imageFrame.pack()
 
 buttonFrame = tk.Frame()
 renderButton = tk.Button(buttonFrame, text="Render Image from Robot", command = renderImage)
