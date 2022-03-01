@@ -6,7 +6,7 @@ import cv2
 """Controls GUI to Get End Effector Target Location
 
 Requires:
-start, stop, and reset functions
+start, stop, and reset callback functions
 updateTarget functions
 update rate in milli seconds
 opencv camera feed object
@@ -71,6 +71,13 @@ class ControlGUI(tk.Tk):
         updateImages = Button(self, text="Capture", command=self.updateRobotImage, padx=10, pady=10)
         
         #self.robotViewer.after(self.updateRate * 5, self.updateRobotImage)
+
+        def closeRoot():
+            stop()
+            self.destroy()
+
+        # Window Close Execution
+        self.protocol("WM_DELETE_WINDOW", closeRoot)
 
         self.robotViewer.grid(row=0,column=1)
         startButton.grid(row=1,column=0)
