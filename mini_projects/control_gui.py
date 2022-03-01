@@ -90,6 +90,38 @@ class ControlGUI(tk.Tk):
     def __del__(self):
         self.cameraFeed.release()
 
+# class testRobotApplication(tk.Tk):
+
+
+# class Window(tk.Toplevel):
+#     def __init__(self, parent):
+#         super().__init__(parent)
+
+#         self.geometry('300x100')
+#         self.title('Toplevel Window')
+
+#         c = Button(self,
+#                 text='Close',
+#                 command=self.destroy).pack(expand=True)
+
+
+class App(tk.Tk):
+    def __init__(self, childWindow):
+        super().__init__()
+
+        self.child = childWindow
+        self.geometry('300x200')
+        self.title('Main Robot Application')
+
+        # place a button on the root window
+        b = Button(self,
+                text='Open a window',
+                command=self.open_window).pack(expand=True)
+
+    def open_window(self):
+        window = self.child
+        window.open()
+
 if __name__ == "__main__":
     def start():
         print("Start")
@@ -102,4 +134,6 @@ if __name__ == "__main__":
     cameraCap = cv2.VideoCapture(0)
     #print(cameraCap.isOpened())
     gui = ControlGUI(start, stop, reset, updateTarget, cameraFeed=cameraCap)
-    gui.open()
+    #gui.open()
+    app = App(gui)
+    app.mainloop()
