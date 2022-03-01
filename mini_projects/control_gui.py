@@ -74,7 +74,8 @@ class ControlGUI(tk.Tk):
 
         def closeRoot():
             stop()
-            self.destroy()
+            #self.destroy()
+            self.withdraw()
 
         # Window Close Execution
         self.protocol("WM_DELETE_WINDOW", closeRoot)
@@ -118,9 +119,18 @@ class App(tk.Tk):
                 text='Open a window',
                 command=self.open_window).pack(expand=True)
 
+        def closeRoot():
+            self.child.destroy()
+            self.destroy()
+
+        # Window Close Execution
+        self.protocol("WM_DELETE_WINDOW", closeRoot)
+
     def open_window(self):
-        window = self.child
-        window.open()
+        # window = self.child
+        # window.open()
+        self.child.deiconify()
+        self.child.open()    
 
 if __name__ == "__main__":
     def start():
