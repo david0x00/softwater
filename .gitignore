@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 *.avi
 .csv
+.venv
+.vscode
