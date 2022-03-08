@@ -12,7 +12,7 @@ update rate in milli seconds
 opencv camera feed object
 """
 class ControlGUI(tk.Tk):
-    def __init__(self, start, stop, reset, updateTarget, cameraFeed=cv2.VideoCapture(0), updateRate=1000):
+    def __init__(self, start, stop, reset, updateTarget, cameraFeed=None, updateRate=1000):
         super().__init__()
         self.start = start
         self.stop = stop
@@ -20,7 +20,8 @@ class ControlGUI(tk.Tk):
         self.updateRate = updateRate
         self.cameraFeed = cameraFeed
         self.updateTarget = updateTarget
-        self.cameraViewSize = (int(1920/2), int(1080/2))
+        #self.cameraViewSize = (int(1920/2), int(1080/2))
+        self.cameraViewSize = (int(self.cameraFeed.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.cameraFeed.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
     # Updates canvas with new image from the camera
     def updateRobotImage(self):
@@ -35,7 +36,10 @@ class ControlGUI(tk.Tk):
 
     # Returns tkinter PhotoImage from the camera feed resized to fit canvas
     def getImages(self):
-        ret, cv_img = self.cameraFeed.read()
+        # ret, cv_img = self.cameraFeed.read()
+        ret = self.cameraFeed.grab()
+        ret, cv_img = self.cameraFeed.retrieve()
+        print(cv_img.shape)
         resized_down = cv2.resize(cv_img, self.cameraViewSize, interpolation=cv2.INTER_LINEAR)
         b,g,r = cv2.split(resized_down) # Apparently the cv2 object has a different coloring order than tk's images
         img = cv2.merge((r,g,b))
@@ -142,7 +146,7 @@ if __name__ == "__main__":
     def updateTarget(target):
         print(target[0], ",", target[1])
     cameraCap = cv2.VideoCapture(0)
-    #print(cameraCap.isOpened())
+    print(cameraCap.isOpened())
     gui = ControlGUI(start, stop, reset, updateTarget, cameraFeed=cameraCap)
     #gui.open()
     app = App(gui)

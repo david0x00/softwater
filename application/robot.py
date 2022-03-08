@@ -524,7 +524,7 @@ class WaterRobot(threading.Thread):
             controller = pickle.load(f)
         system = controller.system
 
-        target = [-7.0, 29.0]
+        target = [7.0, 29.0]
         ocp = ampc.OCP(system)
         ocp.set_cost(ThresholdCost(system=system, goal=target, threshold=2.0, observations=["M10X", "M10Y"]))
         for ctrl in system.controls:
@@ -541,12 +541,12 @@ class WaterRobot(threading.Thread):
         print(system.observations)
         print(system.controls)
 
-        fname = "data/controltarg_" + str(int(target[0]))+ "_" + str(int(target[1])) + ".csv"
+        self.fname = "data/controltarg_" + str(int(target[0]))+ "_" + str(int(target[1])) + ".csv"
         try:
-            os.remove(fname)
+            os.remove(self.fname)
         except:
             pass
-        with open(fname, 'a', newline='') as file:
+        with open(self.fname, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
             writer.writeheader()
         
@@ -556,7 +556,7 @@ class WaterRobot(threading.Thread):
         start_time = datetime.datetime.now()
         loop_number = 0
         loop_period = 0.5
-        timer = 100
+        timer = 300
         while 1:
             curr_time = datetime.datetime.now()
             elapsed_time = (curr_time - start_time).total_seconds()
@@ -577,7 +577,7 @@ class WaterRobot(threading.Thread):
         print("Done!")
         
     def save_control_state(self, st):
-        with open('data/control_test.csv', 'a', newline='') as file:
+        with open(self.fname, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
 
             current_time = datetime.datetime.now()
