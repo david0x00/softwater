@@ -660,7 +660,11 @@ class WaterRobot(threading.Thread):
             self.__read_sensor(id)
 
     def __actuate_solenoid(self, id):
-        self.actuators[id].switch()
+        for i in range(5):
+            try:
+                self.actuators[id].switch()
+            except OSError:
+                print("try actuator: " + str(i))
     
     def set_solenoid(self, id, val):
         self.actuators[id].set_val(val)
@@ -698,11 +702,19 @@ class WaterRobot(threading.Thread):
         
         self.sample_count = 0
         self.start_time = datetime.datetime.now()
+        loop_count = 0
+        period = 1/self.frequency
 
         while (self.to_exit == False):
-            time.sleep(1 / self.frequency)
-            self.runActuatorCommands()
-            self.saveState()
+            curr_time = datetime.datetime.now()
+            elapsed_time = (curr_time-self.start_time).total_seconds()
+            # time.sleep(1 / self.frequency)
+            if (loop_count * period) < elapsed_time:
+                self.runActuatorCommands()
+                self.saveState()
+                loop_count += 1
+            else:
+                time.sleep(0.01)
         
         self.is_taking_data = False
         self.actuator_command_queue = queue.Queue()
@@ -723,11 +735,11 @@ class WaterRobot(threading.Thread):
             #writer = csv.DictWriter(file, fieldnames=['sensors', 'actuators'])
             writer = csv.DictWriter(file, fieldnames=self.csv_headers)
 
-            self.startTimer()
+            #self.startTimer()
             if self.camera is not None:
                 self.camera.capture(self.sample_count)
-            self.endTimer("Camera Capture")
-            self.startTimer()
+            #self.endTimer("Camera Capture")
+            # self.startTimer()
             current_time = datetime.datetime.now()
             self.elapsed_time = round((current_time - self.start_time).total_seconds(),3)
 
@@ -754,7 +766,7 @@ class WaterRobot(threading.Thread):
             #writer.writerow({'sensors': self.values, 'actuators': actuatorvalues})
             writer.writerow(row_dict)
             self.sample_count += 1
-            self.endTimer("everything else")
+            # self.endTimer("everything else")
 
     def printOut(self, text):
         print(text)
