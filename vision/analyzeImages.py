@@ -4,6 +4,7 @@ import cv2
 from numpy.lib.polynomial import poly
 import mainvision
 import numpy as np
+from markerdetector import MarkerDetector
 
 csv_headers = ["M0X", "M0Y", "M0T", 
                "M1X", "M1Y", "M1T", 
@@ -339,10 +340,18 @@ def analyzeImages(directory):
 
     print(image_count)
 
+    color_threshold = (np.array([0, 0, 150]), np.array([130, 130, 255]))
+    init_img_name = directory + "/0.jpg"
+    init_img = cv2.imread(init_img_name)
+    md = MarkerDetector(init_img, color_threshold)
+
     for i in range(image_count):
         img_name = directory + "/" + str(i) + ".jpg"
+        img = cv2.imread(img_name)
 
-        marker_dict = analyzeImage(img_name)
+        # marker_dict = analyzeImage(img_name)
+        # print(img_name)
+        marker_dict = md.analyze_threshold_fast(img)
         poly_dict = calculatePoly(marker_dict)
 
         writeRow(marker_file_name, marker_dict, csv_headers)
@@ -350,7 +359,8 @@ def analyzeImages(directory):
 
 if __name__ == "__main__":
     #directory = "/media/user1/Data 2000/soft_robotics_experiments/module_2_single_actuator_right/m2_right_actuator_simple3"
-    directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module2_fullext4"
+    #directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/module2_fullext4"
+    directory = "/Volumes/Flash/autompc_data/sweep2"
     # directory = "/media/user1/Data 2000/soft_robotics_experiments/training_data/round_1/s_curve1"
     analyzeImages(directory)
     #img_name = directory + "/1.jpg"
