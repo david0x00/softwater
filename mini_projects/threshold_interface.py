@@ -9,7 +9,7 @@ import numpy as np
 # lower = color_threshold[0]
 # upper = None# same
 def get_red_mask(image, blur, lower, upper):
-    hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    #hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     blur_img = cv2.GaussianBlur(hsv_img, blur, 0) # (3,3) blur
     red_mask = cv2.inRange(blur_img, lower, upper)
     red_mask = cv2.erode(red_mask, None, iterations=3)

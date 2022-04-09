@@ -89,15 +89,15 @@ class MarkerDetector:
         
         return center_list
 
-    def analyze_threshold_fast(self, img):
-        pixel_coords = self.analyze_threshold_fast_pix(img)
+    def analyze_threshold_fast(self, img, save=False, name=""):
+        pixel_coords = self.analyze_threshold_fast_pix(img, save=save, name=name)
         return self.pix2world(pixel_coords)
 
-    def analyze_threshold_fast_pix(self, img):
+    def analyze_threshold_fast_pix(self, img, save=False, name=""):
         #img = cv2.imread(img_name)
         # undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
         undistorted_img = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
-        imageX, imageY, _ = undistorted_img.shape
+        imageY, imageX, _ = undistorted_img.shape
 
         newCenters = []
         for i, marker in enumerate(self.currentStates):
@@ -122,7 +122,21 @@ class MarkerDetector:
 
             if len(contours) > 0:
                 circle = cv2.minEnclosingCircle(contours[0])
-                self.currentStates[i] = circle[0] + np.array([x - self.bounding_box_dim,y - self.bounding_box_dim])
+                self.currentStates[i] = circle[0] + np.array([max(x - self.bounding_box_dim, 0),max(y - self.bounding_box_dim, 0)])
+            else:
+                print("MARKER NOT DETECTED")
+                print(i)
+                print(markerGuess.shape)
+                cv2.imwrite("box_guess.jpg", markerGuess)
+                cv2.imwrite("box_mask.jpg", red_mask)
+                quit()
+            
+            if save:
+                print("x: " + str(marker[0]) + ", y: " + str(marker[1]))
+                cv2.imwrite(name + "_img.jpg", markerGuess)
+                cv2.imwrite(name + "_mask.jpg", red_mask)
+
+
             #newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
 
         return self.currentStates
