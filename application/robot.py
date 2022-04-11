@@ -6,6 +6,7 @@ import random
 import math
 import datetime
 import queue
+import controllers
 import numpy as np
 from functools import partial
 
@@ -121,146 +122,6 @@ class Camera:
         self.camera.start_preview()
         time.sleep(5)
         self.camera.stop_preview()
-
-
-class MarkerDetector:
-    """Handles the conversion of photo to marker values."""
-
-    bounding_box_dim = math.floor(65 / 2)
-
-    def __init__(self, init_img, colorthreshold):
-        self.lower = colorthreshold[0]
-        self.upper = colorthreshold[1]
-        self.init_undistort(init_img)
-        self.currentStates = self.analyze_thresh_pix(init_img)
-    
-    def init_undistort(self, init_img):
-        # OLD WAY
-        # undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
-        # img = cv2.imread(init_image)
-        img = init_img
-        h = img.shape[0]
-        w = img.shape[1]
-        self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), cv2.CV_32FC1)
-
-    def get_red_mask(self, image, blur):
-        # hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        blur_img = cv2.GaussianBlur(image, blur, 0)
-        red_mask = cv2.inRange(blur_img, self.lower, self.upper)
-        red_mask = cv2.erode(red_mask, None, iterations=3)
-        red_mask = cv2.dilate(red_mask, None, iterations=3)
-        return red_mask
-
-    def analyze_thresh(self, img):
-        pixel_coords = self.analyze_thresh_pix(img)
-        return self.pix2world(pixel_coords)
-
-    # Note: Analyzes images by using basic pixel thresholding method.
-    #       Computes marker locations (pixels) and returns.
-    def analyze_thresh_pix(self, img):
-        # Get image and undistort.
-        # img = cv2.imread(img_name)
-        undistorted_img = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
-
-        # Mask out all non-red pixels.
-        red_mask = self.get_red_mask(undistorted_img, (3, 3))
-        cv2.imwrite("test_undistort.jpg", undistorted_img)
-        cv2.imwrite("test_masked.jpg", red_mask)
-
-        # Draw circles around clusters of red pixels.
-        contours, hierarchy = cv2.findContours(red_mask,
-                                               cv2.RETR_EXTERNAL,
-                                               cv2.CHAIN_APPROX_SIMPLE)
-
-        # Get relevant circles into a list.
-        center_list = []
-        for c in contours:
-            ((x, y), radius) = cv2.minEnclosingCircle(c)
-            if x > 300 and x < 1750:
-                center_list.append((x, y))
-        
-        # Check for error.
-        if len(center_list) != 11:
-            print("Incorrect Marker Detection...")
-            # TODO: Make program run the full sweep if it loses markers
-            return None
-        
-        return center_list
-
-    def analyze_threshold_fast(self, img):
-        pixel_coords = self.analyze_threshold_fast_pix(img)
-        return self.pix2world(pixel_coords)
-
-    def analyze_threshold_fast_pix(self, img):
-        #img = cv2.imread(img_name)
-        # undistorted_img = cv2.undistort(img, mtx, dist, None, newcameramtx)
-        undistorted_img = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
-        imageX, imageY, _ = undistorted_img.shape
-
-        newCenters = []
-        for i, marker in enumerate(self.currentStates):
-            #print(marker)
-            x = math.floor(marker[0])
-            y = math.floor(marker[1])
-            # crop based on pervious positions [y1:y2, x1:x2] making top left (x1, y1) to bottom right (x2, y2)
-            y1 = clamp(0, y - self.bounding_box_dim, imageY)
-            y2 = clamp(0, y + self.bounding_box_dim, imageY)
-            x1 = clamp(0, x - self.bounding_box_dim, imageX)
-            x2 = clamp(0, x + self.bounding_box_dim, imageX)
-
-            markerGuess = undistorted_img[y1:y2, x1:x2]
-            # cv2.imwrite("box/box" + str(i) + ".jpg", markerGuess)
-
-            red_mask = self.get_red_mask(markerGuess, (3,3))
-            # cv2.imwrite("box/box_mask" + str(i) + ".jpg", red_mask)
-            edged = red_mask.copy()
-            contours, hierarchy = cv2.findContours(red_mask,
-                                            cv2.RETR_EXTERNAL,
-                                            cv2.CHAIN_APPROX_SIMPLE)
-
-            if len(contours) > 0:
-                circle = cv2.minEnclosingCircle(contours[0])
-                self.currentStates[i] = circle[0] + np.array([x - self.bounding_box_dim,y - self.bounding_box_dim])
-            #newCenters.append(circle[0] + np.array([x - half_bounding_box_pixel_length,y - half_bounding_box_pixel_length])) # (x,y) position of circle in pixels
-
-        return self.currentStates
-        #self.currentStates = newCenters
-        #return newCenters
-
-
-    def pix2world(self, center_list):
-        # Convert pixel coordinates to world coordinates.
-        center_list.sort(key=lambda x: x[1])
-        center_list.reverse()
-
-        center_list_3d = []
-        for center in center_list:
-            coord_2d = np.array([[center[0]],
-                                [center[1]],
-                                [1]])
-            coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
-            center_list_3d.append((coord_3d[0][0], coord_3d[1][0]))
-        
-        base_point = center_list_3d[0]
-        x_base = base_point[0]
-        y_base = base_point[1]
-
-        # Package up data and return.
-        row_dict = {}
-        for idx in range(11):
-            x_key = "M" + str(idx) + "X"
-            y_key = "M" + str(idx) + "Y"
-            t_key = "M" + str(idx) + "T"
-
-            x_val = center_list_3d[idx][0] - x_base
-            y_val = y_base - center_list_3d[idx][1]
-            t_val = 0
-
-            row_dict[x_key] = x_val
-            row_dict[y_key] = y_val
-            row_dict[t_key] = t_val
-
-        return row_dict
 
 class PumpAndGate(threading.Thread):
     to_exit = False
@@ -484,98 +345,11 @@ class WaterRobot(threading.Thread):
 
         self.pump_and_gate = PumpAndGate(0, self.hardware_mapper)
 
-    def getRedMask(self, image, lower, upper):
-        hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        blur_img = cv2.GaussianBlur(hsv_img, (25,25), 0)
-        red_mask = cv2.inRange(blur_img, lower, upper)
-        red_mask = cv2.erode(red_mask, None, iterations=3)
-        red_mask = cv2.dilate(red_mask, None, iterations=3)
-        return red_mask
-
-    def get_observations(self):
-        img = self.camera.get_opencv_img()
-
-        init_markers = self.md.analyze_threshold_fast(img)
-        marker_keys = list(init_markers.keys())
-
-        for i in range(4):
-            self.obs[i] = round(self.pressure_sensors[i].read_sensor(), 3)
-
-        for i in range(1, 11):
-            key1 = marker_keys[i*3]
-            key2 = marker_keys[i*3 + 1]
-            self.obs[(i - 1)*2 + 4] = init_markers[key1]
-            self.obs[(i - 1)*2 + 5] = init_markers[key2]
-
     def control(self):
-        # Algorithm:
-        # Initalize control loop
-        # color_threshold = (np.array([40, 61, 157]), np.array([255, 255, 255]))
-        color_threshold = (np.array([0, 0, 150]), np.array([130, 130, 255]))
-        init_img = self.camera.get_opencv_img()
-        self.md = MarkerDetector(init_img, color_threshold)
+        self.controller = controllers.AMPCController(self)
+        self.controller.prepare((-7,29))
+        self.controller.run_controller()
 
-        self.obs = np.zeros(24)
-
-        self.get_observations()
-
-        # Initialize autompc
-        with open("controller.pkl", "rb") as f:
-            controller = pickle.load(f)
-        system = controller.system
-
-        target = [7.0, 29.0]
-        ocp = ampc.OCP(system)
-        ocp.set_cost(ThresholdCost(system=system, goal=target, threshold=2.0, observations=["M10X", "M10Y"]))
-        for ctrl in system.controls:
-            ocp.set_ctrl_bound(ctrl, 0, 1)
-        controller.set_ocp(ocp)
-        controller.reset()
-
-        # create tajectory for history
-        traj = ampc.zeros(system, 1)
-        traj[0].obs[:] = self.obs
-        # generate the controller state
-        # constate = controller.traj_to_state(traj)
-        controller.model._device = "cpu"
-        print(system.observations)
-        print(system.controls)
-
-        self.fname = "data/controltarg_" + str(int(target[0]))+ "_" + str(int(target[1])) + ".csv"
-        try:
-            os.remove(self.fname)
-        except:
-            pass
-        with open(self.fname, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=self.control_headers)
-            writer.writeheader()
-        
-        self.u = controller.run(self.obs)
-        self.implement_controls()
-
-        start_time = datetime.datetime.now()
-        loop_number = 0
-        loop_period = 0.5
-        timer = 300
-        while 1:
-            curr_time = datetime.datetime.now()
-            elapsed_time = (curr_time - start_time).total_seconds()
-
-            if elapsed_time > timer:
-                break
-
-            proposed_loop_number = int(elapsed_time / loop_period)
-            if proposed_loop_number > loop_number:
-                print(elapsed_time)
-                loop_number = proposed_loop_number
-                self.get_observations()
-                self.u = controller.run(self.obs)
-                self.implement_controls()
-                self.save_control_state(start_time)
-            
-        self.turn_off_robot()
-        print("Done!")
-        
     def save_control_state(self, st):
         with open(self.fname, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
@@ -607,21 +381,15 @@ class WaterRobot(threading.Thread):
         self.set_gate_valve(False)
         for i in range(8):
             self.set_solenoid(i, False)
-
-
-    def implement_controls(self):
-        print(self.u)
-        self.set_pump(True)
-
-        x = (self.u * self.gate_mask).sum()
-        if x:
-            self.set_gate_valve(True)
-        else:
-            self.set_gate_valve(False)
-
-        for i in range(len(self.u)):
-            u_val = bool(self.u[i])
-            self.set_solenoid(i, u_val)
+        
+    def return_to_home(self):
+        self.set_pump(False)
+        self.set_gate_valve(False)
+        for i in range(8):
+            if i % 2 == 0:
+                self.set_solenoid(i, False)
+            else:
+                self.set_solenoid(i, True)
 
     def tune_cv(self):
         pass
