@@ -60,6 +60,7 @@ class MarkerDetector:
     def analyze_thresh_pix(self, img):
         # Get image and undistort.
         # img = cv2.imread(img_name)
+        print("looking at full image")
         undistorted_img = cv2.remap(img, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
 
         # Mask out all non-red pixels.
@@ -76,10 +77,9 @@ class MarkerDetector:
         center_list = []
         for c in contours:
             ((x, y), radius) = cv2.minEnclosingCircle(c)
-            #print((x,y))
-            if x > 300 and x < 1750:
-                if not (x < 410 and y > 1045):
-                    center_list.append((x, y))
+            print((x,y))
+            if x > 445 and x < 1390 and (not((x < 600) and (y > 800))):
+                center_list.append((x, y))
         
         # Check for error.
         if len(center_list) != 11:

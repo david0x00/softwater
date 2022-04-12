@@ -12,8 +12,8 @@ from functools import partial
 
 import io
 
-import autompc as ampc
-from autompc.costs import ThresholdCost
+#import autompc as ampc
+#from autompc.costs import ThresholdCost
 import pickle
 
 try:
@@ -344,6 +344,17 @@ class WaterRobot(threading.Thread):
             self.actuators.append(Actuator(j, j, is_dep, hardware_mapper=self.hardware_mapper))
 
         self.pump_and_gate = PumpAndGate(0, self.hardware_mapper)
+
+        self.acc40 = controllers.Acc40Manager(self)
+    
+    def run_simple_acc40(self, idx):
+        print("Running Simple on idx: " + str(idx))
+        self.acc40.run_simple(idx)
+
+    def run_ampc_acc40(self, idx):
+        print("Running AMPC on idx: " + str(idx))
+        self.acc40.run_ampc(idx)
+
 
     def control(self):
         self.controller = controllers.AMPCController(self)

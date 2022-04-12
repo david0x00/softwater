@@ -66,6 +66,9 @@ class Application(tk.Tk):
         control_button = ttk.Button(master=self, text='Control', command=self._control)  # the start button
         control_button.place(x=870, y=9)
 
+        off_button = ttk.Button(master=self, text='Off', command=self._off)  # the start button
+        off_button.place(x=975, y=9)
+
         # Information Displays
         num_sensors_display = ttk.Label(master=self, text="Robot Connected: " + str(self.a.detected_status))
         num_sensors_display.place(x=15, y=640)
@@ -122,6 +125,28 @@ class Application(tk.Tk):
         ttk.Button(master=self, text='Save To', command=self.createfile).place(x=579, y=24, anchor=tk.CENTER)
         ttk.Button(master=self, text='Save Current State', command=self.save_state).place(x=692, y=24, anchor=tk.CENTER)
 
+        #Acc40 stuff
+        acc40_idx = tk.StringVar(value=0)
+        tk.Entry(self, textvariable=acc40_idx, width=3).place(x=375, y=24, anchor=tk.CENTER)
+        set_simple_acc40 = partial(self.simple_acc40, (acc40_idx))
+        set_ampc_acc40 = partial(self.ampc_acc40, (acc40_idx))
+        ttk.Button(master=self, text='Simple', command=set_simple_acc40, width=5).place(x=420, y=24, anchor=tk.CENTER)
+        ttk.Button(master=self, text='AMPC', command=set_ampc_acc40, width=5).place(x=480, y=24, anchor=tk.CENTER)
+    
+    def ampc_acc40(self, input):
+        content = int(input.get())
+        if content >= 0 and content < 40:
+            self.a.run_ampc_acc40(content)
+        else:
+            print("Range 0-39")
+
+    def simple_acc40(self, input):
+        content = int(input.get())
+        if content >= 0 and content < 40:
+            self.a.run_simple_acc40(content)
+        else:
+            print("Range 0-39")
+
     def button_countdown(self, i, label):
         if i > 0:
             i -= 1
@@ -157,6 +182,9 @@ class Application(tk.Tk):
 
     def _tune(self):
         self.a.tune_cv()
+    
+    def _off(self):
+        self.a.turn_off_robot()
 
     def _control(self):
         self.a.control()
