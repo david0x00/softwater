@@ -91,6 +91,8 @@ class MarkerDetector:
 
     def analyze_threshold_fast(self, img, save=False, name=""):
         pixel_coords = self.analyze_threshold_fast_pix(img, save=save, name=name)
+        if pixel_coords == None:
+            return None
         return self.pix2world(pixel_coords)
 
     def analyze_threshold_fast_pix(self, img, save=False, name=""):
@@ -129,7 +131,7 @@ class MarkerDetector:
                 print(markerGuess.shape)
                 cv2.imwrite("box_guess.jpg", markerGuess)
                 cv2.imwrite("box_mask.jpg", red_mask)
-                quit()
+                return None
             
             if save:
                 print("x: " + str(marker[0]) + ", y: " + str(marker[1]))

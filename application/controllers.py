@@ -40,6 +40,7 @@ class Acc40Manager:
         run_directory = self.get_run_directory(data_directory)
 
         targ = self.convert_idx(idx)
+        self.turn_off()
         self.simple_controller.prepare(targ, run_directory)
         self.simple_controller.run_controller()
         self.simple_controller.write_imgs(run_directory)
@@ -53,10 +54,14 @@ class Acc40Manager:
         run_directory = self.get_run_directory(data_directory)
 
         targ = self.convert_idx(idx)
+        self.turn_off()
         self.ampc_controller.prepare(targ, run_directory)
         self.ampc_controller.run_controller()
         self.ampc_controller.write_imgs(run_directory)
         self.return_home()
+    
+    def turn_off(self):
+        self.robot.turn_off_robot()
 
     def return_home(self):
         self.robot.return_to_home()
@@ -128,11 +133,21 @@ class Controller:
         self.img_arr.append(img)
 
         init_markers = self.md.analyze_threshold_fast(img)
+        if init_markers == None:
+            self.call_emergency_stop()
+            print("Lost Marker Track")
+            return
         marker_keys = list(init_markers.keys())
 
         for i in range(4):
-            self.obs[i] = round(self.robot.pressure_sensors[i].read_sensor(), 3)
+            pread = round(self.robot.pressure_sensors[i].read_sensor(), 3)
+            if pread < 130.0:
+                self.obs[i] = pread
+            else:
+                print("Faulty pressure reading " + str(self.obs[i]))
+                self.obs[i] = round(self.robot.pressure_sensors[i].read_sensor(), 3)
             if self.obs[i] >= self.max_pressure_threshold:
+                print("Max Pressure Exceeded")
                 self.call_emergency_stop()
             elif self.obs[i] >= self.max_pressure_threshold - 4:
                 print("Pressure close: " + str(self.obs[i]))
@@ -145,6 +160,9 @@ class Controller:
 
     def implement_controls(self):
         #print(self.u)
+        if self.emergency_stop:
+            return 
+
         self.robot.set_pump(True)
 
         x = (self.u * self.robot.gate_mask).sum()
@@ -206,6 +224,7 @@ class SimpleController(Controller):
     def prepare(self, targ, data_dir):
         super().prepare()
         self.pressures = self.controller[targ]
+        print(self.pressures)
 
         self.get_observations()
 
