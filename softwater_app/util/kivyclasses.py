@@ -16,7 +16,6 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.animation import Animation
 
-import copy
 import cv2
 import numpy as np
 
@@ -66,13 +65,19 @@ class RobotImageBoxButtons(BoxLayout):
         return False
 
 
-class RobotImagePane(FloatLayout):
-    def __init__(self, robot_image, p_img, p_off_img, dp_img, dp_off_img, size_hint=(1, 1), pos_hint={"x": 0, "y": 0}):
+class RobotImagePane(BoxLayout):
+    def __init__(self, robot_image, pump_img, pump_off_img, gate_img, gate_off_img, p_img, p_off_img, dp_img, dp_off_img, size_hint=(1, 1), pos_hint={"x": 0, "y": 0}):
         super(RobotImagePane, self).__init__()
         self.size_hint = size_hint
         self.pos_hint = pos_hint
 
+        self.main_button_layout = BoxLayout(size_hint=(0.3, None), orientation="vertical", pos_hint={"x": 0, "center_y": 0.5}, padding=10)
+        self.robot_layout = FloatLayout()
+
         self.robot_image = ImagePane(robot_image)
+
+        self.pump = IconButton(pump_off_img, pump_img, sticky=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
+        self.gate = IconButton(gate_off_img, gate_img, sticky=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
 
         self.actuator0 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
         self.actuator1 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
@@ -81,17 +86,23 @@ class RobotImagePane(FloatLayout):
         self.actuator4 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
         self.actuator5 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
 
-        self.add_widget(self.robot_image)
-        self.add_widget(self.actuator0)
-        self.add_widget(self.actuator1)
-        self.add_widget(self.actuator2)
-        self.add_widget(self.actuator3)
-        self.add_widget(self.actuator4)
-        self.add_widget(self.actuator5)
+        self.add_widget(self.main_button_layout)
+        self.add_widget(self.robot_layout)
 
-        self.bind(size=self.update, pos=self.update)
-    
-    def update(self, *args):
+        self.main_button_layout.add_widget(self.pump)
+        self.main_button_layout.add_widget(self.gate)
+
+        self.robot_layout.add_widget(self.robot_image)
+        self.robot_layout.add_widget(self.actuator0)
+        self.robot_layout.add_widget(self.actuator1)
+        self.robot_layout.add_widget(self.actuator2)
+        self.robot_layout.add_widget(self.actuator3)
+        self.robot_layout.add_widget(self.actuator4)
+        self.robot_layout.add_widget(self.actuator5)
+
+        self.robot_layout.bind(size=self.image_button_layout, pos=self.image_button_layout)
+        
+    def image_button_layout(self, *args):
         col1 = 0.2575
         col2 = 0.5475
         col3 = 0.8375
@@ -99,10 +110,10 @@ class RobotImagePane(FloatLayout):
         row1 = 0.79
         row2 = 0.20
 
-        self.robot_image.size = self.size
+        self.robot_image.size = self.robot_layout.size
 
         sx, sy = self.robot_image.image.norm_image_size
-        px, py = (self.pos[0] + (self.size[0] - sx) / 2, self.pos[1] + (self.size[1] - sy) / 2)
+        px, py = (self.robot_layout.pos[0] + (self.robot_layout.size[0] - sx) / 2, self.robot_layout.pos[1] + (self.robot_layout.size[1] - sy) / 2)
 
         actuator_size = (0.235 * sx, 0.08 * sx)
 
@@ -240,6 +251,7 @@ class IconButton(ButtonBehavior, Widget):
         self.always_release = True
         self._callbacks = []
         self.pressed = False
+        self.mouse_pos = (0, 0)
 
         self.return_time = 0.2
         self.react_time = 0.1
@@ -249,14 +261,22 @@ class IconButton(ButtonBehavior, Widget):
         self.add_widget(self._icon_normal)
         self.add_widget(self._icon_pressed)
         self.bind(size=self.update, pos=self.update)
-    
-    def on_mouse_update(self, window, pos):
-        print(pos)
+        Window.bind(mouse_pos=self.on_mousepos)
 
     def add_callback(self, func):
         self._callbacks.append(func)
+    
+    def on_mousepos(self, window, pos):
+        self.mouse_pos = pos
 
-    def on_press(self):       
+    def on_press(self):
+        if self.pressed:
+            if not self._collide_check(self._icon_pressed):
+                return
+        else:
+            if not self._collide_check(self._icon_normal):
+                return
+
         fadein = Animation(opacity=1, duration=self.react_time)
         fadeout = Animation(opacity=0, duration=self.react_time)
 
@@ -271,6 +291,15 @@ class IconButton(ButtonBehavior, Widget):
                 
         for func in self._callbacks:
                 func(self.pressed)
+    
+    def _collide_check(self, image):
+        size = image.norm_image_size
+        pos = (image.pos[0] + (image.size[0] - size[0]) / 2, image.pos[1] + (image.size[1] - size[1]) / 2)
+
+        if self.mouse_pos[0] >= pos[0] and self.mouse_pos[0] <= pos[0] + size[0] and self.mouse_pos[1] >= pos[1] and self.mouse_pos[1] <= pos[1] + size[1]:
+            return True
+        return False
+
 
     def on_release(self):
         if not self.sticky:
@@ -285,10 +314,10 @@ class IconButton(ButtonBehavior, Widget):
                 func(self.pressed)
 
     def update(self, *args):
-        self._icon_normal.size = self.size
-        self._icon_normal.pos = self.pos
         self._icon_pressed.size = self.size
         self._icon_pressed.pos = self.pos
+        self._icon_normal.size = self.size
+        self._icon_normal.pos = self.pos        
 
 
 class Divider(Widget):

@@ -58,10 +58,14 @@ class MainWindow(App):
 
         robot_state_image_pane = RobotImagePane(
             "./assets/robot.png",
+            "./assets/pump.png",
+            "./assets/pump_off.png",
+            "./assets/gate.png",
+            "./assets/gate_off.png",
             "./assets/pressurize.png",
             "./assets/pressurize_off.png",
             "./assets/depressurize.png",
-            "./assets/depressurize_off.png",)
+            "./assets/depressurize_off.png")
 
         # asm
         window.add_widget(main_layout)
