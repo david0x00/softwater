@@ -267,7 +267,8 @@ class IconButton(ButtonBehavior, Widget):
         self._callbacks.append(func)
     
     def on_mousepos(self, window, pos):
-        self.mouse_pos = pos
+        if window == self.get_root_window():
+            self.mouse_pos = pos
 
     def on_press(self):
         if not self.collide_point(*self.mouse_pos):
