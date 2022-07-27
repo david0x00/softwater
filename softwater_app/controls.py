@@ -82,3 +82,15 @@ def depressurize5(pressed):
         print("Depressurize5:", pressed)
     else:
         pass
+
+def pump(pressed):
+    if NO_RPI:
+        print("Pump:", pressed)
+    else:
+        pass
+
+def gate(pressed):
+    if NO_RPI:
+        print("Gate:", pressed)
+    else:
+        pass

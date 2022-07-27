@@ -101,10 +101,13 @@ class MainWindow(App):
         robot_state_image_pane.actuator5.pressurize.add_callback(controls.pressurize5)
         robot_state_image_pane.actuator5.depressurize.add_callback(controls.depressurize5)
 
+        robot_state_image_pane.pump.add_callback(controls.pump)
+        robot_state_image_pane.gate.add_callback(controls.gate)
+
         for i in range(6):
             robot_state_image_pane.show_pressure(i, 100.4)
 
-        Clock.schedule_interval(self._background_tasks, 1/100)
+        #Clock.schedule_interval(self._background_tasks, 1/100)
         return window
 
     def _background_tasks(self, dt):
