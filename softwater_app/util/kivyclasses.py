@@ -6,6 +6,7 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.behaviors import ButtonBehavior
+from kivymd.uix.behaviors import HoverBehavior
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
@@ -228,7 +229,7 @@ class CV2Image(Image):
         self.texture = texture
 
 
-class IconButton(ButtonBehavior, Widget):
+class IconButton(ButtonBehavior, HoverBehavior, Widget):
     def __init__(self, icon_normal, icon_pressed, size_hint=(1, 1), pos_hint={}, sticky=False):
         super(IconButton, self).__init__()
         self._icon_normal = Image(source=icon_normal)
@@ -258,13 +259,24 @@ class IconButton(ButtonBehavior, Widget):
         self.add_widget(self._icon_normal)
         self.add_widget(self._icon_pressed)
         self.bind(size=self.update, pos=self.update)
-        Window.bind(mouse_pos=self.on_mouse_pos)
 
-    def on_mouse_pos(self, window, pos):
-        if not self.get_root_window():
-            return
-        self._mouse_pos = pos
-        self._hover_handler()
+    def on_enter(self, *args):
+        Window.set_system_cursor("hand")
+        if self.pressed:
+            self._hover_anim.start(self._icon_pressed)
+        else:
+            self._hover_anim.start(self._icon_normal)
+    
+    def on_leave(self, *args):
+        Window.set_system_cursor("arrow")
+        self._hover_anim.stop(self._icon_normal)
+        self._hover_anim.stop(self._icon_pressed)
+        if (self.pressed):
+            self._return_anim.start(self._icon_pressed)
+            self._icon_normal.opacity = 0
+        else:
+            self._return_anim.start(self._icon_normal)
+            self._icon_pressed.opacity = 0
 
     def add_callback(self, func):
         self._callbacks.append(func)
@@ -285,11 +297,10 @@ class IconButton(ButtonBehavior, Widget):
             fadeout.start(self._icon_normal)
             self.pressed = True
         
+        self.on_enter()
+        
         for func in self._callbacks:
                 func(self.pressed)
-        
-        self._hovering = False
-        self._hover_handler()
 
     def on_release(self):
         if not self.sticky:
@@ -304,35 +315,13 @@ class IconButton(ButtonBehavior, Widget):
             for func in self._callbacks:
                 func(self.pressed)
         
-        self._hovering = False
-        self._hover_handler()
+        self.on_enter()
 
     def update(self, *args):
         self._icon_normal.size = self.size
         self._icon_normal.pos = self.pos
         self._icon_pressed.size = self.size
         self._icon_pressed.pos = self.pos
-    
-    def _hover_handler(self):
-        if self.collide_point(*self._mouse_pos):
-            Window.set_system_cursor("hand")
-            if not self._hovering:
-                self._hovering = True
-                if self.pressed:
-                    self._hover_anim.start(self._icon_pressed)
-                else:
-                    self._hover_anim.start(self._icon_normal)
-        elif self._hovering:
-            self._hovering = False
-            Window.set_system_cursor("arrow")
-            self._hover_anim.stop(self._icon_normal)
-            self._hover_anim.stop(self._icon_pressed)
-            if (self.pressed):
-                self._return_anim.start(self._icon_pressed)
-                self._icon_normal.opacity = 0
-            else:
-                self._return_anim.start(self._icon_normal)
-                self._icon_pressed.opacity = 0
 
 
 class Divider(Widget):
