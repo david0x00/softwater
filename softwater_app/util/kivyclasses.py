@@ -277,6 +277,9 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
         else:
             self._return_anim.start(self._icon_normal)
             self._icon_pressed.opacity = 0
+    
+    def on_mouse_update(self, window, pos):
+        print(pos)
 
     def add_callback(self, func):
         self._callbacks.append(func)
@@ -296,9 +299,7 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
             fadein.start(self._icon_pressed)
             fadeout.start(self._icon_normal)
             self.pressed = True
-        
-        self.on_enter()
-        
+                
         for func in self._callbacks:
                 func(self.pressed)
 
@@ -314,8 +315,6 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
             fadeout.start(self._icon_pressed)
             for func in self._callbacks:
                 func(self.pressed)
-        
-        self.on_enter()
 
     def update(self, *args):
         self._icon_normal.size = self.size
