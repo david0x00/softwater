@@ -229,7 +229,7 @@ class CV2Image(Image):
         self.texture = texture
 
 
-class IconButton(ButtonBehavior, HoverBehavior, Widget):
+class IconButton(ButtonBehavior, Widget):
     def __init__(self, icon_normal, icon_pressed, size_hint=(1, 1), pos_hint={}, sticky=False):
         super(IconButton, self).__init__()
         self._icon_normal = Image(source=icon_normal)
@@ -243,40 +243,14 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
         self._callbacks = []
         self.pressed = False
 
-        self.blink_time = 0.3
         self.return_time = 0.2
         self.react_time = 0.1
-        self._hovering = False
 
-        self._mouse_pos = (0, 0)
-
-        self._hover_anim = Animation(opacity=0.6, duration=self.blink_time) \
-            + Animation(opacity=1, duration=self.blink_time) \
-            + Animation(duration=self.return_time)
-        self._hover_anim.repeat = True
         self._return_anim = Animation(opacity=1, duration=self.return_time)
 
         self.add_widget(self._icon_normal)
         self.add_widget(self._icon_pressed)
         self.bind(size=self.update, pos=self.update)
-
-    def on_enter(self, *args):
-        Window.set_system_cursor("hand")
-        if self.pressed:
-            self._hover_anim.start(self._icon_pressed)
-        else:
-            self._hover_anim.start(self._icon_normal)
-    
-    def on_leave(self, *args):
-        Window.set_system_cursor("arrow")
-        self._hover_anim.stop(self._icon_normal)
-        self._hover_anim.stop(self._icon_pressed)
-        if (self.pressed):
-            self._return_anim.start(self._icon_pressed)
-            self._icon_normal.opacity = 0
-        else:
-            self._return_anim.start(self._icon_normal)
-            self._icon_pressed.opacity = 0
     
     def on_mouse_update(self, window, pos):
         print(pos)
@@ -287,9 +261,6 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
     def on_press(self):       
         fadein = Animation(opacity=1, duration=self.react_time)
         fadeout = Animation(opacity=0, duration=self.react_time)
-
-        self._hover_anim.stop(self._icon_normal)
-        self._hover_anim.stop(self._icon_pressed)
 
         if self.sticky and self.pressed:
             fadein.start(self._icon_normal)
@@ -309,8 +280,7 @@ class IconButton(ButtonBehavior, HoverBehavior, Widget):
             
             fadein = Animation(opacity=1, duration=self.react_time)
             fadeout = Animation(opacity=0, duration=self.react_time)
-            if self._hovering:
-                fadein += self._hover_anim
+
             fadein.start(self._icon_normal)
             fadeout.start(self._icon_pressed)
             for func in self._callbacks:
