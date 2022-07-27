@@ -16,7 +16,7 @@ import io
 #from autompc.costs import ThresholdCost
 import pickle
 
-try:
+'''try:
     from picamera import PiCamera
     from picamera.array import PiRGBArray
     import cv2
@@ -65,7 +65,10 @@ except ValueError:
     ads_1 = -1
     mcp_0 = -1
     mcp_1 = -1
-    robot_detected = False
+    robot_detected = False'''
+
+camera_detected = False
+robot_detected = False
 
 mtx = np.array([
     [1535.10668, 0, 954.393136],

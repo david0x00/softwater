@@ -12,10 +12,10 @@ print(dev)
 mh = Raspi_MotorHAT(addr=0x6f)
 
 def stop():
-	mh.getMotor(1).run(Raspi_MotorHAT.RELEASE)
-	mh.getMotor(2).run(Raspi_MotorHAT.RELEASE)
-	mh.getMotor(3).run(Raspi_MotorHAT.RELEASE)
-	mh.getMotor(4).run(Raspi_MotorHAT.RELEASE)
+        mh.getMotor(1).run(Raspi_MotorHAT.RELEASE)
+        mh.getMotor(2).run(Raspi_MotorHAT.RELEASE)
+        mh.getMotor(3).run(Raspi_MotorHAT.RELEASE)
+        mh.getMotor(4).run(Raspi_MotorHAT.RELEASE)
 
 atexit.register(stop)
 
@@ -51,26 +51,26 @@ while (True):
         for event in dev.read_loop():
 
             if (event.code == 103 and event.value == 1):
-                print "Forward"
+                print("Forward")
                 print(event.value)
                 forward();
-	        time.sleep(0.5)
+                time.sleep(0.5)
             elif (event.code == 108 and event.value == 1):
-                print  "Back"
+                print("Back")
                 print(event.value)
                 back();
-	        time.sleep(0.5)
+                time.sleep(0.5)
             elif (event.code == 106 and event.value == 1) :
-                print "right"
+                print("right")
                 print(event.value)
                 right();
                 time.sleep(0.5)
             elif (event.code == 105 and event.value == 1) :
-                print "left"
+                print("left")
                 print(event.value)
                 left();
                 time.sleep(0.5)
             elif (event.code == 28 and event.value == 1) :
-                print "Stop"
+                print("Stop")
                 stop();
 
