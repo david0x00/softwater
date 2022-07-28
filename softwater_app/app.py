@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(1, './utils')
-
 from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -15,7 +12,7 @@ from kivy.clock import Clock
 import cv2
 import numpy as np
 
-from util.kivyclasses import *
+from util.content_classes import *
 from util.colortools import *
 
 import controls
@@ -41,8 +38,11 @@ class MainWindow(App):
 
         window = BoxLayout(orientation="vertical")
 
-        content_div_cc = ColorComponent(sunset_orange, sunset_purple, POS_LEFT, POS_RIGHT, txtsize=2)
+        content_div_cc = ColorComponent(sunset_orange, sunset_purple, POS_LEFT, POS_RIGHT)
         content_background_cc = ColorComponent(dim_gray, dark_gray, POS_TOP_CENTER, POS_BOT_CENTER)
+        select_cc = ColorComponent(sunset_orange, sunset_purple, POS_TOP_LEFT, POS_BOT_RIGHT)
+        button_up_cc = ColorComponent(sunset_purple, gunmetal, POS_BOT_LEFT, POS_RIGHT)
+        button_down_cc = ColorComponent(sunset_orange, gunmetal, POS_BOT_LEFT, POS_RIGHT)
 
         main_layout = MainContentPane("./assets/title.png", "./assets/background.jpg")
 
@@ -56,16 +56,16 @@ class MainWindow(App):
         tracker_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
         robot_state_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(1.5, 1))
 
-        robot_state_image_pane = RobotImagePane(
+        self.robot_state_image_pane = RobotImagePane(
             "./assets/robot.png",
-            "./assets/pump.png",
-            "./assets/pump_off.png",
-            "./assets/gate.png",
-            "./assets/gate_off.png",
+            button_up_cc,
+            button_down_cc,
             "./assets/pressurize.png",
             "./assets/pressurize_off.png",
             "./assets/depressurize.png",
             "./assets/depressurize_off.png")
+        
+        self.camera_pane = CameraPane(button_up_cc, button_down_cc, select_cc)
 
         # asm
         window.add_widget(main_layout)
@@ -81,39 +81,48 @@ class MainWindow(App):
         content_bottom.add_widget(tracker_pane)
         content_bottom.add_widget(robot_state_pane)
 
-        robot_state_pane.add_widget(robot_state_image_pane)
+        tracker_pane.add_widget(self.camera_pane)
+        robot_state_pane.add_widget(self.robot_state_image_pane)
 
-        robot_state_image_pane.actuator0.pressurize.add_callback(controls.pressurize0)
-        robot_state_image_pane.actuator0.depressurize.add_callback(controls.depressurize0)
+        self.camera_pane.camera_view.add_callback(controls.camera_view)
+        self.camera_pane.tracker_view.add_callback(controls.tracker_view)
 
-        robot_state_image_pane.actuator1.pressurize.add_callback(controls.pressurize1)
-        robot_state_image_pane.actuator1.depressurize.add_callback(controls.depressurize1)
+        self.robot_state_image_pane.actuator0.pressurize.add_callback(controls.pressurize0)
+        self.robot_state_image_pane.actuator0.depressurize.add_callback(controls.depressurize0)
 
-        robot_state_image_pane.actuator2.pressurize.add_callback(controls.pressurize2)
-        robot_state_image_pane.actuator2.depressurize.add_callback(controls.depressurize2)
+        self.robot_state_image_pane.actuator1.pressurize.add_callback(controls.pressurize1)
+        self.robot_state_image_pane.actuator1.depressurize.add_callback(controls.depressurize1)
 
-        robot_state_image_pane.actuator3.pressurize.add_callback(controls.pressurize3)
-        robot_state_image_pane.actuator3.depressurize.add_callback(controls.depressurize3)
+        self.robot_state_image_pane.actuator2.pressurize.add_callback(controls.pressurize2)
+        self.robot_state_image_pane.actuator2.depressurize.add_callback(controls.depressurize2)
 
-        robot_state_image_pane.actuator4.pressurize.add_callback(controls.pressurize4)
-        robot_state_image_pane.actuator4.depressurize.add_callback(controls.depressurize4)
+        self.robot_state_image_pane.actuator3.pressurize.add_callback(controls.pressurize3)
+        self.robot_state_image_pane.actuator3.depressurize.add_callback(controls.depressurize3)
 
-        robot_state_image_pane.actuator5.pressurize.add_callback(controls.pressurize5)
-        robot_state_image_pane.actuator5.depressurize.add_callback(controls.depressurize5)
+        self.robot_state_image_pane.actuator4.pressurize.add_callback(controls.pressurize4)
+        self.robot_state_image_pane.actuator4.depressurize.add_callback(controls.depressurize4)
 
-        robot_state_image_pane.pump.add_callback(controls.pump)
-        robot_state_image_pane.gate.add_callback(controls.gate)
+        self.robot_state_image_pane.actuator5.pressurize.add_callback(controls.pressurize5)
+        self.robot_state_image_pane.actuator5.depressurize.add_callback(controls.depressurize5)
+
+        self.robot_state_image_pane.pump.add_callback(controls.pump)
+        self.robot_state_image_pane.gate.add_callback(controls.gate)
+        self.robot_state_image_pane.sensors.add_callback(controls.sensors)
 
         for i in range(6):
-            robot_state_image_pane.show_pressure(i, 100.4)
+            self.robot_state_image_pane.show_pressure(i, 100.4)
 
-        #Clock.schedule_interval(self._background_tasks, 1/100)
+        Clock.schedule_interval(self._background_tasks, 1/100)
+        controls.app = self
         return window
 
     def _background_tasks(self, dt):
-        pass
+        result, image = cam.read()
+        if (result):
+            self.camera_pane.image.set_image(image)
 
-
+app = MainWindow()
+cam = cv2.VideoCapture(0)
 
 if __name__ == '__main__':
-    MainWindow().run()
+    app.run()

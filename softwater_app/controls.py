@@ -1,96 +1,55 @@
-from tkinter import N
+from app import app
 
-
-NO_RPI = True
-
-if NO_RPI:
-    # don't import stuff that only runs on the rpi
-    pass
-else:
-    # import everything to implement the control functions
-    pass
 
 def pressurize0(pressed):
-    if NO_RPI:
-        print("Pressurize0:", pressed)
-    else:
-        pass
+    print("Pressurize0:", pressed)
+    app.robot_state_image_pane.show_pressure(0, 105.2)
 
 def depressurize0(pressed):
-    if NO_RPI:
-        print("Depressurize0:", pressed)
-    else:
-        pass
+    print("Depressurize0:", pressed)
+    app.robot_state_image_pane.show_pressure(0, 100.2)
 
 def pressurize1(pressed):
-    if NO_RPI:
-        print("Pressurize1:", pressed)
-    else:
-        pass
+    print("Pressurize1:", pressed)
 
 def depressurize1(pressed):
-    if NO_RPI:
-        print("Depressurize1:", pressed)
-    else:
-        pass
+    print("Depressurize1:", pressed)
 
 def pressurize2(pressed):
-    if NO_RPI:
-        print("Pressurize2:", pressed)
-    else:
-        pass
+    print("Pressurize2:", pressed)
 
 def depressurize2(pressed):
-    if NO_RPI:
-        print("Depressurize2:", pressed)
-    else:
-        pass
+    print("Depressurize2:", pressed)
 
 def pressurize3(pressed):
-    if NO_RPI:
-        print("Pressurize3:", pressed)
-    else:
-        pass
+    print("Pressurize3:", pressed)
 
 def depressurize3(pressed):
-    if NO_RPI:
-        print("Depressurize3:", pressed)
-    else:
-        pass
+    print("Depressurize3:", pressed)
 
 def pressurize4(pressed):
-    if NO_RPI:
-        print("Pressurize4:", pressed)
-    else:
-        pass
+    print("Pressurize4:", pressed)
 
 def depressurize4(pressed):
-    if NO_RPI:
-        print("Depressurize4:", pressed)
-    else:
-        pass
-    
+    print("Depressurize4:", pressed)  
 
 def pressurize5(pressed):
-    if NO_RPI:
-        print("Pressurize5:", pressed)
-    else:
-        pass
+    print("Pressurize5:", pressed)
 
 def depressurize5(pressed):
-    if NO_RPI:
-        print("Depressurize5:", pressed)
-    else:
-        pass
+    print("Depressurize5:", pressed)
 
 def pump(pressed):
-    if NO_RPI:
-        print("Pump:", pressed)
-    else:
-        pass
+    print("Pump:", pressed)
 
 def gate(pressed):
-    if NO_RPI:
-        print("Gate:", pressed)
-    else:
-        pass
+    print("Gate:", pressed)
+
+def sensors(pressed):
+    print("Sensors:", pressed)
+
+def camera_view(pressed):
+    print("Camera View:", pressed)
+
+def tracker_view(pressed):
+    print("Tracker View:", pressed)

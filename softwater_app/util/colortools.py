@@ -146,11 +146,11 @@ class CGrad:
 
     def _find_pos(self, pos):
         if pos == POS_TOP_LEFT:
-            return [0, 0]
+            return [0, 1]
         elif pos == POS_TOP_CENTER:
-            return [0.5, 0]
+            return [0.5, 1]
         elif pos == POS_TOP_RIGHT:
-            return [1, 0]
+            return [1, 1]
         elif pos == POS_LEFT:
             return [0, 0.5]
         elif pos == POS_CENTER:
@@ -158,10 +158,10 @@ class CGrad:
         elif pos == POS_RIGHT:
             return [1, 0.5]
         elif pos == POS_BOT_LEFT:
-            return [0, 1]
+            return [0, 0]
         elif pos == POS_BOT_CENTER:
-            return [0.5, 1]
-        return [1, 1]
+            return [0.5, 0]
+        return [1, 0]
 
 
 class Color:
