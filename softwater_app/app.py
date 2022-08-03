@@ -117,12 +117,26 @@ class MainWindow(App):
         return window
 
     def _background_tasks(self, dt):
-        result, image = cam.read()
-        if (result):
-            self.camera_pane.image.set_image(image)
+        camera.capture(cap, format="bgr")
+        self.camera_pane.image.set_image(cap.array)
 
 app = MainWindow()
-cam = cv2.VideoCapture(0)
+
+import picamera
+from picamera.array import PiRGBArray
+
+camera = None
+cap = None
+
+import time
 
 if __name__ == '__main__':
-    app.run()
+
+    camera = picamera.PiCamera()
+    cap = picamera.array.PiRGBArray(camera)
+    time.sleep(2)
+
+    try:
+        app.run()
+    finally:
+        camera.close()

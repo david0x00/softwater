@@ -125,7 +125,7 @@ class CV2Image(Image):
             img_size[0] = int(img_size[0] * self.size[1] / float(img_size[1]))
             img_size[1] = int(self.size[1])
         
-        self.img_size = img_size
+        self.img_size = (img_size[0], img_size[1])
 
         print(crop.shape)
 
