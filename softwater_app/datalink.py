@@ -1,16 +1,7 @@
-from re import L
-import time
-import random
-import threading
 import pickle
 import zmq
-from enum import Enum
-
-class NumberEnum(Enum):
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value < other.value
-        return NotImplemented
+from rate import Rate
+import time
 
 PRIORITY_LOW    = 0
 PRIORITY_MEDIUM = 1
@@ -92,6 +83,7 @@ class DataLink():
         if self._pinging:
             if t - self._ping_start > self.ping_timeout:
                 self._pinging = False
+                self._latency = None
         elif t - self._ping_start > self.ping_time:
             self._pinging = True
             self._ping_start = t
@@ -105,7 +97,7 @@ class DataLink():
                     priority = m['priority']
                     msg = self._send_msgs[i]
 
-            msg = pickle.dumps(msg, protocol=5)
+            msg = pickle.dumps(msg, protocol=4)
             try:
                 self._socket.send(msg, flags=zmq.NOBLOCK)
                 self._send_msgs.pop(i)
@@ -114,15 +106,10 @@ class DataLink():
 
 
 if __name__ == "__main__":
-    d1 = DataLink("Link1", True)
-    d2 = DataLink("Link2", False)
+    d1 = DataLink("Link1", False, host="169.254.11.63")
+    r = Rate(5)
 
-    try:
-        while True:
-            print(d2.latency(string=True))
-            while d2.data_available():
-                print(f"Link 2 received \"{d2.get()['data']}\" from link 1. {d2.latency(string=True)}")
-            d2.update()
-            d1.update()
-    except KeyboardInterrupt as e:
-        pass
+    while True:
+        if r.ready():
+            print(d1.latency(string=True))
+        d1.update()
