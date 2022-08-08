@@ -77,13 +77,11 @@ if __name__=="__main__":
     server.accept()
 
     while True:
-        #start = time.time()
+        start = time.time()
         msg = server.recv_msg()
-        if not msg:
-            print("E")
-        #print(time.time() - start)
+        print(time.time())
         print(msg)
-        #time.sleep(1)
+        time.sleep(1)
 
 
     
