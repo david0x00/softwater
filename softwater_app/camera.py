@@ -63,8 +63,8 @@ class Camera:
         self._lock = threading.Lock()
 
         self._cap = cv2.VideoCapture(cam_id)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        #self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        #self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
         self._lastcap = time.time()
 
@@ -119,3 +119,11 @@ class Camera:
                     self._imgbuf.insert(img)
             rate.sleep()
         self._cap.release()
+
+
+if __name__=="__main__":
+    cap = cv2.VideoCapture(1)
+    ret, image = cap.read()
+    cv2.imshow("meme", image)
+    cv2.waitKey(0)
+    cap.close()

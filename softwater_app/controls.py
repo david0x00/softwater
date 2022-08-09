@@ -2,7 +2,7 @@ from app import app
 import cv2
 from camera import Camera
 
-cam = Camera(1920, 1080)
+cam = Camera(1920, 1080, cam_id=1)
 cam.new_stream()
 cam.start()
 is_camera_view = True
