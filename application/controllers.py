@@ -274,13 +274,45 @@ class SimpleController(Controller):
 
 
 class AMPCController(Controller):
+<<<<<<< Updated upstream
     controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+=======
+    # Original
+    # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+    # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
+    barrier_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_barrier_defaultgoals/controller.pkl"
+    quad_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_quad_defaultgoals/controller.pkl"
+    controller_file = quad_file
+    tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
+>>>>>>> Stashed changes
 
     def __init__(self, robot):
         '''super().__init__(robot)
         with open(self.controller_file, "rb") as f:
             self.controller = pickle.load(f)
+<<<<<<< Updated upstream
         self.system = self.controller.system'''
+=======
+        #************** altering the tune
+        '''
+        with open(self.tuner_file, "rb") as f:
+            self.tune_result = pickle.load(f)
+        config = self.tune_result.inc_cfg
+        config["QuadCostFactory:M2-AR-OUT_R"] = 1
+        config["QuadCostFactory:M2-AR-IN_R"] = 1
+        config["QuadCostFactory:M2-AL-OUT_R"] = 1
+        config["QuadCostFactory:M2-AL-IN_R"] = 1
+        config["QuadCostFactory:M1-AR-OUT_R"] = 1
+        config["QuadCostFactory:M1-AR-IN_R"] = 1
+        config["QuadCostFactory:M1-AL-OUT_R"] = 1
+        config["QuadCostFactory:M1-AL-IN_R"] = 1
+        self.controller.set_config(config)
+        self.controller.reset()
+        '''
+        #****************************************
+
+        self.system = self.controller.system
+>>>>>>> Stashed changes
 
     def prepare(self, targ, data_dir):
         '''super().prepare()
@@ -296,7 +328,7 @@ class AMPCController(Controller):
         self.controller.reset()
 
         # create tajectory for history
-        traj = ampc.zeros(self.system, 1)
+        traj = ampc.Trajectory.zeros(self.system, 1)
         traj[0].obs[:] = self.obs
         # generate the controller state
         # constate = controller.traj_to_state(traj)
@@ -332,7 +364,7 @@ class AMPCController(Controller):
                 #print(elapsed_time)
                 loop_number = proposed_loop_number
                 self.get_observations()
-                self.u = self.controller.run(self.obs)
+                self.u = self.controller.step(self.obs)
                 if not self.check_emergency_stop():
                     self.implement_controls()
                 self.save_control_state(start_time)

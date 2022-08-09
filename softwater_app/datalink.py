@@ -107,7 +107,7 @@ class DataLink():
 
 
 if __name__ == "__main__":
-    d1 = DataLink("Link1", False, host="169.254.11.63")
+    d1 = DataLink("Link1", True)
     r = Rate(5)
 
     while True:
