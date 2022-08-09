@@ -212,6 +212,40 @@ class Controller:
         init_img = self.robot.camera.get_opencv_img()
         self.md = MarkerDetector(init_img, color_threshold)
 
+class ClosedLoopIK(Controller):
+    comb_bmodel = keras.models.load_model("/Volumes/Flash/comb_bmodel/")
+
+    xmin = -15
+    xmax = 15
+    ymin = 0
+    ymax = 40
+
+    pmin = 95
+    pmax = 121
+
+    def rescale(self, p_list):
+        ret = []
+        for p in p_list:
+            ret.append((p * (pmax - pmin)) + pmin)
+        return ret
+
+    def normalize(self, x, y):
+        ret = np.zeros(2)
+        ret[0] = (x - self.xmin) / (self.xmax - self.xmin)
+        ret[1] = (y - self.ymin) / (self.ymax - self.ymin)
+        ret = ret.reshape(1,-1)
+        return ret
+        
+    def calc_pressures(self, x, y):
+        x_in = self.normalize(x, y)
+        comb_pred = self.comb_bmodel.predict(x_in)
+        comb_final = self.rescale(list(comb_pred[0]))
+        return comb_final
+
+    def __init__(self, robot):
+        super().__init__(robot)
+
+
 
 class SimpleController(Controller):
     controller_file = "/home/pi/Desktop/acc40/controllers/simple1_comb.p"
