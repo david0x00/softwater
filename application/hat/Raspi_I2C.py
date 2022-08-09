@@ -63,7 +63,7 @@ class Raspi_I2C(object):
       self.bus.write_byte_data(self.address, reg, value)
       if self.debug:
         print("I2C: Wrote 0x%02X to register 0x%02X" % (value, reg))
-    except(IOError, err):
+    except IOError:
       return self.errMsg()
 
   def write16(self, reg, value):
