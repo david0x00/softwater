@@ -154,35 +154,36 @@ class MainWindow(App):
             os.mkdir("./appdata")
 
         if not os.path.exists("./appdata/settings.json"):
-            self.command_center.frequency_text.set  ("1" )
-            self.command_center.duration_text.set   ("10")
-            settings_pane.brightness.set            (50  )
-            settings_pane.contrast.set              (50  )
-            settings_pane.saturation.set            (50  )
-            settings_pane.exposure.set              (-4  )
-            settings_pane.r_min.set                 (0   )
-            settings_pane.r_max.set                 (255 )
-            settings_pane.g_min.set                 (0   )
-            settings_pane.g_max.set                 (255 )
-            settings_pane.b_min.set                 (0   )
-            settings_pane.b_max.set                 (255 )
+            #self.command_center.frequency_text.set  ("1" )
+            #self.command_center.duration_text.set   ("10")
+            settings = dict({
+                "BRIGHTNESS":   50,
+                "CONTRAST":     50,
+                "SATURATION":   50,
+                "EXPOSURE":     -4,
+                "R MIN":        0,
+                "R MAX":        255,
+                "G MIN":        0,
+                "G MAX":        255,
+                "B MIN":        0,
+                "B MAX":        255
+            })
             
             with open("./appdata/settings.json", "w") as f:
-                json.dump(self.settings, f, indent=4)
-                self.settings = json.load(f)
-        else:
-            with open("./appdata/settings.json", "r") as f:
-                self.settings = json.load(f)
-                settings_pane.brightness.set(self.settings["BRIGHTNESS"])
-                settings_pane.contrast.set(self.settings["CONTRAST"])
-                settings_pane.saturation.set(self.settings["SATURATION"])
-                settings_pane.exposure.set(self.settings["EXPOSURE"])
-                settings_pane.r_min.set(self.settings["R MIN"])
-                settings_pane.r_max.set(self.settings["R MAX"])
-                settings_pane.g_min.set(self.settings["G MIN"])
-                settings_pane.g_max.set(self.settings["G MAX"])
-                settings_pane.b_min.set(self.settings["B MIN"])
-                settings_pane.b_max.set(self.settings["B MAX"])
+                json.dump(settings, f, indent=4)
+        
+        with open("./appdata/settings.json", "r") as f:
+            self.settings = json.load(f)
+            settings_pane.brightness.set(self.settings["BRIGHTNESS"])
+            settings_pane.contrast.set(self.settings["CONTRAST"])
+            settings_pane.saturation.set(self.settings["SATURATION"])
+            settings_pane.exposure.set(self.settings["EXPOSURE"])
+            settings_pane.r_min.set(self.settings["R MIN"])
+            settings_pane.r_max.set(self.settings["R MAX"])
+            settings_pane.g_min.set(self.settings["G MIN"])
+            settings_pane.g_max.set(self.settings["G MAX"])
+            settings_pane.b_min.set(self.settings["B MIN"])
+            settings_pane.b_max.set(self.settings["B MAX"])
         
         return window
     

@@ -1,14 +1,12 @@
 {
-    "FRAME_WIDTH": 640,
-    "FRAME_HEIGHT": 480,
-    "BRIGHTNESS": 62.0,
-    "CONTRAST": 30.0,
-    "SATURATION": 35.0,
-    "EXPOSURE": -5,
-    "R MIN": 40.0,
-    "R MAX": 187.0,
-    "G MIN": 29.0,
-    "G MAX": 226.0,
-    "B MIN": 19.0,
-    "B MAX": 102.0
+    "BRIGHTNESS": 50,
+    "CONTRAST": 50,
+    "SATURATION": 50,
+    "EXPOSURE": -4,
+    "R MIN": 0,
+    "R MAX": 255,
+    "G MIN": 0,
+    "G MAX": 255,
+    "B MIN": 0,
+    "B MAX": 255
 }
