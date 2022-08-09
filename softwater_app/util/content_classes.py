@@ -350,9 +350,9 @@ class CameraPane(BoxLayout):
     def _update_rgb(self, dt):
         rgb = self.image.get_rgb()
         if rgb is not None:
-            self.r.text = str(rgb[0])
-            self.g.text = str(rgb[1])
-            self.b.text = str(rgb[2])
+            self.r.text = str(int(float(str(rgb[0]))))
+            self.g.text = str(int(float(str(rgb[1]))))
+            self.b.text = str(int(float(str(rgb[2]))))
         else:
             self.r.text = "R"
             self.g.text = "G"

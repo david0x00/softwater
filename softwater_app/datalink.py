@@ -90,6 +90,7 @@ class DataLink():
             self._send(None, MSGTYPE_PING, PRIORITY_HIGH)
 
         while len(self._send_msgs) != 0:
+            # send high priority messages first
             priority = PRIORITY_LOW
             for i in range(len(self._send_msgs)):
                 m = self._send_msgs[i]

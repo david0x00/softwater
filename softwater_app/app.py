@@ -202,11 +202,9 @@ class MainWindow(App):
     
     def _update_log_frequency(self, text):
         self.settings["LOG FREQUENCY"] = text
-        print("lel1")
 
     def _update_log_duration(self, text):
         self.settings["LOG DURATION"] = text
-        print("yeye02")
     
     def _adjust_brightness(self, min, value, max):
         controls.change_cam_settings(cv2.CAP_PROP_BRIGHTNESS, value)

@@ -1,8 +1,10 @@
 from app import app
-
 import cv2
+from camera import Camera
 
-cap = cv2.VideoCapture(0)
+cam = Camera(1920, 1080)
+cam.new_stream()
+cam.start()
 is_camera_view = True
 
 def auto_mpc(pressed):
@@ -49,8 +51,8 @@ def tracker_view(pressed):
         is_camera_view = not is_camera_view
 
 def display_image():
-    result, image = cap.read()
-    if not is_camera_view or not result:
+    result, image = cam.get(0)
+    if result and not is_camera_view:
         lower_bound = (app.settings["B MIN"], app.settings["G MIN"], app.settings["R MIN"])
         upper_bound = (app.settings["B MAX"], app.settings["G MAX"], app.settings["R MAX"])
         image = cv2.inRange(image, lower_bound, upper_bound)
@@ -59,7 +61,7 @@ def display_image():
     return result, image
         
 def change_cam_settings(setting, value):
-    cap.set(setting, value)
+    cam.set(setting, value)
 
 def pressurize0(pressed):
     print("Pressurize0:", pressed)
