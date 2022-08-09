@@ -54,7 +54,7 @@ class Acc40Manager:
         run_directory = self.get_run_directory(data_directory)
 
         targ = self.convert_idx(idx)
-it pull origin master --allow-unrelated-histories        self.turn_off()
+        self.turn_off()
         self.ampc_controller.prepare(targ, run_directory)
         self.ampc_controller.run_controller()
         self.ampc_controller.write_imgs(run_directory)
