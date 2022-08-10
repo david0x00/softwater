@@ -1,4 +1,3 @@
-from pickletools import uint8
 import cv2
 import numpy as np
 import time
@@ -64,11 +63,7 @@ class RobotDetector:
 
         mask_blurred = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT)
 
-        cv2.imshow("img2", mask_blurred)
-        cv2.waitKey(1)
-
         keypoints = self.detector.detect(mask_blurred)
-        #print(keypoints)
         return keypoints
 
 
@@ -92,6 +87,6 @@ if __name__ == "__main__":
             img = cv2.resize(img, (1280, 720))
             cv2.imshow("img", img)
             cv2.waitKey(1)
-        #print(link.latency(True))
+        print(link.latency(True))
 
         

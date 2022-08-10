@@ -110,8 +110,6 @@ class DataLink():
             except zmq.error.Again:
                 break
             
-            
-
 
 if __name__ == "__main__":
     import cv2

@@ -1,13 +1,13 @@
 from datalink import DataLink
-import threading
-import queue
 from rate import Rate
 from camera import Camera
+from hardware import WaterRobot
 
 
 
 if __name__ == "__main__":
-    cam = Camera()
+    import time
+    '''cam = Camera()
     cam.start()
     link = DataLink("SoftWaterRobot", True)
     r = Rate(100)
@@ -21,4 +21,10 @@ if __name__ == "__main__":
                 msg = {"image": img}
                 link.send(msg)
                 link.update()
-        r.sleep()
+        r.sleep()'''
+    
+    robot = WaterRobot(4, 8)
+
+    robot.set_pump(True)
+    time.sleep(5)
+    robot.set_pump(False)
