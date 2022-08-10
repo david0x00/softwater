@@ -7,20 +7,16 @@ import time
 
 cam = cv2.VideoCapture("./data/robot_test.mp4")
 
-red_hue = 0
-blue_hue = 115
-hue_error = 4
-
 class RobotDetector:
     def __init__(self):
-        self.dims = (1920, 1080)
-        self.main_color_hue = 0
-        self.main_color_hue_error = 8
-        self.main_color_low_sat = 100
+        self.dims = (1280, 720)
+        self.main_color_hue = 169
+        self.main_color_hue_error = 3
+        self.main_color_low_sat = 40
         self.main_color_high_sat = 255
         self.main_color_low_val = 100
         self.main_color_high_val = 230
-        self.gaussian_blur = (99, 99)
+        self.gaussian_blur = (25, 25)
         params = cv2.SimpleBlobDetector_Params()
         params.filterByColor = True
         params.blobColor = 255
@@ -28,9 +24,9 @@ class RobotDetector:
         params.minCircularity = 0.6
         params.maxCircularity = float('inf')
         params.filterByArea = True
-        params.minArea = 20
+        params.minArea = 100
         params.filterByInertia = True
-        params.minInertiaRatio = 0.4
+        params.minInertiaRatio = 0.2
         params.maxInertiaRatio = float('inf')
         self.detector = cv2.SimpleBlobDetector_create(params)
     
@@ -68,8 +64,8 @@ class RobotDetector:
 
         mask_blurred = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT)
 
-        #cv2.imshow("img2", mask_blurred)
-        #cv2.waitKey(1)
+        cv2.imshow("img2", mask_blurred)
+        cv2.waitKey(1)
 
         keypoints = self.detector.detect(mask_blurred)
         #print(keypoints)
@@ -77,21 +73,25 @@ class RobotDetector:
 
 
 if __name__ == "__main__":
+    from datalink import DataLink
+
+    link = DataLink("Link1", False, "169.254.11.63")
     detector = RobotDetector()
 
     while True:
-        if (cam.query_image()):
-            ret, img = cam.read()
-            if not ret:
-                break
+        link.update()
+        if link.data_available():
+            start = time.time()
+            msg = link.get()
+            img = msg["data"]["image"]
+            keypoints = detector.detect(img)
+            blank = np.zeros((1, 1))
+            
+            img = cv2.drawKeypoints(img, keypoints, blank, (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            
+            img = cv2.resize(img, (1280, 720))
+            cv2.imshow("img", img)
+            cv2.waitKey(1)
+        #print(link.latency(True))
 
-        start = time.time()
-        #img = cv2.resize(img, (1280, 720), cv2.INTER_AREA)
-        keypoints = detector.detect(img)
-        print(time.time() - start)
-
-        blank = np.zeros((1, 1))
-        img = cv2.drawKeypoints(img, keypoints, blank, (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-        cv2.imshow("img", img)
-        cv2.waitKey(1)
+        

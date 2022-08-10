@@ -2,6 +2,7 @@ import pickle
 import zmq
 from rate import Rate
 import time
+import threading
 
 PRIORITY_LOW    = 0
 PRIORITY_MEDIUM = 1
@@ -22,7 +23,7 @@ class DataLink():
         else:
             self._socket.connect(f"tcp://{host}:{str(port)}")
 
-        self.ping_time = 0.5
+        self.ping_time = 1
         self.ping_timeout = 3
 
         self._pinging = False
@@ -66,18 +67,21 @@ class DataLink():
         t = time.perf_counter()
 
         # RECEIVING
-        try:
-            msg = pickle.loads(self._socket.recv(flags=zmq.NOBLOCK))
-            id = msg['type']
-            if id == MSGTYPE_PING:
-                self._send(None, MSGTYPE_REPING, PRIORITY_HIGH)
-            elif id == MSGTYPE_REPING:
-                self._latency = t - self._ping_start
-                self._pinging = False
-            else:
-                self._receive_msgs.append(msg)
-        except zmq.error.Again:
-            pass
+        while True:
+            try:
+                msg = pickle.loads(self._socket.recv(flags=zmq.NOBLOCK))
+                id = msg['type']
+                if id == MSGTYPE_PING:
+                    self._send(None, MSGTYPE_REPING, PRIORITY_HIGH)
+                    
+                elif id == MSGTYPE_REPING:
+                    self._latency = t - self._ping_start
+                    self._pinging = False
+                    
+                else:
+                    self._receive_msgs.append(msg)
+            except zmq.error.Again:
+                break
 
         # SENDING
         if self._pinging:
@@ -94,6 +98,7 @@ class DataLink():
             priority = PRIORITY_LOW
             for i in range(len(self._send_msgs)):
                 m = self._send_msgs[i]
+                
                 if m['priority'] >= priority:
                     priority = m['priority']
                     msg = self._send_msgs[i]
@@ -104,13 +109,20 @@ class DataLink():
                 self._send_msgs.pop(i)
             except zmq.error.Again:
                 break
+            
+            
 
 
 if __name__ == "__main__":
-    d1 = DataLink("Link1", True)
+    import cv2
+    link = DataLink("Link1", False, "169.254.11.63")
     r = Rate(5)
 
     while True:
         if r.ready():
-            print(d1.latency(string=True))
-        d1.update()
+            print(link.latency(string=True))
+        if link.data_available():
+            msg = link.get()
+            cv2.imshow("image", msg["data"]["image"])
+            cv2.waitKey(1)
+        link.update()
