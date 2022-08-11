@@ -17,7 +17,8 @@ class CommandCenter(BoxLayout):
         layout4 = BoxLayout(orientation="horizontal", spacing=40)
 
         robot_status_title_label = ResizableLabel("Robot Status:", 0.4, halign="left")
-        robot_status_label = ResizableLabel("Not Connected", 0.4, halign="right")
+        self.robot_status_label = ResizableLabel("Not Connected", 0.4)
+        self.robot_status_ping = ResizableLabel("", 0.4, halign="right")
         self.log_button = RoundToggleButton("Log", "Log", button_down_cc, button_up_cc)
 
         self.start_button = RoundToggleButton("Start", "Start", button_down_cc, button_up_cc)
@@ -43,7 +44,8 @@ class CommandCenter(BoxLayout):
         layout3_2.add_widget(ResizableLabel("sec", 0.3, size_hint=(0.5, 1)))
 
         layout1.add_widget(robot_status_title_label)
-        layout1.add_widget(robot_status_label)
+        layout1.add_widget(self.robot_status_label)
+        layout1.add_widget(self.robot_status_ping)
         layout3.add_widget(layout3_1)
         layout3.add_widget(layout3_2)
         
@@ -52,6 +54,15 @@ class CommandCenter(BoxLayout):
 
         self.start_button.add_callback(self._start_pressed)
         self.stop_button.add_callback(self._stop_presssed)
+    
+    def set_robot_status(self, connected, ping):
+        if connected:
+            self.robot_status_label.text = "Connected"
+            self.robot_status_label.color = "#00FF00"
+        else:
+            self.robot_status_label.text = "Not Connected"
+            self.robot_status_label.color = "#FF0000"
+        self.robot_status_ping.text = ping
     
     def _start_pressed(self, pressed):
         if (pressed):
@@ -178,6 +189,9 @@ class CameraImageSelector(CV2Image, FloatLayout):
             self.mouse_pos = None
     
     def get_rgb(self):
+        if self.cv2_img is None:
+            return None
+        
         w = float(self.img_size[0])
         h = float(self.img_size[1])
 

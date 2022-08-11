@@ -146,8 +146,8 @@ class MainWindow(App):
         for i in range(6):
             self.robot_state_image_pane.show_pressure(i, 100.4)
 
-        Clock.schedule_interval(self._refresh_image, 1/30)
-        Clock.schedule_interval(self._background_tasks, 1/100)
+        Clock.schedule_interval(self._background_tasks, 1/30)
+        Clock.schedule_interval(controls.main_callback, 1/100)
         controls.app = self
 
         if not os.path.exists("./appdata"):
@@ -242,12 +242,10 @@ class MainWindow(App):
         self.settings["B MAX"] = value
 
     def _background_tasks(self, dt):
-        self.camera_pane.image.get_rgb()
-
-    def _refresh_image(self, dt):
         result, image = controls.display_image()
         if (result):
             self.camera_pane.image.set_image(image)
+        self.camera_pane.image.get_rgb()
 
 app = MainWindow()
 

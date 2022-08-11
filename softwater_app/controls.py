@@ -1,11 +1,44 @@
+from operator import is_
+from re import L
 from app import app
 import cv2
 from camera import Camera
+from datalink import DataLink
+from detect import RobotDetector
+import numpy as np
+from rate import Rate
 
-cam = Camera(1920, 1080, cam_id=1)
-cam.new_stream()
-cam.start()
 is_camera_view = True
+link = DataLink("App", False, "169.254.11.63")
+detector = RobotDetector()
+
+camera_image = None
+tracker_image = None
+pvalues = [0, 0, 0, 0, 0, 0]
+
+ask_rate = Rate(10)
+
+def main_callback(dt):
+    global camera_image, tracker_image, pvalues
+
+    link.update()
+
+    app.command_center.set_robot_status(link.connected(), link.latency(string=True))
+
+    if link.connected():
+        if ask_rate.ready():
+            link.send({'command': {'get keyframe': None}})
+
+    if link.data_available():
+        msg = link.get()['data']
+        if 'data' in msg.keys():
+            data = msg['data']
+            if 'keyframe' in data['keys']:
+                img, pvalues = msg['keyframe']
+                keypoints, tracker_image = detector.detect(img)
+                camera_image = cv2.drawKeypoints(img, keypoints, np.zeros((1, 1)), (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+    link.update()
 
 def auto_mpc(pressed):
     print("Auto MPC:", pressed)
@@ -39,29 +72,28 @@ def stop_experiment(pressed):
     print("Stop Experiment: ", pressed)
 
 def camera_view(pressed):
+    global is_camera_view
     print("Camera View:", pressed)
     if (pressed):
-        global is_camera_view
         is_camera_view = not is_camera_view
 
 def tracker_view(pressed):
+    global is_camera_view
     print("Tracker View:", pressed)
     if (pressed):
-        global is_camera_view
         is_camera_view = not is_camera_view
 
 def display_image():
-    result, image = cam.get(0)
-    if result and not is_camera_view:
-        lower_bound = (app.settings["B MIN"], app.settings["G MIN"], app.settings["R MIN"])
-        upper_bound = (app.settings["B MAX"], app.settings["G MAX"], app.settings["R MAX"])
-        image = cv2.inRange(image, lower_bound, upper_bound)
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-
-    return result, image
+    if is_camera_view:
+        if camera_image is not None:
+            return True, camera_image
+    else:
+        if tracker_image is not None:
+            return True, cv2.cvtColor(tracker_image, cv2.COLOR_GRAY2BGR)
+    return False, None
         
 def change_cam_settings(setting, value):
-    cam.set(setting, value)
+    pass
 
 def pressurize0(pressed):
     print("Pressurize0:", pressed)
@@ -103,6 +135,8 @@ def depressurize5(pressed):
 
 def pump(pressed):
     print("Pump:", pressed)
+    if link.connected():
+        link.send({'command': {''}})
 
 def gate(pressed):
     print("Gate:", pressed)

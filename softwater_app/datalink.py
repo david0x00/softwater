@@ -34,6 +34,9 @@ class DataLink():
 
         self._send_msgs = []
         self._receive_msgs = []
+    
+    def connected(self):
+        return self._latency is not None
 
     def latency(self, string=False):
         if string:

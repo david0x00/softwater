@@ -1,10 +1,4 @@
 import cv2
-import numpy as np
-import time
-
-#input_image_path = "./data/test5.jpg"
-
-cam = cv2.VideoCapture("./data/robot_test.mp4")
 
 class RobotDetector:
     def __init__(self):
@@ -64,29 +58,48 @@ class RobotDetector:
         mask_blurred = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT)
 
         keypoints = self.detector.detect(mask_blurred)
-        return keypoints
+        return keypoints, mask_blurred
 
 
 if __name__ == "__main__":
     from datalink import DataLink
+    from rate import Rate
+    import time
+    import numpy as np
 
     link = DataLink("Link1", False, "169.254.11.63")
     detector = RobotDetector()
 
+    start = time.time()
+
+    main_rate = Rate(200)
+    ask_rate = Rate(30)
+
+    back = True
+
+    link.send({'command': 'get keyframe'})
+
     while True:
         link.update()
+
         if link.data_available():
-            start = time.time()
-            msg = link.get()
-            img = msg["data"]["image"]
-            keypoints = detector.detect(img)
-            blank = np.zeros((1, 1))
-            
-            img = cv2.drawKeypoints(img, keypoints, blank, (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            
-            img = cv2.resize(img, (1280, 720))
-            cv2.imshow("img", img)
-            cv2.waitKey(1)
-        print(link.latency(True))
+            msg = link.get()['data']
+            if 'keyframe' in msg.keys():
+                link.send({'command': 'get keyframe'})
+                print((time.time() - start) * 1000)
+                start = time.time()
+                img, values = msg['keyframe']
+                keypoints = detector.detect(img)
+                blank = np.zeros((1, 1))
+                
+                img = cv2.drawKeypoints(img, keypoints, blank, (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                
+                img = cv2.resize(img, (1280, 720))
+                cv2.imshow("img", img)
+                cv2.waitKey(1)
+                
+        
+        main_rate.sleep()
+        
 
         
