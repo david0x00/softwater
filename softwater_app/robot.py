@@ -10,7 +10,6 @@ if __name__ == "__main__":
     camera = Camera()
     camera.start()
     link = DataLink("SoftWaterRobot", True)
-    main_rate = Rate(100)    
     robot = WaterRobot(4, 8)
 
     while True:
@@ -23,7 +22,7 @@ if __name__ == "__main__":
                         break
                 if 'get keyframe' in cmd.keys():
                     start = time.time()
-                    #robot.read_sensors()
+                    robot.read_sensors()
                     sens = (time.time() - start) * 1000
                     img = None
                     while img is None:
@@ -33,9 +32,12 @@ if __name__ == "__main__":
                     link.send(msg)
                     total = (time.time() - start) * 1000
                     print(sens, get_img, total)
+                if 'pump' in cmd.keys():
+                    robot.set_pump(cmd['pump'])
+                if 'gate' in cmd.keys():
+                    robot.set_gate_valve(cmd['gate'])
 
         link.update()
-        #main_rate.sleep()
     
     link.send({'status': 'stopped'})
     

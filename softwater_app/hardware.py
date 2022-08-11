@@ -84,14 +84,9 @@ class PressureSensor(threading.Thread):
         self.timer = frequency
         self.hardware_mapper = hardware_mapper
         self.num_of_tries = 5
-        self.update_rate = Rate(20)
-        self.pressure = 0
 
     def run(self):
-        while not self.to_exit:
-            self.pressure = self.read_sensor()
-            self.update_rate.sleep()
-            print(self.id)
+        pass
 
     def read_sensor(self):
         if self.hardware_mapper is not None:
@@ -212,7 +207,6 @@ class WaterRobot(threading.Thread):
 
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000, hardware_mapper=self.hardware_mapper)
-            sensor.start()
             self.pressure_sensors.append(sensor)
             self.values.append(0)
         for j in range(0, numActuators):
@@ -257,7 +251,7 @@ class WaterRobot(threading.Thread):
         self.pump_and_gate.switchGateValve()
 
     def __read_sensor(self, id):
-        self.values[id] = round(self.pressure_sensors[id].pressure, 3)
+        self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
 
     def read_sensor(self, id: int):
         if (id < len(self.pressure_sensors) and id >= 0):
