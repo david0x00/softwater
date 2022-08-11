@@ -2,29 +2,40 @@ from datalink import DataLink
 from rate import Rate
 from camera import Camera
 from hardware import WaterRobot
+import time
 
 
 
 if __name__ == "__main__":
-    import time
-    '''cam = Camera()
-    cam.start()
+    camera = Camera()
+    camera.start()
     link = DataLink("SoftWaterRobot", True)
-    r = Rate(100)
-    img_send_rate = Rate(20)
-
-    while True:
-        #ret, img = cap.read()
-        if img_send_rate.ready():
-            img = cam.get()
-            if img is not None:
-                msg = {"image": img}
-                link.send(msg)
-                link.update()
-        r.sleep()'''
-    
+    main_rate = Rate(100)    
     robot = WaterRobot(4, 8)
 
-    robot.set_pump(True)
-    time.sleep(5)
-    robot.set_pump(False)
+    while True:
+        if link.data_available():
+            msg = link.get()['data']
+            if 'command' in msg.keys():
+                if msg['command'] == 'stop':
+                    break
+                if msg['command'] == 'get keyframe':
+                    start = time.time()
+                    robot.read_sensors()
+                    sens = (time.time() - start) * 1000
+                    img = None
+                    while img is None:
+                        img = camera.get()
+                    get_img = (time.time() - start) * 1000 - sens
+                    msg = {'keyframe': (img, robot.values)}
+                    link.send(msg)
+                    total = (time.time() - start) * 1000
+                    print(sens, get_img, total)
+
+        link.update()
+        #main_rate.sleep()
+    
+    link.send({'status': 'stopped'})
+    
+    robot.stop()
+    camera.stop()
