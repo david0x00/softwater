@@ -6,23 +6,27 @@ from rate import Rate
 import board
 import busio
 
-i2c = busio.I2C(board.SCL, board.SDA)
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.analog_in import AnalogIn
+try:
+    i2c = busio.I2C(board.SCL, board.SDA)
+    import adafruit_ads1x15.ads1115 as ADS
+    from adafruit_ads1x15.analog_in import AnalogIn
 
-ads_0 = ADS.ADS1115(i2c, address=0x48)
-ads_1 = ADS.ADS1115(i2c, address=0x49)
+    ads_0 = ADS.ADS1115(i2c, address=0x48)
+    ads_1 = ADS.ADS1115(i2c, address=0x49)
 
-from adafruit_mcp230xx.mcp23008 import MCP23008
+    from adafruit_mcp230xx.mcp23008 import MCP23008
 
-mcp_0 = MCP23008(i2c, address=0x20)
-mcp_1 = MCP23008(i2c, address=0x21)
+    mcp_0 = MCP23008(i2c, address=0x20)
+    mcp_1 = MCP23008(i2c, address=0x21)
 
-from hat.Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
+    from hat.Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 
-mh = Raspi_MotorHAT(addr=0x6f)
-pump = mh.getMotor(1)
-gate_valve = mh.getMotor(2)
+    mh = Raspi_MotorHAT(addr=0x6f)
+    pump = mh.getMotor(1)
+    gate_valve = mh.getMotor(2)
+except:
+    print("Robot not detected...")
+    quit()
 
 
 class PumpAndGate(threading.Thread):
@@ -163,7 +167,7 @@ class Actuator(threading.Thread):
         self.hardware_mapper = hardware_mapper
 
     def run(self):
-        print()
+        pass
     
     def set_val(self, val):
         if val == False:
