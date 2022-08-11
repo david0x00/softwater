@@ -29,7 +29,7 @@ if __name__ == "__main__":
                     while img is None:
                         img = camera.get()
                     get_img = (time.time() - start) * 1000 - sens
-                    msg = {'keyframe': (img, robot.values)}
+                    msg = {'data': {'keyframe': (img, robot.values)}}
                     link.send(msg)
                     total = (time.time() - start) * 1000
                     print(sens, get_img, total)
