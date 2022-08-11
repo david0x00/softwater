@@ -35,9 +35,10 @@ def main_callback(dt):
             data = msg['data']
             if 'keyframe' in data.keys():
                 img, pvalues = data['keyframe']
-                print(pvalues)
                 keypoints, tracker_image = detector.detect(img)
-                camera_image = cv2.drawKeypoints(img, keypoints, np.zeros((1, 1)), (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+                camera_image = img
+                for sensor in range(len(pvalues)):
+                    app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
 
     link.update()
 
@@ -74,13 +75,11 @@ def stop_experiment(pressed):
 
 def camera_view(pressed):
     global is_camera_view
-    print("Camera View:", pressed)
     if (pressed):
         is_camera_view = not is_camera_view
 
 def tracker_view(pressed):
     global is_camera_view
-    print("Tracker View:", pressed)
     if (pressed):
         is_camera_view = not is_camera_view
 
@@ -90,57 +89,20 @@ def display_image():
             return True, camera_image
     else:
         if tracker_image is not None:
-            return True, cv2.cvtColor(tracker_image, cv2.COLOR_GRAY2BGR)
+            return True, tracker_image
     return False, None
         
 def change_cam_settings(setting, value):
-    pass
+    link.send({'command': {'cam setting': (setting, value)}})
 
-def pressurize0(pressed):
-    print("Pressurize0:", pressed)
-    app.robot_state_image_pane.show_pressure(0, 105.2)
+def pressurize(id, pressed):
+    link.send({'command': {'pressurize': (id, pressed)}})
 
-def depressurize0(pressed):
-    print("Depressurize0:", pressed)
-    app.robot_state_image_pane.show_pressure(0, 100.2)
-
-def pressurize1(pressed):
-    print("Pressurize1:", pressed)
-
-def depressurize1(pressed):
-    print("Depressurize1:", pressed)
-
-def pressurize2(pressed):
-    print("Pressurize2:", pressed)
-
-def depressurize2(pressed):
-    print("Depressurize2:", pressed)
-
-def pressurize3(pressed):
-    print("Pressurize3:", pressed)
-
-def depressurize3(pressed):
-    print("Depressurize3:", pressed)
-
-def pressurize4(pressed):
-    print("Pressurize4:", pressed)
-
-def depressurize4(pressed):
-    print("Depressurize4:", pressed)  
-
-def pressurize5(pressed):
-    print("Pressurize5:", pressed)
-
-def depressurize5(pressed):
-    print("Depressurize5:", pressed)
+def depressurize(id, pressed):
+    link.send({'command': {'depressurize': (id, pressed)}})
 
 def pump(pressed):
-    print("Pump:", pressed)
-    if link.connected():
-        link.send({'command': {''}})
+    link.send({'command': {'pump': pressed}})
 
 def gate(pressed):
-    print("Gate:", pressed)
-
-def sensors(pressed):
-    print("Sensors:", pressed)
+    link.send({'command': {'gate': pressed}})

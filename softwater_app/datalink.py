@@ -46,7 +46,10 @@ class DataLink():
         return self._latency
 
     def send(self, data, priority=PRIORITY_LOW):
+        if not self.connected():
+            return False
         self._send(data, MSGTYPE_USER, priority)
+        return True
         
     def _send(self, data, msg_type, priority):
         self._send_msgs.append({

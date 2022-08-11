@@ -1,10 +1,11 @@
 import cv2
+import numpy as np
 
 class RobotDetector:
     def __init__(self):
         self.dims = (1280, 720)
-        self.main_color_hue = 169
-        self.main_color_hue_error = 3
+        self.main_color_hue = 168
+        self.main_color_hue_error = 2
         self.main_color_low_sat = 40
         self.main_color_high_sat = 255
         self.main_color_low_val = 100
@@ -58,14 +59,14 @@ class RobotDetector:
         mask_blurred = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT)
 
         keypoints = self.detector.detect(mask_blurred)
-        return keypoints, mask_blurred
+        detection = cv2.drawKeypoints(mask_blurred, keypoints, np.zeros((1, 1)), (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        return keypoints, detection
 
 
 if __name__ == "__main__":
     from datalink import DataLink
     from rate import Rate
     import time
-    import numpy as np
 
     link = DataLink("Link1", False, "169.254.11.63")
     detector = RobotDetector()
@@ -89,7 +90,7 @@ if __name__ == "__main__":
                 print((time.time() - start) * 1000)
                 start = time.time()
                 img, values = msg['keyframe']
-                keypoints = detector.detect(img)
+                keypoints, _ = detector.detect(img)
                 blank = np.zeros((1, 1))
                 
                 img = cv2.drawKeypoints(img, keypoints, blank, (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)

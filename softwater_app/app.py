@@ -2,9 +2,7 @@ from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
-
 from kivy.app import App
-from kivy.uix.popup import Popup
 
 import os
 import cv2
@@ -57,7 +55,7 @@ class MainWindow(App):
         controller_select_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(2, 1))
         self.command_center_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
         tracker_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
-        self.robot_state_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(1.5, 1))
+        self.robot_state_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(1.2, 1))
 
         controller_select = ControlSelector(button_up_cc, button_down_cc)
 
@@ -110,32 +108,30 @@ class MainWindow(App):
         self.camera_pane.camera_view.add_callback(controls.camera_view)
         self.camera_pane.tracker_view.add_callback(controls.tracker_view)
 
-        self.robot_state_image_pane.actuator0.pressurize.add_callback(controls.pressurize0)
-        self.robot_state_image_pane.actuator0.depressurize.add_callback(controls.depressurize0)
+        self.robot_state_image_pane.actuator0.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator0.add_depressurize_callback(controls.depressurize)
 
-        self.robot_state_image_pane.actuator1.pressurize.add_callback(controls.pressurize1)
-        self.robot_state_image_pane.actuator1.depressurize.add_callback(controls.depressurize1)
+        self.robot_state_image_pane.actuator1.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator1.add_depressurize_callback(controls.depressurize)
 
-        self.robot_state_image_pane.actuator2.pressurize.add_callback(controls.pressurize2)
-        self.robot_state_image_pane.actuator2.depressurize.add_callback(controls.depressurize2)
+        self.robot_state_image_pane.actuator2.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator2.add_depressurize_callback(controls.depressurize)
 
-        self.robot_state_image_pane.actuator3.pressurize.add_callback(controls.pressurize3)
-        self.robot_state_image_pane.actuator3.depressurize.add_callback(controls.depressurize3)
+        self.robot_state_image_pane.actuator3.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator3.add_depressurize_callback(controls.depressurize)
 
-        self.robot_state_image_pane.actuator4.pressurize.add_callback(controls.pressurize4)
-        self.robot_state_image_pane.actuator4.depressurize.add_callback(controls.depressurize4)
+        self.robot_state_image_pane.actuator4.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator4.add_depressurize_callback(controls.depressurize)
 
-        self.robot_state_image_pane.actuator5.pressurize.add_callback(controls.pressurize5)
-        self.robot_state_image_pane.actuator5.depressurize.add_callback(controls.depressurize5)
+        self.robot_state_image_pane.actuator5.add_pressurize_callback(controls.pressurize)
+        self.robot_state_image_pane.actuator5.add_depressurize_callback(controls.depressurize)
 
         self.robot_state_image_pane.pump.add_callback(controls.pump)
         self.robot_state_image_pane.gate.add_callback(controls.gate)
-        self.robot_state_image_pane.sensors.add_callback(controls.sensors)
 
         settings_pane.brightness.add_callback(self._adjust_brightness)
         settings_pane.contrast.add_callback(self._adjust_contrast)
         settings_pane.saturation.add_callback(self._adjust_saturation)
-        settings_pane.exposure.add_callback(self._adjust_exposure)
         settings_pane.r_min.add_callback(self._adjust_r_min)
         settings_pane.r_max.add_callback(self._adjust_r_max)
         settings_pane.g_min.add_callback(self._adjust_g_min)
@@ -158,9 +154,8 @@ class MainWindow(App):
             #self.command_center.duration_text.set   ("10")
             settings = dict({
                 "BRIGHTNESS":   50,
-                "CONTRAST":     50,
-                "SATURATION":   50,
-                "EXPOSURE":     -4,
+                "CONTRAST":     0,
+                "SATURATION":   0,
                 "R MIN":        0,
                 "R MAX":        255,
                 "G MIN":        0,
@@ -177,7 +172,6 @@ class MainWindow(App):
             settings_pane.brightness.set(self.settings["BRIGHTNESS"])
             settings_pane.contrast.set(self.settings["CONTRAST"])
             settings_pane.saturation.set(self.settings["SATURATION"])
-            settings_pane.exposure.set(self.settings["EXPOSURE"])
             settings_pane.r_min.set(self.settings["R MIN"])
             settings_pane.r_max.set(self.settings["R MAX"])
             settings_pane.g_min.set(self.settings["G MIN"])
@@ -219,10 +213,6 @@ class MainWindow(App):
         controls.change_cam_settings(cv2.CAP_PROP_SATURATION, value)
         self.settings["SATURATION"] = value
     
-    def _adjust_exposure(self, min, value, max):
-        controls.change_cam_settings(cv2.CAP_PROP_EXPOSURE, value)
-        self.settings["EXPOSURE"] = value
-    
     def _adjust_r_min(self, min, value, max):
         self.settings["R MIN"] = value
     
@@ -245,7 +235,7 @@ class MainWindow(App):
         result, image = controls.display_image()
         if (result):
             self.camera_pane.image.set_image(image)
-        self.camera_pane.image.get_rgb()
+        #self.camera_pane.image.get_hsv()
 
 app = MainWindow()
 

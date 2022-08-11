@@ -201,7 +201,6 @@ class WaterRobot(threading.Thread):
     actuators = []
     to_exit = False
     values = []
-    actuator_command_queue = queue.Queue()
 
     def __init__(self, numSensors, numActuators):
         threading.Thread.__init__(self)
@@ -266,13 +265,6 @@ class WaterRobot(threading.Thread):
     def read_sensors(self):
         for i in range(len(self.pressure_sensors)):
             self.read_sensor(i)
-
-    def __actuate_solenoid(self, id):
-        for i in range(5):
-            try:
-                self.actuators[id].switch()
-            except OSError:
-                print("try actuator: " + str(i))
     
     def set_solenoid(self, id, val):
         self.actuators[id].set_val(val)
@@ -283,16 +275,5 @@ class WaterRobot(threading.Thread):
     def set_pump(self, val):
         self.pump_and_gate.set_pump(val)
 
-    def actuate_solenoid(self, id: int):
-        if (id < len(self.actuators) and id >= 0):
-            self.__actuate_solenoid(id)
-    
-    def runActuatorCommands(self):
-        while not self.actuator_command_queue.empty():
-            self.actuator_command_queue.get()()
-
     def run(self):
-        while (self.to_exit == False):
-            self.runActuatorCommands()
-        
-        self.actuator_command_queue = queue.Queue()
+        pass

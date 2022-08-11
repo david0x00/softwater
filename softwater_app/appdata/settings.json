@@ -1,8 +1,7 @@
 {
     "BRIGHTNESS": 50,
-    "CONTRAST": 50,
-    "SATURATION": 50,
-    "EXPOSURE": -4,
+    "CONTRAST": 0,
+    "SATURATION": 0,
     "R MIN": 0,
     "R MAX": 255,
     "G MIN": 0,

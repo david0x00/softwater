@@ -1,6 +1,7 @@
-from turtle import pos
 from kivy.clock import Clock
 from util.helpful_kivy_classes import *
+import cv2
+import numpy as np
 
 
 class CommandCenter(BoxLayout):
@@ -188,7 +189,7 @@ class CameraImageSelector(CV2Image, FloatLayout):
         else:
             self.mouse_pos = None
     
-    def get_rgb(self):
+    def get_hsv(self):
         if self.cv2_img is None:
             return None
         
@@ -214,7 +215,10 @@ class CameraImageSelector(CV2Image, FloatLayout):
             return None
 
         bgr = self.cv2_img[y, x]
-        return (bgr[2], bgr[1], bgr[0])
+        pxl = np.zeros((1, 1, 3), dtype=np.uint8)
+        pxl[0, 0] = bgr
+        hsv = cv2.cvtColor(pxl, cv2.COLOR_BGR2HSV)
+        return hsv[0, 0]
 
     def on_touch_up(self, touch):
         if (self.selecting):
@@ -311,9 +315,9 @@ class CameraPane(BoxLayout):
         self.tracker_view = RoundToggleButton("Tracker", "Tracker", button_down_cc, button_up_cc)
         self.reset = RoundToggleButton("Reset", "Reset", button_down_cc, button_up_cc)
         self.rgb_layout = BoxLayout(orientation="horizontal", size_hint=(1, 1))
-        self.r = ResizableLabel("R", 0.3)
-        self.g = ResizableLabel("G", 0.3)
-        self.b = ResizableLabel("B", 0.3)
+        self.r = ResizableLabel("H", 0.3)
+        self.g = ResizableLabel("S", 0.3)
+        self.b = ResizableLabel("V", 0.3)
 
         self.add_widget(self.button_layout)
         self.add_widget(self.image)
@@ -337,7 +341,7 @@ class CameraPane(BoxLayout):
         self.camera_view.state = "down"
 
         self.bind(size=self.update, pos=self.update)
-        Clock.schedule_interval(self._update_rgb, 1/4)
+        Clock.schedule_interval(self._update_hsv, 1/4)
     
     def _camera_view_pressed(self, pressed):
         self.camera_view_pressed = pressed
@@ -361,20 +365,22 @@ class CameraPane(BoxLayout):
         self.g.font_size = self.g.size[1] / 2
         self.b.font_size = self.b.size[1] / 2
     
-    def _update_rgb(self, dt):
-        rgb = self.image.get_rgb()
+    def _update_hsv(self, dt):
+        rgb = self.image.get_hsv()
         if rgb is not None:
             self.r.text = str(int(float(str(rgb[0]))))
             self.g.text = str(int(float(str(rgb[1]))))
             self.b.text = str(int(float(str(rgb[2]))))
         else:
-            self.r.text = "R"
-            self.g.text = "G"
-            self.b.text = "B"
+            self.r.text = "H"
+            self.g.text = "S"
+            self.b.text = "V"
 
 class RobotImageBoxButtons(BoxLayout):
-    def __init__(self, p_img, p_off_img, dp_img, dp_off_img):
+    def __init__(self, id, p_img, p_off_img, dp_img, dp_off_img):
         super(RobotImageBoxButtons, self).__init__()
+
+        self.id = id
 
         self.size_hint=(None, None)
         self.orientation = "horizontal"
@@ -392,22 +398,35 @@ class RobotImageBoxButtons(BoxLayout):
         self.add_widget(self.pressurize)
         self.add_widget(self.pressure)
         self.add_widget(self.depressurize)
+
+        self._pressurize_callbacks = []
+        self._depressurize_callbacks = []
     
     def on_size(self, *args):
         self.pressurize.width = self.size[1]
         self.pressure.width = self.size[0] - 2 * self.size[1]
         self.pressure.font_size = self.size[1] / 2.5
         self.depressurize.width = self.size[1]
+
+    def add_pressurize_callback(self, func):
+        self._pressurize_callbacks.append(func)
+    
+    def add_depressurize_callback(self, func):
+        self._depressurize_callbacks.append(func)
     
     def _pressurize_pressed(self, pressed):
         self.pressurize_pressed = pressed
         if (self._exclusive_check()):
             self.depressurize.on_press()
+        for func in self._pressurize_callbacks:
+            func(self.id, pressed)
     
     def _depressurize_pressed(self, pressed):
         self.depressurize_pressed = pressed
         if (self._exclusive_check()):
             self.pressurize.on_press()
+        for func in self._depressurize_callbacks:
+            func(self.id, pressed)
     
     def _exclusive_check(self):
         return self.pressurize_pressed and self.depressurize_pressed
@@ -421,28 +440,26 @@ class RobotImagePane(BoxLayout):
         self.orientation = "horizontal"
         self.padding = 10
 
-        self.button_layout = BoxLayout(orientation="vertical", size_hint=(0.25, 0.7), pos_hint={"x": 0, "center_y": 0.5}, spacing=10)
+        self.button_layout = BoxLayout(orientation="vertical", size_hint=(0.25, 0.5), pos_hint={"x": 0, "center_y": 0.5}, spacing=10)
         self.robot_layout = FloatLayout()
 
         self.robot_image = ImagePane(robot_image)
 
-        self.pump = RoundToggleButton("Pump (on)", "Pump (off)", button_down_cc, button_up_cc)
-        self.gate = RoundToggleButton("Gate (open)", "Gate (closed)", button_down_cc, button_up_cc)
-        self.sensors = RoundToggleButton("Sensors (on)", "Sensors (off)", button_down_cc, button_up_cc)
+        self.pump = RoundToggleButton("Pump", "Pump", button_down_cc, button_up_cc)
+        self.gate = RoundToggleButton("Gate", "Gate", button_down_cc, button_up_cc)
 
-        self.actuator0 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
-        self.actuator1 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
-        self.actuator2 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
-        self.actuator3 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
-        self.actuator4 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
-        self.actuator5 = RobotImageBoxButtons(p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator0 = RobotImageBoxButtons(0, p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator1 = RobotImageBoxButtons(1, p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator2 = RobotImageBoxButtons(2, p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator3 = RobotImageBoxButtons(3, p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator4 = RobotImageBoxButtons(4, p_img, p_off_img, dp_img, dp_off_img)
+        self.actuator5 = RobotImageBoxButtons(5, p_img, p_off_img, dp_img, dp_off_img)
 
         self.add_widget(self.button_layout)
         self.add_widget(self.robot_layout)
 
         self.button_layout.add_widget(self.pump)
         self.button_layout.add_widget(self.gate)
-        self.button_layout.add_widget(self.sensors)
 
         self.robot_layout.add_widget(self.robot_image)
         self.robot_layout.add_widget(self.actuator0)
