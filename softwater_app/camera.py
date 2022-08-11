@@ -22,7 +22,7 @@ class Camera:
         self._thread.join()
     
     def set(self, setting, value):
-        self.camera.set(setting, value)
+        self._camera.set(setting, value)
 
     def get(self, latest=True):
         img = None
