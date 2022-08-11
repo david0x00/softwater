@@ -262,6 +262,10 @@ class WaterRobot(threading.Thread):
     def read_sensor(self, id: int):
         if (id < len(self.pressure_sensors) and id >= 0):
             self.__read_sensor(id)
+    
+    def read_sensors(self):
+        for i in range(len(self.pressure_sensors)):
+            self.read_sensor(i)
 
     def __actuate_solenoid(self, id):
         for i in range(5):
