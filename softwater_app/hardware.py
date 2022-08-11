@@ -1,13 +1,7 @@
-import csv
-import os
 import threading
-import time
 import random
-import math
-import datetime
 import queue
-import numpy as np
-from functools import partial
+from rate import Rate
 
 import board
 import busio
@@ -90,22 +84,25 @@ class PressureSensor(threading.Thread):
         self.timer = frequency
         self.hardware_mapper = hardware_mapper
         self.num_of_tries = 5
+        self.update_rate = Rate(20)
+        self.pressure = 0
 
     def run(self):
-        pass
+        while not self.to_exit:
+            self.read_sensor()
+            self.update_rate.sleep()
 
     def read_sensor(self):
         if self.hardware_mapper is not None:
-            #print("Sensor " + str(self.id) + "reads: " + str(self.hardware_mapper.readSensor(self.id)))
             for i in range(self.num_of_tries):
                 try:
-                    return self.hardware_mapper.readSensor(self.id)
+                    self.pressure = self.hardware_mapper.readSensor(self.id)
+                    return self.pressure
                 except OSError:
                     print("try: " + str(i))
             return -1
         else:
             randomnum = random.uniform(0, 10)
-            #print("Sensor " + str(self.id) + "reads: " + str(randomnum))
             return randomnum
 
     def getID(self):
@@ -248,6 +245,8 @@ class WaterRobot(threading.Thread):
 
     def stop(self):
         print("Sensor Shutdown")
+        for sensor in self.pressure_sensors:
+            sensor.terminate()
         self.to_exit = True
     
     def switchPump(self):
@@ -257,7 +256,7 @@ class WaterRobot(threading.Thread):
         self.pump_and_gate.switchGateValve()
 
     def __read_sensor(self, id):
-        self.values[id] = round(self.pressure_sensors[id].read_sensor(), 3)
+        self.values[id] = round(self.pressure_sensors[id].pressure, 3)
 
     def read_sensor(self, id: int):
         if (id < len(self.pressure_sensors) and id >= 0):

@@ -33,8 +33,8 @@ def main_callback(dt):
         msg = link.get()['data']
         if 'data' in msg.keys():
             data = msg['data']
-            if 'keyframe' in data['keys']:
-                img, pvalues = msg['keyframe']
+            if 'keyframe' in data.keys():
+                img, pvalues = data['keyframe']
                 keypoints, tracker_image = detector.detect(img)
                 camera_image = cv2.drawKeypoints(img, keypoints, np.zeros((1, 1)), (0, 255, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
