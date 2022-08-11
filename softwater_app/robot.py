@@ -17,11 +17,13 @@ if __name__ == "__main__":
         if link.data_available():
             msg = link.get()['data']
             if 'command' in msg.keys():
-                if msg['command'] == 'stop':
-                    break
-                if msg['command'] == 'get keyframe':
+                cmd = msg['command']
+                if 'running' in cmd.keys():
+                    if not cmd['running']:
+                        break
+                if 'get keyframe' in cmd.keys():
                     start = time.time()
-                    robot.read_sensors()
+                    #robot.read_sensors()
                     sens = (time.time() - start) * 1000
                     img = None
                     while img is None:

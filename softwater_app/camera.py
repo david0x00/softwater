@@ -11,7 +11,7 @@ class Camera:
         self._framerate = framerate
         self._running = False
         self._thread = threading.Thread(target=self._capture)
-        self._queue = queue.Queue()
+        self._queue = queue.Queue(10)
     
     def start(self):
         self._running = True
