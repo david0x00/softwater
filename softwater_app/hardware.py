@@ -89,15 +89,15 @@ class PressureSensor(threading.Thread):
 
     def run(self):
         while not self.to_exit:
-            self.read_sensor()
+            self.pressure = self.read_sensor()
             self.update_rate.sleep()
+            print(self.id)
 
     def read_sensor(self):
         if self.hardware_mapper is not None:
             for i in range(self.num_of_tries):
                 try:
-                    self.pressure = self.hardware_mapper.readSensor(self.id)
-                    return self.pressure
+                    return self.hardware_mapper.readSensor(self.id)
                 except OSError:
                     print("try: " + str(i))
             return -1
