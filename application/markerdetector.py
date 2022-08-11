@@ -65,6 +65,7 @@ class MarkerDetector:
 
         # Mask out all non-red pixels.
         red_mask = self.get_red_mask(undistorted_img, (3, 3))
+        print("writing maksk")
         cv2.imwrite("test_undistort.jpg", undistorted_img)
         cv2.imwrite("test_masked.jpg", red_mask)
 

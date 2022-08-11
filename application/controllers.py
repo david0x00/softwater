@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pickle
 import datetime
 import os
@@ -213,7 +214,7 @@ class Controller:
         self.md = MarkerDetector(init_img, color_threshold)
 
 class ClosedLoopIK(Controller):
-    comb_bmodel = keras.models.load_model("/Volumes/Flash/comb_bmodel/")
+    #comb_bmodel = keras.models.load_model("/Volumes/Flash/comb_bmodel/")
 
     xmin = -15
     xmax = 15
@@ -359,6 +360,7 @@ class AMPCController(Controller):
         print(self.system.controls)
 
         print(targ)
+        print(data_dir)
         self.data_file = data_dir + "control_data_" + str(int(targ[0])) + "_" + str(int(targ[1])) + ".csv"
         if os.path.exists(self.data_file):
             print("something wrong!!!")
@@ -385,11 +387,19 @@ class AMPCController(Controller):
             if proposed_loop_number > loop_number:
                 #print(elapsed_time)
                 loop_number = proposed_loop_number
+                start = time.time()
                 self.get_observations()
+                obs_time = (time.time() - start ) * 1000
                 self.u = self.controller.step(self.obs)
+                ampc_time = (time.time() - start ) * 1000 - obs_time
                 if not self.check_emergency_stop():
                     self.implement_controls()
+                imp_time = (time.time() - start ) * 1000 - ampc_time
                 self.save_control_state(start_time)
+                save_time = (time.time() - start ) * 1000 - imp_time
+                total_time = (time.time() - start ) * 1000
+
+                print(obs_time, ampc_time, imp_time, save_time, total_time)
             
         self.robot.turn_off_robot()
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
