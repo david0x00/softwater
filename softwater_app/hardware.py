@@ -212,6 +212,7 @@ class WaterRobot(threading.Thread):
 
         for i in range(0, numSensors):
             sensor = PressureSensor(i, i, 1000, hardware_mapper=self.hardware_mapper)
+            sensor.start()
             self.pressure_sensors.append(sensor)
             self.values.append(0)
         for j in range(0, numActuators):
