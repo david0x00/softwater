@@ -214,7 +214,7 @@ class Controller:
         self.md = MarkerDetector(init_img, color_threshold)
 
 class ClosedLoopIK(Controller):
-    #comb_bmodel = keras.models.load_model("/Volumes/Flash/comb_bmodel/")
+    model_file = "/Volumes/Flash/comb_bmodel/"
 
     xmin = -15
     xmax = 15
@@ -239,14 +239,25 @@ class ClosedLoopIK(Controller):
         
     def calc_pressures(self, x, y):
         x_in = self.normalize(x, y)
-        comb_pred = self.comb_bmodel.predict(x_in)
+        comb_pred = self.ik_model.predict(x_in)
         comb_final = self.rescale(list(comb_pred[0]))
         return comb_final
 
     def __init__(self, robot):
         super().__init__(robot)
+        self.ik_model = keras.models.load_model(self.model_file)
+
+    def prepare(self, targ, data_dir):
+        super().prepare()
+
+        # Get initial pressures
+        ip = self.calc_pressures(targ[0], targ[1])
 
 
+    def run_controller(self):
+        # in a loop
+        # calculate the error in the cartesian space.
+        # 
 
 class SimpleController(Controller):
     controller_file = "/home/pi/Desktop/acc40/controllers/simple1_comb.p"
@@ -302,7 +313,7 @@ class SimpleController(Controller):
                 if not self.check_emergency_stop():
                     self.implement_controls()
                 self.save_control_state(start_time)
-            
+
         self.robot.turn_off_robot()
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
 
