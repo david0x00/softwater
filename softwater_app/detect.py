@@ -3,7 +3,6 @@ import numpy as np
 
 class RobotDetector:
     def __init__(self):
-        self.dims = (1280, 720)
         self.main_color_hue = 168
         self.main_color_hue_error = 2
         self.main_color_low_sat = 40
@@ -11,22 +10,24 @@ class RobotDetector:
         self.main_color_low_val = 100
         self.main_color_high_val = 230
         self.gaussian_blur = (25, 25)
-        params = cv2.SimpleBlobDetector_Params()
-        params.filterByColor = True
-        params.blobColor = 255
-        params.filterByCircularity = True
-        params.minCircularity = 0.6
-        params.maxCircularity = float('inf')
-        params.filterByArea = True
-        params.minArea = 100
-        params.filterByInertia = True
-        params.minInertiaRatio = 0.2
-        params.maxInertiaRatio = float('inf')
-        self.detector = cv2.SimpleBlobDetector_create(params)
+        self.params = cv2.SimpleBlobDetector_Params()
+        self.params.filterByColor = True
+        self.params.blobColor = 255
+        self.params.filterByCircularity = True
+        self.params.minCircularity = 0.6
+        self.params.maxCircularity = float('inf')
+        self.params.filterByArea = True
+        self.params.minArea = 100
+        self.params.filterByInertia = True
+        self.params.minInertiaRatio = 0.2
+        self.params.maxInertiaRatio = float('inf')
+        self.detector = cv2.SimpleBlobDetector_create(self.params)
+    
+    def update_params(self):
+        self.detector = cv2.SimpleBlobDetector_create(self.params)
     
     def detect(self, image):
-        img = cv2.resize(image, self.dims, cv2.INTER_AREA)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         low_hue = self.main_color_hue - self.main_color_hue_error
         high_hue = self.main_color_hue + self.main_color_hue_error

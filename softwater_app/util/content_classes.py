@@ -1,5 +1,8 @@
 from kivy.clock import Clock
 from util.helpful_kivy_classes import *
+from kivy.core.window import Window
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 import cv2
 import numpy as np
 
@@ -89,16 +92,16 @@ class ControlSelector(GridLayout):
         self.open_loop_button = RoundToggleButton("Open Loop", "Open Loop", button_down_cc, button_up_cc, size_hint=(0.2, 1))
         self.manual_button = RoundToggleButton("Manual", "Manual", button_down_cc, button_up_cc, size_hint=(0.2, 1))
     
-        auto_mpc_selector = FileSelector(button_up_cc, button_down_cc)
-        pid_selector = FileSelector(button_up_cc, button_down_cc)
-        open_loop_selector = FileSelector(button_up_cc, button_down_cc)
+        self.auto_mpc_selector = FileSelector(button_up_cc, button_down_cc)
+        self.pid_selector = FileSelector(button_up_cc, button_down_cc)
+        self.open_loop_selector = FileSelector(button_up_cc, button_down_cc)
 
         self.add_widget(self.auto_mpc_button)
-        self.add_widget(auto_mpc_selector)
+        self.add_widget(self.auto_mpc_selector)
         self.add_widget(self.pid_button)
-        self.add_widget(pid_selector)
+        self.add_widget(self.pid_selector)
         self.add_widget(self.open_loop_button)
-        self.add_widget(open_loop_selector)
+        self.add_widget(self.open_loop_selector)
         self.add_widget(self.manual_button)
 
         self.auto_mpc_button.add_callback(self._auto_mpc_pressed)
@@ -130,42 +133,101 @@ class ControlSelector(GridLayout):
             self.pid_button.state = "normal"
             self.open_loop_button.state = "normal"
 
-class SettingsPane(BoxLayout):
+class SettingsPane(ScrollView):
     def __init__(self, size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5}):
         super(SettingsPane, self).__init__()
         self.size_hint = size_hint
         self.pos_hint = pos_hint
-        self.orientation = "vertical"
-        self.padding = 10
-        self.spacing = 10
+        
+        self.layout = BoxLayout(orientation="vertical", size_hint=(1, None), height=600, spacing=10, padding=10)
 
         camera_settings_header = ResizableLabel("Camera Settings", 0.75, size_hint=(1, 2))
-        self.brightness = TextNumberSlider("Brightness", 1, 0, 100, 0, pos_hint={"x": 0})
-        self.contrast = TextNumberSlider("Contrast", 1, 0, 100, 0, pos_hint={"x": 0})
-        self.saturation = TextNumberSlider("Saturation", 1, 0, 100, 0, pos_hint={"x": 0})
-        self.exposure = TextNumberSlider("Exposure", 1, -7, -1, -7, pos_hint={"x": 0})
+        self.brightness = TextNumberSlider("Brightness", 0.8, 0, 100, 0, pos_hint={"x": 0})
+        self.contrast = TextNumberSlider("Contrast", 0.8, 0, 100, 0, pos_hint={"x": 0})
+        self.saturation = TextNumberSlider("Saturation", 0.8, 0, 100, 0, pos_hint={"x": 0})
 
+        r = 0.6
         tracker_settings_header = ResizableLabel("Tracker Settings", 0.75, size_hint=(1, 2))
-        self.r_min = TextNumberSlider("R Min", 1, 0, 255, 0, pos_hint={"x": 0})
-        self.r_max = TextNumberSlider("R Max", 1, 0, 255, 0, pos_hint={"x": 0})
-        self.g_min = TextNumberSlider("G Min", 1, 0, 255, 0, pos_hint={"x": 0})
-        self.g_max = TextNumberSlider("G Max", 1, 0, 255, 0, pos_hint={"x": 0})
-        self.b_min = TextNumberSlider("B Min", 1, 0, 255, 0, pos_hint={"x": 0})
-        self.b_max = TextNumberSlider("B Max", 1, 0, 255, 0, pos_hint={"x": 0})
 
-        self.add_widget(camera_settings_header)
-        self.add_widget(self.brightness)
-        self.add_widget(self.contrast)
-        self.add_widget(self.saturation)
-        self.add_widget(self.exposure)
+        layout1 = BoxLayout(orientation="horizontal")
+        self.hue_avg = ResizableTextInput("", r)
+        self.hue_error = ResizableTextInput("", r)
 
-        self.add_widget(tracker_settings_header)
-        self.add_widget(self.r_min)
-        self.add_widget(self.r_max)
-        self.add_widget(self.g_min)
-        self.add_widget(self.g_max)
-        self.add_widget(self.b_min)
-        self.add_widget(self.b_max)
+        layout1.add_widget(ResizableLabel("Hue:", r, size_hint=(1.5, 1), halign="left"))
+        layout1.add_widget(ResizableLabel("Avg:", r))
+        layout1.add_widget(self.hue_avg)
+        layout1.add_widget(ResizableLabel("Error:", r))
+        layout1.add_widget(self.hue_error)
+
+        layout2 = BoxLayout(orientation="horizontal")
+        self.saturation_low = ResizableTextInput("", r)
+        self.saturation_high = ResizableTextInput("", r)
+        layout2.add_widget(ResizableLabel("Saturation:", r, size_hint=(1.5, 1), halign="left"))
+        layout2.add_widget(ResizableLabel("Low:", r))
+        layout2.add_widget(self.saturation_low)
+        layout2.add_widget(ResizableLabel("High:", r))
+        layout2.add_widget(self.saturation_high)
+
+        layout3 = BoxLayout(orientation="horizontal")
+        self.value_low = ResizableTextInput("", r)
+        self.value_high = ResizableTextInput("", r)
+        layout3.add_widget(ResizableLabel("Value:", r, size_hint=(1.5, 1), halign="left"))
+        layout3.add_widget(ResizableLabel("Low:", r))
+        layout3.add_widget(self.value_low)
+        layout3.add_widget(ResizableLabel("High:", r))
+        layout3.add_widget(self.value_high)
+
+        layout4 = BoxLayout(orientation="horizontal")
+        self.gaussian_blur_x = ResizableTextInput("", r)
+        self.gaussian_blur_y = ResizableTextInput("", r)
+        layout4.add_widget(ResizableLabel("Gaussian Blur:", r, size_hint=(1.5, 1), halign="left"))
+        layout4.add_widget(ResizableLabel("x:", r))
+        layout4.add_widget(self.gaussian_blur_x)
+        layout4.add_widget(ResizableLabel("y:", r))
+        layout4.add_widget(self.gaussian_blur_y)
+
+        layout5 = BoxLayout(orientation="horizontal")
+        self.circularity_min = ResizableTextInput("", r)
+        self.circularity_max = ResizableTextInput("", r)
+        layout5.add_widget(ResizableLabel("Circularity:", r, size_hint=(1.5, 1), halign="left"))
+        layout5.add_widget(ResizableLabel("Min:", r))
+        layout5.add_widget(self.circularity_min)
+        layout5.add_widget(ResizableLabel("Max:", r))
+        layout5.add_widget(self.circularity_max)
+
+        layout6 = BoxLayout(orientation="horizontal")
+        self.area_min = ResizableTextInput("", r)
+        self.area_max = ResizableTextInput("", r)
+        layout6.add_widget(ResizableLabel("Area:", r, size_hint=(1.5, 1), halign="left"))
+        layout6.add_widget(ResizableLabel("Min:", r))
+        layout6.add_widget(self.area_min)
+        layout6.add_widget(ResizableLabel("Max:", r))
+        layout6.add_widget(self.area_max)
+
+        layout7 = BoxLayout(orientation="horizontal")
+        self.inertia_min = ResizableTextInput("", r)
+        self.inertia_max = ResizableTextInput("", r)
+        layout7.add_widget(ResizableLabel("Inertia:", r, size_hint=(1.5, 1), halign="left"))
+        layout7.add_widget(ResizableLabel("Min:", r))
+        layout7.add_widget(self.inertia_min)
+        layout7.add_widget(ResizableLabel("Max:", r))
+        layout7.add_widget(self.inertia_max)
+
+        self.add_widget(self.layout)
+
+        self.layout.add_widget(camera_settings_header)
+        self.layout.add_widget(self.brightness)
+        self.layout.add_widget(self.contrast)
+        self.layout.add_widget(self.saturation)
+
+        self.layout.add_widget(tracker_settings_header)
+        self.layout.add_widget(layout1)
+        self.layout.add_widget(layout2)
+        self.layout.add_widget(layout3)
+        self.layout.add_widget(layout4)
+        self.layout.add_widget(layout5)
+        self.layout.add_widget(layout6)
+        self.layout.add_widget(layout7)
 
 
 class CameraImageSelector(CV2Image, FloatLayout):

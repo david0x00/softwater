@@ -1,17 +1,11 @@
-from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.stacklayout import StackLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.behaviors import ButtonBehavior, ToggleButtonBehavior, FocusBehavior
+from kivy.uix.behaviors import ButtonBehavior, ToggleButtonBehavior
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.uix.slider import Slider
-from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
-from kivy.properties import StringProperty
 from kivy.graphics import Rectangle, RoundedRectangle
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
@@ -38,7 +32,7 @@ class ResizableTextInput(TextInput):
 
         self._callbacks = []
 
-        self.bind(size=self.update, pos=self.update, on_text=self._new_text)
+        self.bind(size=self.update, pos=self.update, on_text_validate=self._on_text_validate)
     
     def add_callback(self, func):
         self._callbacks.append(func)
@@ -46,9 +40,9 @@ class ResizableTextInput(TextInput):
     def set(self, text):
         self.text = text
     
-    def _new_text(self, instance, value):
+    def _on_text_validate(self, instance):
         for func in self._callbacks:
-            func(self.text)
+            func(self, self.text)
     
     def update(self, *args):
         self.font_size = self.size[1] * self.resize
@@ -90,7 +84,7 @@ class FileSelector(BoxLayout):
 
         self.browser_button.add_callback(self.open_file_browser)
 
-        self._file_path = ""
+        self.file_path = ""
         self.set_filename(input_text)
 
         self._file_thread = None
@@ -101,7 +95,7 @@ class FileSelector(BoxLayout):
         Clock.schedule_interval(self._update, 1/10)
     
     def set_filename(self, filename):
-        self._file_path = filename
+        self.file_path = filename
         self.browser.text = f"file: {filename}"
 
     def open_file_browser(self, pressed):
@@ -123,34 +117,6 @@ class FileSelector(BoxLayout):
                 self._file_thread.join()
                 self._file_thread = None
                 self.browser_button.state = "normal"
-
-
-class NumberSlider(Slider):
-    def __init__(self, min, max, value, size_hint=(1, 1), step=1, height=100):
-        super(NumberSlider, self).__init__()
-        self.min = min
-        self.max = max
-        self.value = value
-        self.size_hint = size_hint
-        self.step = step
-        self.height = height
-
-        self._value = value
-
-        self._callbacks = []
-
-    def add_callback(self, func):
-        self._callbacks.append(func)
-    
-    def set(self, value):
-        self.value = value
-        self._value = value
-    
-    def on_touch_up(self, touch):
-        if (self._value != self.value):
-            self._value = self.value
-            for func in self._callbacks:
-                func(self.min, self.value, self.max)
 
 
 class TextNumberSlider(BoxLayout):
@@ -187,6 +153,34 @@ class TextNumberSlider(BoxLayout):
         if (self.round == 0):
             return int(value)
         return round(value, self.round)
+
+
+class NumberSlider(Slider):
+    def __init__(self, min, max, value, size_hint=(1, 1), step=1, height=100):
+        super(NumberSlider, self).__init__()
+        self.min = min
+        self.max = max
+        self.value = value
+        self.size_hint = size_hint
+        self.step = step
+        self.height = height
+
+        self._value = value
+
+        self._callbacks = []
+
+    def add_callback(self, func):
+        self._callbacks.append(func)
+    
+    def set(self, value):
+        self.value = value
+        self._value = value
+    
+    def on_touch_up(self, touch):
+        if (self._value != self.value):
+            self._value = self.value
+            for func in self._callbacks:
+                func(self.min, self.value, self.max)
 
 
 class HiddenContentPane(FloatLayout):
@@ -321,18 +315,21 @@ class CV2Image(Image):
         self.cv2_img = None
         self.crop = None
         self.zoom = ((0, 0), (1, 1))
+        self.can_zoom = True
     
     def set_zoom(self, zoom):
-        self.zoom = zoom
-        self._redo_texture()
+        if self.can_zoom:
+            self.zoom = zoom
+            self._redo_texture()
 
     def set_image(self, img):
         self.cv2_img = img
         self._redo_texture()
     
     def reset_zoom(self):
-        self.zoom = ((0, 0), (1, 1))
-        self._redo_texture()
+        if self.can_zoom:
+            self.zoom = ((0, 0), (1, 1))
+            self._redo_texture()
     
     def _redo_texture(self):
         if self.cv2_img is None:

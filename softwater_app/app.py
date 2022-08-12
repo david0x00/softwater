@@ -55,9 +55,9 @@ class MainWindow(App):
         controller_select_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(2, 1))
         self.command_center_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
         tracker_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
-        self.robot_state_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc, size_hint=(1.2, 1))
+        self.robot_state_pane = ContentPane(bar_color_component=content_div_cc, background_color_component=content_background_cc)
 
-        controller_select = ControlSelector(button_up_cc, button_down_cc)
+        self.controller_select = ControlSelector(button_up_cc, button_down_cc)
 
         self.command_center = CommandCenter(button_up_cc, button_down_cc)
 
@@ -89,7 +89,7 @@ class MainWindow(App):
         content_bottom.add_widget(tracker_pane)
         content_bottom.add_widget(self.robot_state_pane)
 
-        controller_select_pane.add_widget(controller_select)
+        controller_select_pane.add_widget(self.controller_select)
         self.command_center_pane.add_widget(self.command_center)
         tracker_pane.add_widget(self.camera_pane)
         self.robot_state_pane.add_widget(self.robot_state_image_pane)
@@ -97,10 +97,10 @@ class MainWindow(App):
         settings_button.add_callback(self._open_settings)
         self.settings_content_pane.add_widget(settings_pane)
 
-        controller_select.auto_mpc_button.add_callback(controls.auto_mpc)
-        controller_select.pid_button.add_callback(controls.pid)
-        controller_select.open_loop_button.add_callback(controls.open_loop)
-        controller_select.manual_button.add_callback(controls.manual)
+        self.controller_select.auto_mpc_button.add_callback(controls.auto_mpc)
+        self.controller_select.pid_button.add_callback(controls.pid)
+        self.controller_select.open_loop_button.add_callback(controls.open_loop)
+        self.controller_select.manual_button.add_callback(controls.manual)
 
         self.command_center.start_button.add_callback(controls.start_experiment)
         self.command_center.stop_button.add_callback(controls.stop_experiment)
@@ -129,18 +129,23 @@ class MainWindow(App):
         self.robot_state_image_pane.pump.add_callback(controls.pump)
         self.robot_state_image_pane.gate.add_callback(controls.gate)
 
-        settings_pane.brightness.add_callback(self._adjust_brightness)
-        settings_pane.contrast.add_callback(self._adjust_contrast)
-        settings_pane.saturation.add_callback(self._adjust_saturation)
-        settings_pane.r_min.add_callback(self._adjust_r_min)
-        settings_pane.r_max.add_callback(self._adjust_r_max)
-        settings_pane.g_min.add_callback(self._adjust_g_min)
-        settings_pane.g_max.add_callback(self._adjust_g_max)
-        settings_pane.b_min.add_callback(self._adjust_b_min)
-        settings_pane.b_max.add_callback(self._adjust_b_max)
-
-        for i in range(6):
-            self.robot_state_image_pane.show_pressure(i, 100.4)
+        settings_pane.brightness.add_callback(controls.adjust_brightness)
+        settings_pane.contrast.add_callback(controls.adjust_contrast)
+        settings_pane.saturation.add_callback(controls.adjust_saturation)
+        settings_pane.hue_avg.add_callback(controls.adjust_hue_average)
+        settings_pane.hue_error.add_callback(controls.adjust_hue_error)
+        settings_pane.saturation_low.add_callback(controls.adjust_saturation_low)
+        settings_pane.saturation_high.add_callback(controls.adjust_saturation_high)
+        settings_pane.value_low.add_callback(controls.adjust_value_low)
+        settings_pane.value_high.add_callback(controls.adjust_value_high)
+        settings_pane.gaussian_blur_x.add_callback(controls.adjust_gaussian_blur_x)
+        settings_pane.gaussian_blur_y.add_callback(controls.adjust_gaussian_blur_y)
+        settings_pane.circularity_min.add_callback(controls.adjust_circularity_min)
+        settings_pane.circularity_max.add_callback(controls.adjust_circularity_max)
+        settings_pane.area_min.add_callback(controls.adjust_area_min)
+        settings_pane.area_max.add_callback(controls.adjust_area_max)
+        settings_pane.inertia_min.add_callback(controls.adjust_inertia_min)
+        settings_pane.inertia_max.add_callback(controls.adjust_inertia_max)
 
         Clock.schedule_interval(self._background_tasks, 1/30)
         Clock.schedule_interval(controls.main_callback, 1/100)
@@ -150,18 +155,24 @@ class MainWindow(App):
             os.mkdir("./appdata")
 
         if not os.path.exists("./appdata/settings.json"):
-            #self.command_center.frequency_text.set  ("1" )
-            #self.command_center.duration_text.set   ("10")
             settings = dict({
-                "BRIGHTNESS":   50,
-                "CONTRAST":     0,
-                "SATURATION":   0,
-                "R MIN":        0,
-                "R MAX":        255,
-                "G MIN":        0,
-                "G MAX":        255,
-                "B MIN":        0,
-                "B MAX":        255
+                'BRIGHTNESS':   50,
+                'CONTRAST':     0,
+                'SATURATION':   0,
+                'HUE AVG':      0,
+                'HUE ERROR':    3,
+                'SAT LOW':      60,
+                'SAT HIGH':     255,
+                'VALUE LOW':    60,
+                'VALUE HIGH':   245,
+                'GAUS BLUR X':  25,
+                'GAUS BLUR Y':  25,
+                'CIRC MIN':     0.6,
+                'CIRC MAX':     'inf',
+                'AREA MIN':     100,
+                'AREA MAX':     'inf',
+                'INERTIA MIN':  0.2,
+                'INERTIA MAX':  'inf'
             })
             
             with open("./appdata/settings.json", "w") as f:
@@ -169,15 +180,23 @@ class MainWindow(App):
         
         with open("./appdata/settings.json", "r") as f:
             self.settings = json.load(f)
-            settings_pane.brightness.set(self.settings["BRIGHTNESS"])
-            settings_pane.contrast.set(self.settings["CONTRAST"])
-            settings_pane.saturation.set(self.settings["SATURATION"])
-            settings_pane.r_min.set(self.settings["R MIN"])
-            settings_pane.r_max.set(self.settings["R MAX"])
-            settings_pane.g_min.set(self.settings["G MIN"])
-            settings_pane.g_max.set(self.settings["G MAX"])
-            settings_pane.b_min.set(self.settings["B MIN"])
-            settings_pane.b_max.set(self.settings["B MAX"])
+            settings_pane.brightness.set(self.settings['BRIGHTNESS'])
+            settings_pane.contrast.set(self.settings['CONTRAST'])
+            settings_pane.saturation.set(self.settings['SATURATION'])
+            settings_pane.hue_avg.text = str(self.settings['HUE AVG'])
+            settings_pane.hue_error.text = str(self.settings['HUE ERROR'])
+            settings_pane.saturation_low.text = str(self.settings['SAT LOW'])
+            settings_pane.saturation_high.text = str(self.settings['SAT HIGH'])
+            settings_pane.value_low.text = str(self.settings['VALUE LOW'])
+            settings_pane.value_high.text = str(self.settings['VALUE HIGH'])
+            settings_pane.gaussian_blur_x.text = str(self.settings['GAUS BLUR X'])
+            settings_pane.gaussian_blur_y.text = str(self.settings['GAUS BLUR Y'])
+            settings_pane.circularity_min.text = str(self.settings['CIRC MIN'])
+            settings_pane.circularity_max.text = str(self.settings['CIRC MAX'])
+            settings_pane.area_min.text = str(self.settings['AREA MIN'])
+            settings_pane.area_max.text = str(self.settings['AREA MAX'])
+            settings_pane.inertia_min.text = str(self.settings['INERTIA MIN'])
+            settings_pane.inertia_max.text = str(self.settings['INERTIA MAX'])
         
         return window
     
@@ -188,54 +207,11 @@ class MainWindow(App):
     def _open_settings(self, pressed):
         if (pressed):
             self.settings_content_pane.toggle()
-            if (self.settings_content_pane.is_open()):
-                self.command_center_pane.disabled = True
-                self.robot_state_pane.disabled = True
-            else:
-                self.command_center_pane.disabled = False
-                self.robot_state_pane.disabled = False
-    
-    def _update_log_frequency(self, text):
-        self.settings["LOG FREQUENCY"] = text
-
-    def _update_log_duration(self, text):
-        self.settings["LOG DURATION"] = text
-    
-    def _adjust_brightness(self, min, value, max):
-        controls.change_cam_settings(cv2.CAP_PROP_BRIGHTNESS, value)
-        self.settings["BRIGHTNESS"] = value
-    
-    def _adjust_contrast(self, min, value, max):
-        controls.change_cam_settings(cv2.CAP_PROP_CONTRAST, value)
-        self.settings["CONTRAST"] = value
-    
-    def _adjust_saturation(self, min, value, max):
-        controls.change_cam_settings(cv2.CAP_PROP_SATURATION, value)
-        self.settings["SATURATION"] = value
-    
-    def _adjust_r_min(self, min, value, max):
-        self.settings["R MIN"] = value
-    
-    def _adjust_r_max(self, min, value, max):
-        self.settings["R MAX"] = value
-
-    def _adjust_g_min(self, min, value, max):
-        self.settings["G MIN"] = value
-    
-    def _adjust_g_max(self, min, value, max):
-        self.settings["G MAX"] = value
-    
-    def _adjust_b_min(self, min, value, max):
-        self.settings["B MIN"] = value
-    
-    def _adjust_b_max(self, min, value, max):
-        self.settings["B MAX"] = value
 
     def _background_tasks(self, dt):
         result, image = controls.display_image()
         if (result):
             self.camera_pane.image.set_image(image)
-        #self.camera_pane.image.get_hsv()
 
 app = MainWindow()
 
