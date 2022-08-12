@@ -179,7 +179,7 @@ def adjust_hue_error(instance, text):
     if value is None:
         instance.text = str(app.settings['HUE ERROR'])
     else:
-        detector.main_color_hue_error
+        detector.main_color_hue_error = value
         app.settings['HUE ERROR'] = value
 
 def adjust_saturation_low(instance, text):
