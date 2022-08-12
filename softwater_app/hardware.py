@@ -111,6 +111,7 @@ class PressureSensor(threading.Thread):
         self.to_exit = True
 
 
+import time
 class HardwareMapping:
     def __init__(self):
         self.actuator_pin_order = [2, 3, 1, 0]
@@ -132,7 +133,9 @@ class HardwareMapping:
 
     def readSensor(self, id):
         sensor_pair = self.sensor_pairs[id]
+        start = time.perf_counter()
         chan = AnalogIn(sensor_pair[0], sensor_pair[1])
+        print((time.perf_counter() - start) * 1000)
         Va = chan.voltage
         P = ((Va / 5.0) + 0.040) / 0.004  # kilopascels
         return P
@@ -262,7 +265,7 @@ class WaterRobot(threading.Thread):
     
     def read_sensors(self):
         for i in range(len(self.pressure_sensors)):
-            self.read_sensor(i)
+            self.__read_sensor(i)
     
     def set_solenoid(self, id, val):
         self.actuators[id].set_val(val)
