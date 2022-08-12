@@ -313,7 +313,7 @@ class SimpleController(Controller):
                 if not self.check_emergency_stop():
                     self.implement_controls()
                 self.save_control_state(start_time)
-            
+
         self.robot.turn_off_robot()
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
 
