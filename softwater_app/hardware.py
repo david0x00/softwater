@@ -11,8 +11,8 @@ try:
     import adafruit_ads1x15.ads1115 as ADS
     from adafruit_ads1x15.analog_in import AnalogIn
 
-    ads_0 = ADS.ADS1115(i2c, address=0x48)
-    ads_1 = ADS.ADS1115(i2c, address=0x49)
+    ads_0 = ADS.ADS1115(i2c, address=0x48, data_rate=860)
+    ads_1 = ADS.ADS1115(i2c, address=0x49, data_rate=860)
 
     from adafruit_mcp230xx.mcp23008 import MCP23008
 
@@ -133,9 +133,7 @@ class HardwareMapping:
 
     def readSensor(self, id):
         sensor_pair = self.sensor_pairs[id]
-        start = time.perf_counter()
         chan = AnalogIn(sensor_pair[0], sensor_pair[1])
-        print((time.perf_counter() - start) * 1000)
         Va = chan.voltage
         P = ((Va / 5.0) + 0.040) / 0.004  # kilopascels
         return P
