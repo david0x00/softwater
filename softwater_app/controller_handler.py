@@ -10,7 +10,6 @@ class ControllerHandler(threading.Thread):
         self._running = True
         self._in_queue = queue.Queue()
         self._out_queue = queue.Queue()
-        self._cv = threading.Condition()
         self._controller = None
     
     def set_controller(self, controller):
@@ -25,8 +24,6 @@ class ControllerHandler(threading.Thread):
     
     def pipe_in(self, msg):
         self._in_queue.put(msg)
-        with self._cv:
-            self._cv.notify_all()
 
     def stop(self):
         self._running = False
