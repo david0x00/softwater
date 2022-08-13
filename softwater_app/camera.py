@@ -8,6 +8,8 @@ class Camera:
         self._camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self._camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self._camera.set(cv2.CAP_PROP_FPS, framerate)
+        self._width = width
+        self._height = height
         self._framerate = framerate
         self._running = False
         self._thread = threading.Thread(target=self._capture)
@@ -19,6 +21,7 @@ class Camera:
     
     def stop(self):
         self._running = False
+        self._camera.release()
         self._thread.join()
     
     def set(self, setting, value):
@@ -29,7 +32,7 @@ class Camera:
         try:
             if latest:
                 while True:
-                    img = self._queue.get(block=False)
+                    img = self._queue.get_nowait()
             else:
                 img = self._queue.get()       
         except queue.Empty:
