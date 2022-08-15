@@ -8,6 +8,7 @@ from detect import RobotDetector
 import numpy as np
 from rate import Rate
 from controller_handler import ControllerHandler
+from controller import SimpleControllerThread
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -17,9 +18,11 @@ camera_image = None
 tracker_image = None
 dc_image = cv2.imread("./assets/disconnected.png")
 
-handler = ControllerHandler()
+#handler = ControllerHandler()
 
-ask_rate = Rate(10)
+controller = SimpleControllerThread()
+
+ask_rate = Rate(5)
 
 def main_callback(dt):
     global camera_image, tracker_image
@@ -30,12 +33,12 @@ def main_callback(dt):
 
     if link.connected():
         while True:
-            msg = handler.pipe_out()
+            msg = controller.pipe_out()
             if msg is None:
                 break
             link.send(msg)
 
-        if not handler.is_alive() and ask_rate.ready():
+        if not controller.is_alive() and ask_rate.ready():
             link.send({'command': {'get keyframe': None}})
         app.camera_pane.image.can_zoom = True
     else:
@@ -54,8 +57,8 @@ def main_callback(dt):
                 for sensor in range(len(pvalues)):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
                 
-                if handler.is_alive():
-                    handler.pipe_in((keypoints, pvalues))
+                if controller.is_alive():
+                    controller.pipe_in((keypoints, pvalues))
     link.update()
 
 def auto_mpc(pressed):
@@ -79,7 +82,7 @@ def manual(pressed):
 def start_experiment(pressed):
     print("Start Experiment:", pressed)
     if (pressed):
-        log = app.command_center.log_button.state == "down"
+        '''log = app.command_center.log_button.state == "down"
         
         try:
             log_frequency = float(app.command_center.frequency_text.text)
@@ -90,7 +93,8 @@ def start_experiment(pressed):
         print("LOG:", log)
         if log:
             print("Frequency:", log_frequency)
-            print("Duration:", log_duration)
+            print("Duration:", log_duration)'''
+        controller.start()
 
 def stop_experiment(pressed):
     print("Stop Experiment: ", pressed)
