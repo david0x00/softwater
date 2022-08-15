@@ -258,6 +258,7 @@ class ClosedLoopIK(Controller):
         # in a loop
         # calculate the error in the cartesian space.
         # 
+        pass
 
 class SimpleController(Controller):
     controller_file = "/home/pi/Desktop/acc40/controllers/simple1_comb.p"
@@ -324,7 +325,8 @@ class AMPCController(Controller):
     # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
     # controller_file = "/home/pi/Desktop/dohun_test/controller.pkl"
     tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
-    controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/0808_endtoend_upperlowerbarrier_defaultgoals_200/controller.pkl"
+    #controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/0808_endtoend_upperlowerbarrier_defaultgoals_200/controller.pkl"
+    controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl"
 
     def __init__(self, robot):
         super().__init__(robot)
