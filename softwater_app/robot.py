@@ -20,8 +20,8 @@ if __name__ == "__main__":
                 if 'command' in msg.keys():
                     cmd = msg['command']
                     if 'running' in cmd.keys():
-                        if not cmd['running']:
-                            break
+                        robot.set_pump(cmd['running'])
+                        robot.set_gate_valve(cmd['running'])
                     elif 'get keyframe' in cmd.keys():
                         robot.read_sensors()
                         img = None
