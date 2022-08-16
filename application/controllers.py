@@ -11,7 +11,8 @@ from markerdetector import MarkerDetector
 
 class Acc40Manager:
     directory = "/home/pi/Desktop/acc40/"
-    ampc_comb_dir = "ampc_comb/"
+    ampc_comb_dir = "ampc_comb_experimental/"
+    # ampc_comb_dir = "ampc_comb/"
     simple_comb_dir = "simple_comb/"
     run_limit = 10
     xc = [[-9,-7,-5,-3,-1,1,3,5,7,9],
@@ -321,12 +322,12 @@ class SimpleController(Controller):
 
 class AMPCController(Controller):
     # Original
-    # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+    controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
     # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
     # controller_file = "/home/pi/Desktop/dohun_test/controller.pkl"
     tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
     #controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/0808_endtoend_upperlowerbarrier_defaultgoals_200/controller.pkl"
-    controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl"
+    # controller_file = '/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl'
 
     def __init__(self, robot):
         super().__init__(robot)
@@ -404,12 +405,12 @@ class AMPCController(Controller):
                 self.get_observations()
                 obs_time = (time.time() - start ) * 1000
                 self.u = self.controller.step(self.obs)
-                ampc_time = (time.time() - start ) * 1000 - obs_time
+                ampc_time = (time.time() - start ) * 1000 - (obs_time)
                 if not self.check_emergency_stop():
                     self.implement_controls()
-                imp_time = (time.time() - start ) * 1000 - ampc_time
+                imp_time = (time.time() - start ) * 1000 - (ampc_time + obs_time)
                 self.save_control_state(start_time)
-                save_time = (time.time() - start ) * 1000 - imp_time
+                save_time = (time.time() - start ) * 1000 - (imp_time + ampc_time + obs_time)
                 total_time = (time.time() - start ) * 1000
 
                 print(obs_time, ampc_time, imp_time, save_time, total_time)
