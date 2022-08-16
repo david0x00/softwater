@@ -6,6 +6,8 @@ import csv
 import pickle
 import queue
 import threading
+import autompc as ampc
+from autompc.costs import ThresholdCost
 
 class Controller:
     emergency_stop = False
@@ -154,6 +156,161 @@ class SimpleController(Controller):
                     self.implement_controls()
                 self.save_control_state(start_time)
             
+        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
+
+class ClosedLoopIK(Controller):
+    controller_file = "./appdata/simple_controller.p"
+
+    def __init__(self):
+        super().__init__()
+        simple_controller = pickle.load( open( self.controller_file, "rb" ) )
+        self.controller = simple_controller["comb"]
+
+    def prepare(self, targ=(9, 27)):
+        super().prepare()
+        self.targ = targ
+        self.pressures = self.controller[targ]
+        print(self.pressures)
+
+        self.Px = 1
+        self.Py = 1
+        self.Ix = 1
+        self.Iy = 1
+
+        self.x_idx = 22
+        self.y_idx = 23
+
+        self.err_x_I = 0
+        self.err_y_I = 0
+
+        self.control_targ = self.targ
+
+        self.pressure_flags = [False, False, False, False]
+        self.change_targ = False
+
+        self.get_observations()
+    
+    def evaluate(self, obs):
+        if self.change_targ:
+            targ_x = self.targ[0]
+            targ_y = self.targ[1]
+
+            curr_x = self.obs[self.x_idx]
+            curr_y = self.obs[self.y_idx]
+
+            err_x = targ_x - curr_x
+            err_y = targ_y - curr_y
+
+            self.err_x_I += err_x
+
+            curr_targ_x = self.control_targ[0]
+
+            con_x = curr_targ_x + (err_x * self.Px) + (self.err_x_I * self.Ix)
+        
+        u = np.zeros(8)
+        for i in range(4):
+            if obs[i] < self.pressures[i]:
+                u[i*2] = 1
+        return u
+
+    def run_controller(self):
+        start_time = datetime.datetime.now()
+        loop_number = -1
+        loop_period = 0.5
+        timer = self.run_time
+        while 1:
+            if self.check_emergency_stop():
+                break
+
+            curr_time = datetime.datetime.now()
+            elapsed_time = (curr_time - start_time).total_seconds()
+
+            if elapsed_time > timer:
+                break
+
+            proposed_loop_number = int(elapsed_time / loop_period)
+            if proposed_loop_number > loop_number:
+                #print(elapsed_time)
+                loop_number = proposed_loop_number
+                self.get_observations()
+                self.u = self.evaluate(self.obs)
+                if not self.check_emergency_stop():
+                    self.implement_controls()
+                self.save_control_state(start_time)
+            
+        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
+
+class AMPCController(Controller):
+    # Original
+    # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+    # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
+    barrier_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_barrier_defaultgoals/controller.pkl"
+    quad_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_quad_defaultgoals/controller.pkl"
+    controller_file = quad_file
+    tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
+
+    def __init__(self, robot):
+        super().__init__(robot)
+        with open(self.controller_file, "rb") as f:
+            self.controller = pickle.load(f)
+        self.system = self.controller.system
+
+    def prepare(self, targ, data_dir):
+        super().prepare()
+
+        self.get_observations()
+
+        target = [float(targ[0]), float(targ[1])]
+        ocp = ampc.OCP(self.system)
+        ocp.set_cost(ThresholdCost(system=self.system, goal=target, threshold=2.0, observations=["M10X", "M10Y"]))
+        for ctrl in self.system.controls:
+            ocp.set_ctrl_bound(ctrl, 0, 1)
+        self.controller.set_ocp(ocp)
+        self.controller.reset()
+
+        # create tajectory for history
+        traj = ampc.Trajectory.zeros(self.system, 1)
+        traj[0].obs[:] = self.obs
+        # generate the controller state
+        # constate = controller.traj_to_state(traj)
+        self.controller.model._device = "cpu"
+        print(self.system.observations)
+        print(self.system.controls)
+
+        print(targ)
+        self.data_file = data_dir + "control_data_" + str(int(targ[0])) + "_" + str(int(targ[1])) + ".csv"
+        if os.path.exists(self.data_file):
+            print("something wrong!!!")
+        with open(self.data_file, 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self.control_headers)
+            writer.writeheader()
+
+    def run_controller(self):
+        start_time = datetime.datetime.now()
+        loop_number = -1
+        loop_period = 0.5
+        timer = self.run_time
+        while 1:
+            if self.check_emergency_stop():
+                break
+
+            curr_time = datetime.datetime.now()
+            elapsed_time = (curr_time - start_time).total_seconds()
+
+            if elapsed_time > timer:
+                break
+
+            proposed_loop_number = int(elapsed_time / loop_period)
+            if proposed_loop_number > loop_number:
+                #print(elapsed_time)
+                loop_number = proposed_loop_number
+                self.get_observations()
+                self.u = self.controller.step(self.obs)
+                if not self.check_emergency_stop():
+                    self.implement_controls()
+                self.save_control_state(start_time)
+            
+        self.robot.turn_off_robot()
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
 
 
