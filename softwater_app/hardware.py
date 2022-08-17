@@ -129,7 +129,13 @@ class HardwareMapping:
                 self.pins.append(temp_pin)
 
     def actuateSolenoid(self, id, new_state):
-        self.pins[id].value = new_state
+        for i in range(5):
+            try:
+                self.pins[id].value = new_state
+                return
+            except OSError:
+                print("try sol: " + str(i))
+        
 
     def readSensor(self, id):
         sensor_pair = self.sensor_pairs[id]
