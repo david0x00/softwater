@@ -3,6 +3,9 @@ import time
 
 class Rate:
     def __init__(self, rate):
+        self.set_rate(rate)
+    
+    def set_rate(self, rate):
         self._rate = rate
         self._inv_rate = 1 / rate
         self._cycles = 0

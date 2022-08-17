@@ -1,14 +1,13 @@
-from operator import is_
-from re import L
 from app import app
 import cv2
-from camera import Camera
 from datalink import DataLink
 from detect import RobotDetector
 import numpy as np
 from rate import Rate
-from controller_handler import ControllerHandler
-from controller import SimpleControllerThread
+import dill
+from controller import ControllerHandler
+import simple_controller
+import sys
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -18,9 +17,8 @@ camera_image = None
 tracker_image = None
 dc_image = cv2.imread("./assets/disconnected.png")
 
-#handler = ControllerHandler()
 
-controller = SimpleControllerThread()
+handler = ControllerHandler()
 
 ask_rate = Rate(5)
 
@@ -32,13 +30,15 @@ def main_callback(dt):
     app.command_center.set_robot_status(link.connected(), link.latency(string=True))
 
     if link.connected():
-        while True:
-            msg = controller.pipe_out()
-            if msg is None:
-                break
-            link.send(msg)
-
-        if not controller.is_alive() and ask_rate.ready():
+        
+        if handler.is_alive():
+            while True:
+                msg = handler.pipe_out()
+                if msg is None:
+                    break
+                link.send(msg)
+                print(msg)
+        elif ask_rate.ready():
             link.send({'command': {'get keyframe': None}})
         app.camera_pane.image.can_zoom = True
     else:
@@ -57,14 +57,18 @@ def main_callback(dt):
                 for sensor in range(len(pvalues)):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
                 
-                if controller.is_alive():
-                    controller.pipe_in((keypoints, pvalues))
+                if handler.is_alive():
+                    handler.pipe_in((keypoints, pvalues))
+    
     link.update()
 
 def auto_mpc(pressed):
     print("Auto MPC:", pressed)
     if pressed:
-        print(app.controller_select.auto_mpc_selector.file_path)
+        global handler
+        controller = simple_controller.controller
+        controller.prepare((9, 27))
+        handler.set_controller(controller)
 
 def pid(pressed):
     print("PID:", pressed)
@@ -94,7 +98,10 @@ def start_experiment(pressed):
         if log:
             print("Frequency:", log_frequency)
             print("Duration:", log_duration)'''
-        controller.start()
+        global handler
+        if handler.controller is not None:
+            #handler.controller.prepare((9, 27))
+            handler.start()
 
 def stop_experiment(pressed):
     print("Stop Experiment: ", pressed)
