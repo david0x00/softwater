@@ -375,8 +375,14 @@ class CameraPane(BoxLayout):
 
         self.camera_view = RoundToggleButton("Camera", "Camera", button_down_cc, button_up_cc)
         self.tracker_view = RoundToggleButton("Tracker", "Tracker", button_down_cc, button_up_cc)
-        self.reset = RoundToggleButton("Reset", "Reset", button_down_cc, button_up_cc)
+        self.reset_zoom = RoundToggleButton("Reset Zoom", "Reset Zoom", button_down_cc, button_up_cc)
+        self.reset_detector = RoundToggleButton("Reset Detector", "Reset Detector", button_down_cc, button_up_cc)
         self.rgb_layout = BoxLayout(orientation="horizontal", size_hint=(1, 1))
+
+        label_layout = BoxLayout(orientation="horizontal")
+        detector_status_label = ResizableLabel("Detector Status:", 0.4, halign="left")
+        self.detector_status = ResizableLabel("Offline", 0.4, halign="right", size_hint=(0.6, 1))
+
         self.r = ResizableLabel("H", 0.3)
         self.g = ResizableLabel("S", 0.3)
         self.b = ResizableLabel("V", 0.3)
@@ -386,8 +392,13 @@ class CameraPane(BoxLayout):
 
         self.button_layout.add_widget(self.camera_view)
         self.button_layout.add_widget(self.tracker_view)
-        self.button_layout.add_widget(self.reset)
+        self.button_layout.add_widget(self.reset_zoom)
+        self.button_layout.add_widget(self.reset_detector)
+        self.button_layout.add_widget(label_layout)
         self.button_layout.add_widget(self.rgb_layout)
+
+        label_layout.add_widget(detector_status_label)
+        label_layout.add_widget(self.detector_status)
 
         self.rgb_layout.add_widget(self.r)
         self.rgb_layout.add_widget(self.g)
@@ -395,7 +406,7 @@ class CameraPane(BoxLayout):
 
         self.camera_view.add_callback(self._camera_view_pressed)
         self.tracker_view.add_callback(self._tracker_view_pressed)
-        self.reset.add_callback(self._reset_button_pressed)
+        self.reset_zoom.add_callback(self._reset_zoom_button_pressed)
 
         self.camera_view_pressed = True
         self.tracker_view_pressed = False
@@ -419,7 +430,7 @@ class CameraPane(BoxLayout):
         else:
             self.camera_view.state = "down"
         
-    def _reset_button_pressed(self, pressed):
+    def _reset_zoom_button_pressed(self, pressed):
         self.image.reset_zoom()
     
     def update(self, *args):

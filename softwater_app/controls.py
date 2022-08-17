@@ -20,7 +20,6 @@ dc_image = cv2.imread("./assets/disconnected.png")
 
 handler = ControllerHandler()
 
-ask_rate = Rate(5)
 
 def main_callback(dt):
     global camera_image, tracker_image
@@ -30,7 +29,6 @@ def main_callback(dt):
     app.command_center.set_robot_status(link.connected(), link.latency(string=True))
 
     if link.connected():
-        
         if handler.is_alive():
             while True:
                 msg = handler.pipe_out()
@@ -38,8 +36,7 @@ def main_callback(dt):
                     break
                 link.send(msg)
                 print(msg)
-        elif ask_rate.ready():
-            link.send({'command': {'get keyframe': None}})
+
         app.camera_pane.image.can_zoom = True
     else:
         camera_image = tracker_image = dc_image
@@ -51,14 +48,14 @@ def main_callback(dt):
         if 'data' in msg.keys():
             data = msg['data']
             if 'keyframe' in data.keys():
-                img, pvalues = data['keyframe']
-                keypoints, tracker_image = detector.detect(img)
+                timestamp, img, pvalues = data['keyframe']
+                tracking, tracker_image = detector.detect(img)
                 camera_image = img
                 for sensor in range(len(pvalues)):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
                 
                 if handler.is_alive():
-                    handler.pipe_in((keypoints, pvalues))
+                    handler.pipe_in((timestamp, img, tracker_image, pvalues))
     
     link.update()
 
@@ -115,6 +112,11 @@ def tracker_view(pressed):
     global is_camera_view
     if (pressed):
         is_camera_view = not is_camera_view
+
+def reset_detector(pressed):
+    global detector
+    if pressed:
+        detector.reset()
 
 def display_image():
     if is_camera_view:

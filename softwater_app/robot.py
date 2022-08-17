@@ -4,7 +4,7 @@ from camera import Camera
 from hardware import WaterRobot
 import time
 
-
+send_rate = Rate(10)
 
 if __name__ == "__main__":
     camera = Camera()
@@ -14,6 +14,13 @@ if __name__ == "__main__":
 
     try:
         while True:
+            if send_rate.ready():
+                robot.read_sensors()
+                img = None
+                while img is None:
+                    img = camera.get()
+                link.send({'data': {'keyframe': (time.perf_counter(), img, robot.values)}})
+            
             if link.data_available():
                 msg = link.get()['data']
                 print(msg)
@@ -22,12 +29,6 @@ if __name__ == "__main__":
                     if 'running' in cmd.keys():
                         robot.set_pump(cmd['running'])
                         #robot.set_gate_valve(cmd['running'])
-                    elif 'get keyframe' in cmd.keys():
-                        robot.read_sensors()
-                        img = None
-                        while img is None:
-                            img = camera.get()
-                        link.send({'data': {'keyframe': (img, robot.values)}})
                     elif 'pump' in cmd.keys():
                         robot.set_pump(cmd['pump'])
                     elif 'gate' in cmd.keys():
@@ -42,7 +43,6 @@ if __name__ == "__main__":
                             robot.set_solenoid((id * 2) + 1, False)
                     elif 'depressurize' in cmd.keys():
                         id, pressed = cmd['depressurize']
-                        
                         robot.set_solenoid((id * 2) + 1, pressed)
                         if pressed:
                             robot.set_solenoid((id * 2), False)
