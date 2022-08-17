@@ -5,6 +5,7 @@ from rate import Rate
 import time
 import os
 import cv2
+import csv
 
 class Controller:
     _cmd_queue = Queue()
@@ -25,7 +26,7 @@ class Controller:
     u_headers = [
         "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN",
         "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT",
-        "M2-AR-IN", "M2-AR-OUT", "PUMP", "GATE"
+        "M2-AR-IN", "M2-AR-OUT"
     ]
 
     x_headers = [
@@ -35,11 +36,30 @@ class Controller:
         "M7Y", "M8X", "M8Y", "M9X", "M9Y", "M10X",
         "M10Y"
     ]
+
+    xc = [[-9,-7,-5,-3,-1,1,3,5,7,9],
+          [-9,-7,-5,-3,-1,1,3,5,7,9],
+          [-7,-5,-3,-1,1,3,5,7],
+          [-5,-3,-1,1,3,5],
+          [-3,-1,1,3],
+          [-1,1]]
+    yc = 25
     
     def __init__(self):
         self.column_headers = self.package_headers()
         self.img_arr = []
-        self.data_dir = ""
+        self.data_dir = "./"
+
+        self.idx_coords = []
+        for i, row in enumerate(self.xc):
+            for x in row:
+                y = self.yc + i*2
+                self.idx_coords.append((x,y))
+
+    def convert_idx(self, idx):
+        ret = self.idx_coords[idx]
+        print("Coordinates: " + str(ret))
+        return ret
 
     def prepare(self, target):
         self.target = target
@@ -47,11 +67,19 @@ class Controller:
         self.data_file = str(
             self.data_dir
             + "control_data_" 
-            + str(int(target[0]]))
+            + str(int(target[0]))
             + "_"
             + str(int(target[1]))
             + ".csv"
         )
+        self.img_count = 0
+        self.img_dir = self.data_dir + "imgs/"
+        if not os.path.exists(self.img_dir):
+            os.makedirs(self.img_dir)
+        
+        with open(self.data_file, 'a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self.column_headers)
+            writer.writeheader()
 
     def stop(self):
         if not self.stopped:
@@ -62,11 +90,10 @@ class Controller:
         pass
 
     def on_end(self):
-        self.write_imgs()
+        pass
     
     def get_observations(self):
-        self._out_queue.put({'command': {'get keyframe': None}})
-        print('waiting')
+        self._out_queue.put(('app', 'get data'))
         return self._in_queue.get()
     
     def evaluate(self, x):
@@ -75,7 +102,7 @@ class Controller:
             u.append(False)
     
     def implement_controls(self, u):
-        self._out_queue.put({'command': {'set solenoids': u}})
+        self._out_queue.put(('robot', {'command': {'set solenoids': u}}))
 
     def package_headers(self):
         headers = []
@@ -100,7 +127,7 @@ class Controller:
         return []
 
     def save_data(self, t, x, u, img):
-        self.img_arr.append(img)
+        self.write_img(img)
 
         with open(self.data_file, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.column_headers)
@@ -113,15 +140,10 @@ class Controller:
             
             writer.writerow(row_dict)
     
-    def write_imgs(self):
-        print("Writing Images...")
-        img_dir = self.data_dir + "imgs/"
-        if not os.path.exists(img_dir):
-            os.makedirs(img_dir)
-        for idx, img in enumerate(self.img_arr):
-            file_name = img_dir + str(idx) + ".jpg"
-            cv2.imwrite(file_name, img)
-        print("Done.")
+    def write_img(self, img):
+        file_name = self.img_dir + 'img' + str(self.img_count) + ".jpg"
+        cv2.imwrite(file_name, img)
+        self.img_count += 1
 
     def main_loop(self, in_queue, out_queue, cmd_queue):
         start = time.perf_counter()
@@ -134,7 +156,7 @@ class Controller:
         self._cmd_queue = cmd_queue
         
         # send start command to robot
-        out_queue.put({'command': {'running': True}})
+        out_queue.put(('robot', {'command': {'running': True}}))
 
         self.on_start()
 
@@ -157,7 +179,7 @@ class Controller:
             self.rate.sleep()
         
         # send stop command to robot
-        out_queue.put({'command': {'running': False}})
+        out_queue.put(('robot', ({'command': {'running': False}})))
 
         self.on_end()
 

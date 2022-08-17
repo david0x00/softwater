@@ -20,28 +20,29 @@ dc_image = cv2.imread("./assets/disconnected.png")
 
 handler = ControllerHandler()
 
+pipe_data = None
+
+def package_data(m, p):
+    x = []
+    x += p
+
+    m = detector.pix2world(m)
+
+    x_home = m[0][0]
+    y_home = m[0][1]
+
+    for i in range(1,11):
+        x.append(m[i][0] - x_home)
+        x.append(y_home - m[i][1])
+
+    return x
 
 def main_callback(dt):
-    global camera_image, tracker_image
+    global camera_image, tracker_image, pipe_data
 
     link.update()
 
     app.command_center.set_robot_status(link.connected(), link.latency(string=True))
-
-    if link.connected():
-        if handler.is_alive():
-            while True:
-                msg = handler.pipe_out()
-                if msg is None:
-                    break
-                link.send(msg)
-                print(msg)
-
-        app.camera_pane.image.can_zoom = True
-    else:
-        camera_image = tracker_image = dc_image
-        app.camera_pane.image.reset_zoom()
-        app.camera_pane.image.can_zoom = False
 
     if link.data_available():
         msg = link.get()['data']
@@ -50,12 +51,34 @@ def main_callback(dt):
             if 'keyframe' in data.keys():
                 timestamp, img, pvalues = data['keyframe']
                 tracking, tracker_image = detector.detect(img)
+                app.camera_pane.set_detector_status(tracking)
                 camera_image = img
                 for sensor in range(len(pvalues)):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
-                
-                if handler.is_alive():
-                    handler.pipe_in((timestamp, img, tracker_image, pvalues))
+
+                if tracking:
+                    x = package_data(detector.tracker.objects, pvalues)
+                    pipe_data = ([timestamp], x, img)
+                else:
+                    pipe_data = None
+    
+    if link.connected():
+        if handler.is_alive():
+            while True:
+                output = handler.pipe_out()
+                if output is None:
+                    break
+                type, data = output
+                if type == 'robot':
+                    link.send(data)
+                elif type == 'app':
+                    if data == 'get data' and pipe_data is not None:
+                        handler.pipe_in(pipe_data)
+        app.camera_pane.image.can_zoom = True
+    else:
+        camera_image = tracker_image = dc_image
+        app.camera_pane.image.reset_zoom()
+        app.camera_pane.image.can_zoom = False
     
     link.update()
 

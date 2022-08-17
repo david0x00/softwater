@@ -17,7 +17,7 @@ class SimpleController(Controller):
         print("Controller End")
 
     def evaluate(self, x):
-        pts, pressures = x
+        pressures = x[0:4]
         u = [False for _ in range(self.solenoids)]
 
         target_pressures = self.controller_pressures[self.target]

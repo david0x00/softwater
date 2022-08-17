@@ -1,8 +1,26 @@
 import cv2
 import numpy as np
 import time
-from scipy.spatial import distance as dist
+from scipy.spatial import distance
 from collections import OrderedDict
+
+mtx = np.array([
+    [1535.10668 / 1.5, 0, 954.393136 / 1.5],
+    [0, 1530.80529 / 1.5, 543.030187 / 1.5],
+    [0,0,1]
+])
+
+newcameramtx = np.array([
+    [1559.8905 / 1.5, 0, 942.619458 / 1.5],
+    [0, 1544.98389 / 1.5, 543.694259 / 1.5],
+    [0,0,1]
+])
+
+inv_camera_mtx = np.linalg.inv(newcameramtx)
+
+dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
+
+camera_to_markers_dist = 57.055 #cm
 
 class TrackingPoint:
     x:      float
@@ -19,11 +37,11 @@ class TrackingPoint:
         self.vy = vy
         self.size = size
     
-    def model_motion(self, dt):
+    def model_motion(self, dt, drag=0.01):
         self.x = self.x + self.vx * dt
         self.y = self.y + self.vy * dt
-        self.vx *= 0.5
-        self.vy *= 0.5
+        self.vx *= min(1, drag / dt)
+        self.vy *= min(1, drag / dt)
     
     def set_pt(self, pt, dt):
         self.vx = (pt.x - self.x) / dt
@@ -45,7 +63,7 @@ class RobotTracker():
     objects:        OrderedDict[TrackingPoint] = OrderedDict()
     maxDisappeared: int
     
-    def __init__(self, maxDisappeared=2):
+    def __init__(self, maxDisappeared=30):
         self.maxDisappeared = maxDisappeared
 
     def register(self, tracking_point: TrackingPoint):
@@ -61,6 +79,7 @@ class RobotTracker():
             ids.append(obj_id)
         for id in ids:
             self.deregister(id)
+        self.nextObjectID = 0
 
     def update(self, pts: list[TrackingPoint], dt: float):
         for obj_id in self.objects.keys():
@@ -103,7 +122,7 @@ class RobotTracker():
             for i in range(len(objectIDs)):
                 objectCentroids[i] = self.objects[objectIDs[i]].xy()
 
-            D = dist.cdist(objectCentroids, inputCentroids)
+            D = distance.cdist(objectCentroids, inputCentroids)
             rows = D.min(axis=1).argsort()
             cols = D.argmin(axis=1)[rows]
 
@@ -162,14 +181,33 @@ class RobotDetector:
         self.tracker = RobotTracker()
         self.robot_segments = 11
         self.detector = cv2.SimpleBlobDetector_create(self.params)
+
+        self.init_undistort()
     
     def update_params(self):
         self.detector = cv2.SimpleBlobDetector_create(self.params)
     
     def reset(self):
         self.tracker.clear()
+
+    def init_undistort(self):
+        h = 720
+        w = 1280
+        self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), cv2.CV_32FC1)
     
+    def pix2world(self, objects):
+        world_objects = []
+        for obj_id in objects.keys():
+            coord_2d = np.array([[objects[obj_id].x],
+                                    [objects[obj_id].y],
+                                    [1]])
+            coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
+            world_objects.append((coord_3d[0][0], coord_3d[1][0]))
+        return world_objects
+
     def detect(self, image):
+        undistorted_img = cv2.remap(image, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
+
         if self.first:
             self.timestamp = time.perf_counter()
             self.first = False
@@ -177,7 +215,7 @@ class RobotDetector:
         dt = curr - self.timestamp
         self.timestamp = curr
 
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hsv = cv2.cvtColor(undistorted_img, cv2.COLOR_BGR2HSV)
 
         low_hue = self.main_color_hue - self.main_color_hue_error
         high_hue = self.main_color_hue + self.main_color_hue_error
@@ -216,7 +254,7 @@ class RobotDetector:
             pts.append(TrackingPoint(pt.pt[0], pt.pt[1], size=pt.size))
         
         check = False
-        if len(objects) == 0:
+        if len(self.tracker.objects) == 0:
             check = True
         objects = self.tracker.update(pts, dt)
 

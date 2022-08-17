@@ -201,6 +201,21 @@ if current_process().name == 'MainProcess':
                 settings_pane.area_max.text = str(self.settings['AREA MAX'])
                 settings_pane.inertia_min.text = str(self.settings['INERTIA MIN'])
                 settings_pane.inertia_max.text = str(self.settings['INERTIA MAX'])
+
+                controls.detector.main_color_hue = self.settings['HUE AVG']
+                controls.detector.main_color_error = self.settings['HUE ERROR']
+                controls.detector.main_color_low_sat = self.settings['SAT LOW']
+                controls.detector.main_color_high_sat = self.settings['SAT HIGH']
+                controls.detector.main_color_low_val = self.settings['VALUE LOW']
+                controls.detector.main_color_high_val = self.settings['VALUE HIGH']
+                controls.detector.gaussian_blur = (self.settings['GAUS BLUR X'], self.settings['GAUS BLUR Y'])
+                controls.detector.params.minCircularity = float(self.settings['CIRC MIN'])
+                controls.detector.params.maxCircularity = float(self.settings['CIRC MAX'])
+                controls.detector.params.minArea = float(self.settings['AREA MIN'])
+                controls.detector.params.maxArea = float(self.settings['AREA MAX'])
+                controls.detector.params.minInertiaRatio = float(self.settings['INERTIA MIN'])
+                controls.detector.params.maxInertiaRatio = float(self.settings['INERTIA MAX'])
+                controls.detector.update_params()
             
             return window
         

@@ -381,7 +381,7 @@ class CameraPane(BoxLayout):
 
         label_layout = BoxLayout(orientation="horizontal")
         detector_status_label = ResizableLabel("Detector Status:", 0.4, halign="left")
-        self.detector_status = ResizableLabel("Offline", 0.4, halign="right", size_hint=(0.6, 1))
+        self.detector_status = ResizableLabel("No Track", 0.4, halign="right", size_hint=(0.6, 1))
 
         self.r = ResizableLabel("H", 0.3)
         self.g = ResizableLabel("S", 0.3)
@@ -432,6 +432,14 @@ class CameraPane(BoxLayout):
         
     def _reset_zoom_button_pressed(self, pressed):
         self.image.reset_zoom()
+    
+    def set_detector_status(self, tracking):
+        if tracking:
+            self.detector_status.text = "Tracking"
+            self.detector_status.color = "#00FF00"
+        else:
+            self.detector_status.text = "No Track"
+            self.detector_status.color = "#FF0000"
     
     def update(self, *args):
         self.r.font_size = self.r.size[1] / 2
