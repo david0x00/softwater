@@ -110,6 +110,7 @@ if current_process().name == 'MainProcess':
 
             self.camera_pane.camera_view.add_callback(controls.camera_view)
             self.camera_pane.tracker_view.add_callback(controls.tracker_view)
+            self.camera_pane.reset_detector.add_callback(controls.reset_detector)
 
             self.robot_state_image_pane.actuator0.add_pressurize_callback(controls.pressurize)
             self.robot_state_image_pane.actuator0.add_depressurize_callback(controls.depressurize)
