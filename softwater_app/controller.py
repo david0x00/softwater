@@ -14,8 +14,8 @@ class Controller:
 
     rate = Rate(2)
     timeout = 10
-    pressure_sensors = 4
-    solenoids = 8
+    pressure_sensor_count = 4
+    solenoid_count = 8
     stopped = True
     target = None
 
@@ -98,7 +98,7 @@ class Controller:
     
     def evaluate(self, x):
         u = []
-        for _ in range(self.solenoids):
+        for _ in range(self.solenoid_count):
             u.append(False)
     
     def implement_controls(self, u):
