@@ -11,7 +11,7 @@ from markerdetector import MarkerDetector
 
 class Acc40Manager:
     directory = "/home/pi/Desktop/acc40/"
-    ampc_comb_dir = "ampc_comb_experimental/"
+    ampc_comb_dir = "ampc_comb_quad_bc_timeout/"
     # ampc_comb_dir = "ampc_comb/"
     simple_comb_dir = "simple_comb/"
     run_limit = 10
