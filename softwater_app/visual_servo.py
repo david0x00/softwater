@@ -7,6 +7,7 @@ import time
 '''
 Figure out emergency stop
 figure out saving directories
+figure out timeout 50 seconds
 '''
 
 class IK:
