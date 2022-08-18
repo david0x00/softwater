@@ -10,7 +10,7 @@ figure out timeout 50 seconds
 '''
 
 class IK:
-    model_file = "/Volumes/Flash/comb_bmodel/"
+    model_folder = "./ik_model/comb_bmodel/"
 
     xmin = -15
     xmax = 15
@@ -21,7 +21,7 @@ class IK:
     pmax = 121
 
     def __init__(self):
-        self.ik_model = keras.models.load_model(self.model_file)
+        self.ik_model = keras.models.load_model(self.model_folder)
 
     def rescale(self, p_list):
         ret = []
