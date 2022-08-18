@@ -2,12 +2,9 @@ from app import app
 import cv2
 from datalink import DataLink
 from detect import RobotDetector
-import numpy as np
-from rate import Rate
-import dill
 from controller import ControllerHandler
 import simple_controller
-import sys
+import visual_servo
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -17,6 +14,7 @@ camera_image = None
 tracker_image = None
 dc_image = cv2.imread("./assets/disconnected.png")
 
+first_connect = True
 
 handler = ControllerHandler()
 
@@ -31,14 +29,14 @@ def package_data(m, p):
     x_home = m[0][0]
     y_home = m[0][1]
 
-    for i in range(1,11):
+    for i in range(1, detector.robot_segments):
         x.append(m[i][0] - x_home)
         x.append(y_home - m[i][1])
 
     return x
 
 def main_callback(dt):
-    global camera_image, tracker_image, pipe_data
+    global camera_image, tracker_image, pipe_data, first_connect
 
     link.update()
 
@@ -50,9 +48,8 @@ def main_callback(dt):
             data = msg['data']
             if 'keyframe' in data.keys():
                 timestamp, img, pvalues = data['keyframe']
-                tracking, tracker_image = detector.detect(img)
+                tracking, camera_image, tracker_image = detector.detect(img)
                 app.camera_pane.set_detector_status(tracking)
-                camera_image = img
                 for sensor in range(len(pvalues)):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
 
@@ -63,6 +60,14 @@ def main_callback(dt):
                     pipe_data = None
     
     if link.connected():
+        if first_connect:
+            change_cam_settings(cv2.CAP_PROP_WB_TEMPERATURE, 10000)
+            change_cam_settings(cv2.CAP_PROP_AUTO_WB, 1)
+            
+            adjust_brightness(0, app.settings['BRIGHTNESS'], 0)
+            adjust_contrast(0, app.settings['CONTRAST'], 0)
+            adjust_saturation(0, app.settings['SATURATION'], 0)
+            first_connect = False
         if handler.is_alive():
             while True:
                 output = handler.pipe_out()
@@ -79,6 +84,7 @@ def main_callback(dt):
         camera_image = tracker_image = dc_image
         app.camera_pane.image.reset_zoom()
         app.camera_pane.image.can_zoom = False
+        first_connect = True
     
     link.update()
 
@@ -86,14 +92,13 @@ def auto_mpc(pressed):
     print("Auto MPC:", pressed)
     if pressed:
         global handler
-        controller = simple_controller.controller
-        controller.prepare((9, 27))
-        handler.set_controller(controller)
+        handler.set_controller(simple_controller.controller)
 
 def pid(pressed):
     print("PID:", pressed)
     if pressed:
-        print(app.controller_select.pid_selector.file_path)
+        global handler
+        handler.set_controller(visual_servo.controller)
 
 def open_loop(pressed):
     print("Open Loop:", pressed)
@@ -120,7 +125,8 @@ def start_experiment(pressed):
             print("Duration:", log_duration)'''
         global handler
         if handler.controller is not None:
-            #handler.controller.prepare((9, 27))
+            handler.controller.data_dir = "./experiments/"
+            handler.controller.prepare((9, 27))
             handler.start()
 
 def stop_experiment(pressed):

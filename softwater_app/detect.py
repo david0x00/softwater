@@ -37,11 +37,11 @@ class TrackingPoint:
         self.vy = vy
         self.size = size
     
-    def model_motion(self, dt, drag=0.01):
+    def model_motion(self, dt, drag=0.5):
         self.x = self.x + self.vx * dt
         self.y = self.y + self.vy * dt
-        self.vx *= min(1, drag / dt)
-        self.vy *= min(1, drag / dt)
+        self.vx *= drag
+        self.vy *= drag
     
     def set_pt(self, pt, dt):
         self.vx = (pt.x - self.x) / dt
@@ -62,9 +62,11 @@ class RobotTracker():
     nextObjectID:   int = 0
     objects:        OrderedDict[TrackingPoint] = OrderedDict()
     maxDisappeared: int
+    maxObjects:     int
     
-    def __init__(self, maxDisappeared=30):
+    def __init__(self, maxDisappeared=100, maxObjects=11):
         self.maxDisappeared = maxDisappeared
+        self.maxObjects = maxObjects
 
     def register(self, tracking_point: TrackingPoint):
         self.objects[self.nextObjectID] = tracking_point
@@ -268,9 +270,9 @@ class RobotDetector:
         ids = self.tracker.objects.keys()
         for i in range(self.robot_segments):
             if not i in ids:
-                return False, detection
+                return False, undistorted_img, detection
 
-        return True, detection
+        return True, undistorted_img, detection
     
     def draw_keypoints(self, image, pts, color=(0, 255, 0)):
         for pt in pts:

@@ -1,4 +1,3 @@
-from xxlimited import new
 from controller import Controller
 import keras
 import numpy as np

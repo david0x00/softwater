@@ -176,7 +176,9 @@ if current_process().name == 'MainProcess':
                     'AREA MIN':     100,
                     'AREA MAX':     'inf',
                     'INERTIA MIN':  0.2,
-                    'INERTIA MAX':  'inf'
+                    'INERTIA MAX':  'inf',
+                    'FREQUENCY':    2,
+                    'DURATION':     20
                 })
                 
                 with open("./appdata/settings.json", "w") as f:
@@ -201,9 +203,11 @@ if current_process().name == 'MainProcess':
                 settings_pane.area_max.text = str(self.settings['AREA MAX'])
                 settings_pane.inertia_min.text = str(self.settings['INERTIA MIN'])
                 settings_pane.inertia_max.text = str(self.settings['INERTIA MAX'])
+                self.command_center.frequency_text.text = str(self.settings['FREQUENCY'])
+                self.command_center.duration_text.text = str(self.settings['DURATION'])
 
                 controls.detector.main_color_hue = self.settings['HUE AVG']
-                controls.detector.main_color_error = self.settings['HUE ERROR']
+                controls.detector.main_color_hue_error = self.settings['HUE ERROR']
                 controls.detector.main_color_low_sat = self.settings['SAT LOW']
                 controls.detector.main_color_high_sat = self.settings['SAT HIGH']
                 controls.detector.main_color_low_val = self.settings['VALUE LOW']
