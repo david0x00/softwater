@@ -94,7 +94,10 @@ class Controller:
     
     def get_observations(self):
         self._out_queue.put(('app', 'get data'))
-        return self._in_queue.get()
+        print('waiting')
+        data = self._in_queue.get()
+        print('got')
+        return data
     
     def evaluate(self, x):
         u = []

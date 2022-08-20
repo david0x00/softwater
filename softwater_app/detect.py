@@ -37,11 +37,12 @@ class TrackingPoint:
         self.vy = vy
         self.size = size
     
-    def model_motion(self, dt, drag=0.5):
-        self.x = self.x + self.vx * dt
+    def model_motion(self, dt, drag=0):
+        '''self.x = self.x + self.vx * dt
         self.y = self.y + self.vy * dt
         self.vx *= drag
-        self.vy *= drag
+        self.vy *= drag'''
+        pass
     
     def set_pt(self, pt, dt):
         self.vx = (pt.x - self.x) / dt
@@ -60,7 +61,7 @@ class TrackingPoint:
 
 class RobotTracker():
     nextObjectID:   int = 0
-    objects:        OrderedDict[TrackingPoint] = OrderedDict()
+    objects         = OrderedDict()
     maxDisappeared: int
     maxObjects:     int
     
@@ -83,7 +84,7 @@ class RobotTracker():
             self.deregister(id)
         self.nextObjectID = 0
 
-    def update(self, pts: list[TrackingPoint], dt: float):
+    def update(self, pts, dt: float):
         for obj_id in self.objects.keys():
             self.objects[obj_id].model_motion(dt)
         

@@ -5,6 +5,7 @@ from detect import RobotDetector
 from controller import ControllerHandler
 import simple_controller
 import visual_servo
+import ampc_controller
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -92,18 +93,21 @@ def auto_mpc(pressed):
     print("Auto MPC:", pressed)
     if pressed:
         global handler
-        handler.set_controller(simple_controller.controller)
+        handler.set_controller(ampc_controller.controller)
+        handler.controller.timeout = 50
 
 def pid(pressed):
     print("PID:", pressed)
     if pressed:
         global handler
         handler.set_controller(visual_servo.controller)
+        handler.controller.timeout = 50
 
 def open_loop(pressed):
     print("Open Loop:", pressed)
     if pressed:
-        print(app.controller_select.open_loop_selector.file_path)
+        global handler
+        handler.set_controller(simple_controller.controller)
 
 def manual(pressed):
     print("Manual:", pressed)

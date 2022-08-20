@@ -2,10 +2,11 @@ from controller import Controller
 import pickle
 import autompc as ampc
 from autompc.costs import ThresholdCost
+import time
 
 
 class AMPCController(Controller):
-    controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+    controller_file = "./controller.pkl"
 
     def __init__(self):
         super().__init__()
@@ -13,7 +14,7 @@ class AMPCController(Controller):
             self.mpc = pickle.load(f)
         self.system = self.mpc.system
         self.ocp = ampc.OCP(self.system)
-        self.mpc.model._device = "cpu"
+        self.mpc.model._device = "cuda"
 
     def on_start(self):
         print("Controller Start")
@@ -34,8 +35,10 @@ class AMPCController(Controller):
         print("Controller End")
 
     def evaluate(self, x):
+        start = time.time()
         u = self.mpc.step(x)
-        return u
+        print(time.time() - start)
+        return list(u)
 
 controller = AMPCController()
 
