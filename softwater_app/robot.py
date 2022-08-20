@@ -54,6 +54,11 @@ if __name__ == "__main__":
                                 any_on = True
                             robot.set_solenoid(i, values[i])
                         robot.set_gate_valve(any_on)
+                    elif 'rth' in cmd.keys():
+                        robot.set_gate_valve(False)
+                        for i in range(8):
+                            robot.set_solenoid(i, (i % 2) == 1)
+                        
 
             link.update()
     except KeyboardInterrupt:
