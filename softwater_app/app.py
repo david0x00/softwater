@@ -5,6 +5,7 @@ if current_process().name == 'MainProcess':
     Config.set('kivy', 'exit_on_escape', '0')
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     from kivy.app import App
+    from kivy.core.window import Window
 
     import os
     import cv2
