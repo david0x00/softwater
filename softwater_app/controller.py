@@ -16,7 +16,6 @@ class Controller:
     timeout = 10
     pressure_sensor_count = 4
     solenoid_count = 8
-    stopped = True
     target = None
 
     t_headers = [
@@ -82,9 +81,7 @@ class Controller:
             writer.writeheader()
 
     def stop(self):
-        if not self.stopped:
-            self.stopped = True
-            self._cmd_queue.put(None)
+        self._cmd_queue.put(None)
     
     def on_start(self):
         pass
@@ -94,9 +91,18 @@ class Controller:
     
     def get_observations(self):
         self._out_queue.put(('app', 'get data'))
-        print('waiting')
-        data = self._in_queue.get()
-        print('got')
+        print("waiting")
+        t = time.perf_counter()
+        while True:
+            try:
+                data = self._in_queue.get(timeout=1)
+                break
+            except queue.Empty:
+                print('sheesh')
+                if self._check_cmd_queue():
+                    return None
+        
+        print(f"got -- {(time.perf_counter() - t) * 1000} ms")
         return data
     
     def evaluate(self, x):
@@ -148,6 +154,13 @@ class Controller:
         cv2.imwrite(file_name, img)
         self.img_count += 1
 
+    def _check_cmd_queue(self):
+        try:
+            print(self._cmd_queue.get_nowait())
+            return True
+        except queue.Empty:
+            return False
+
     def main_loop(self, in_queue, out_queue, cmd_queue):
         start = time.perf_counter()
 
@@ -164,14 +177,15 @@ class Controller:
         self.on_start()
 
         while time.perf_counter() < start + self.timeout:
-            try:
-                cmd_queue.get_nowait()
-                break
-            except queue.Empty:
-                pass
+            self._check_cmd_queue()
             
             # Main Control tasks
-            t, x, img = self.get_observations()
+            msg = self.get_observations()
+            if msg is None:
+                print('done')
+                break
+            t, x, img = msg
+
             u = self.evaluate(x)
             self.implement_controls(u)
 

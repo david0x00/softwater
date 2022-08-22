@@ -1,6 +1,8 @@
 from app import app
 import cv2
 from datalink import DataLink
+import datetime
+import os
 from detect import RobotDetector
 from controller import ControllerHandler
 import simple_controller
@@ -35,6 +37,16 @@ def package_data(m, p):
         x.append(y_home - m[i][1])
 
     return x
+
+experiment_dir = "./experiments"
+
+def new_experiment_dir(name):
+    if not os.path.exists(experiment_dir):
+        os.mkdir(experiment_dir)
+    timestamp = datetime.datetime.now()
+    folder = f"{experiment_dir}/{name} {timestamp.hour}-{timestamp.minute}-{timestamp.second} {timestamp.month}-{timestamp.day}-{timestamp.year}/"
+    os.mkdir(folder)
+    return folder
 
 def main_callback(dt):
     global camera_image, tracker_image, pipe_data, first_connect
@@ -94,20 +106,24 @@ def auto_mpc(pressed):
     if pressed:
         global handler
         handler.set_controller(ampc_controller.controller)
-        handler.controller.timeout = 50
+        handler.controller.data_dir = new_experiment_dir("Auto MPC")
+        handler.controller.timeout = 30
 
 def pid(pressed):
-    print("PID:", pressed)
+    print("Visual Servo:", pressed)
     if pressed:
         global handler
         handler.set_controller(visual_servo.controller)
-        handler.controller.timeout = 50
+        handler.controller.data_dir = new_experiment_dir("Visual Servo")
+        handler.controller.timeout = 30
 
 def open_loop(pressed):
     print("Open Loop:", pressed)
     if pressed:
         global handler
         handler.set_controller(simple_controller.controller)
+        handler.controller.data_dir = new_experiment_dir("Open Loop")
+        handler.controller.timeout = 30
 
 def manual(pressed):
     print("Manual:", pressed)
@@ -129,12 +145,14 @@ def start_experiment(pressed):
             print("Duration:", log_duration)'''
         global handler
         if handler.controller is not None:
-            handler.controller.data_dir = "./experiments/"
             handler.controller.prepare((9, 27))
             handler.start()
 
 def stop_experiment(pressed):
     print("Stop Experiment: ", pressed)
+    if pressed:
+        if handler.controller is not None:
+            handler.controller.stop()
 
 def camera_view(pressed):
     global is_camera_view

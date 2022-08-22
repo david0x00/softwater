@@ -14,7 +14,7 @@ class AMPCController(Controller):
             self.mpc = pickle.load(f)
         self.system = self.mpc.system
         self.ocp = ampc.OCP(self.system)
-        self.mpc.model._device = "cuda"
+        self.mpc.model._device = "cpu"
 
     def on_start(self):
         print("Controller Start")
