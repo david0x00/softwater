@@ -5,6 +5,7 @@ if current_process().name == 'MainProcess':
     Config.set('kivy', 'exit_on_escape', '0')
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     from kivy.app import App
+    from kivy.core.window import Window
 
     import os
     import cv2
@@ -107,6 +108,8 @@ if current_process().name == 'MainProcess':
 
             self.command_center.start_button.add_callback(controls.start_experiment)
             self.command_center.stop_button.add_callback(controls.stop_experiment)
+            self.command_center.frequency_text.add_callback(controls.adjust_frequency)
+            self.command_center.duration_text.add_callback(controls.adjust_duration)
 
             self.camera_pane.camera_view.add_callback(controls.camera_view)
             self.camera_pane.tracker_view.add_callback(controls.tracker_view)
@@ -176,7 +179,10 @@ if current_process().name == 'MainProcess':
                     'AREA MIN':     100,
                     'AREA MAX':     'inf',
                     'INERTIA MIN':  0.2,
-                    'INERTIA MAX':  'inf'
+                    'INERTIA MAX':  'inf',
+                    'FREQUENCY':    2,
+                    'DURATION':     20,
+                    'TARGET IDX':   0
                 })
                 
                 with open("./appdata/settings.json", "w") as f:
@@ -201,6 +207,24 @@ if current_process().name == 'MainProcess':
                 settings_pane.area_max.text = str(self.settings['AREA MAX'])
                 settings_pane.inertia_min.text = str(self.settings['INERTIA MIN'])
                 settings_pane.inertia_max.text = str(self.settings['INERTIA MAX'])
+                self.command_center.frequency_text.text = str(self.settings['FREQUENCY'])
+                self.command_center.duration_text.text = str(self.settings['DURATION'])
+                self.controller_select.target.text = str(self.settings['TARGET IDX'])
+
+                controls.detector.main_color_hue = self.settings['HUE AVG']
+                controls.detector.main_color_hue_error = self.settings['HUE ERROR']
+                controls.detector.main_color_low_sat = self.settings['SAT LOW']
+                controls.detector.main_color_high_sat = self.settings['SAT HIGH']
+                controls.detector.main_color_low_val = self.settings['VALUE LOW']
+                controls.detector.main_color_high_val = self.settings['VALUE HIGH']
+                controls.detector.gaussian_blur = (self.settings['GAUS BLUR X'], self.settings['GAUS BLUR Y'])
+                controls.detector.params.minCircularity = float(self.settings['CIRC MIN'])
+                controls.detector.params.maxCircularity = float(self.settings['CIRC MAX'])
+                controls.detector.params.minArea = float(self.settings['AREA MIN'])
+                controls.detector.params.maxArea = float(self.settings['AREA MAX'])
+                controls.detector.params.minInertiaRatio = float(self.settings['INERTIA MIN'])
+                controls.detector.params.maxInertiaRatio = float(self.settings['INERTIA MAX'])
+                controls.detector.update_params()
             
             return window
         

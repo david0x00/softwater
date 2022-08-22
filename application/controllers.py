@@ -274,9 +274,6 @@ class SimpleController(Controller):
 
 
 class AMPCController(Controller):
-<<<<<<< Updated upstream
-    controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
-=======
     # Original
     # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
     # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
@@ -284,15 +281,12 @@ class AMPCController(Controller):
     quad_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_quad_defaultgoals/controller.pkl"
     controller_file = quad_file
     tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
->>>>>>> Stashed changes
 
     def __init__(self, robot):
         '''super().__init__(robot)
         with open(self.controller_file, "rb") as f:
             self.controller = pickle.load(f)
-<<<<<<< Updated upstream
         self.system = self.controller.system'''
-=======
         #************** altering the tune
         '''
         with open(self.tuner_file, "rb") as f:
@@ -310,9 +304,6 @@ class AMPCController(Controller):
         self.controller.reset()
         '''
         #****************************************
-
-        self.system = self.controller.system
->>>>>>> Stashed changes
 
     def prepare(self, targ, data_dir):
         '''super().prepare()

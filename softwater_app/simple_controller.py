@@ -17,12 +17,12 @@ class SimpleController(Controller):
         print("Controller End")
 
     def evaluate(self, x):
-        pts, pressures = x
-        u = [False for _ in range(self.solenoids)]
+        pressures = x[0:4]
+        u = [False for _ in range(self.solenoid_count)]
 
         target_pressures = self.controller_pressures[self.target]
 
-        for i in range(self.pressure_sensors):
+        for i in range(self.pressure_sensor_count):
             if pressures[i] < target_pressures[i]:
                 u[i * 2] = True
         return u
