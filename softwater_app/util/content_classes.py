@@ -88,7 +88,7 @@ class ControlSelector(GridLayout):
         self.rows = 2
 
         self.auto_mpc_button = RoundToggleButton("Auto MPC", "Auto MPC", button_down_cc, button_up_cc)
-        self.pid_button = RoundToggleButton("PID", "PID", button_down_cc, button_up_cc)
+        self.pid_button = RoundToggleButton("Visual Servo", "Visual Servo", button_down_cc, button_up_cc)
         self.open_loop_button = RoundToggleButton("Open Loop", "Open Loop", button_down_cc, button_up_cc)
         self.manual_button = RoundToggleButton("Manual", "Manual", button_down_cc, button_up_cc)
 

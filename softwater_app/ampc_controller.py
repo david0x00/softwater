@@ -3,7 +3,6 @@ import pickle
 import autompc as ampc
 from autompc.costs import ThresholdCost
 import time
-import torch
 
 
 class AMPCController(Controller):
@@ -36,9 +35,7 @@ class AMPCController(Controller):
         print("Controller End")
 
     def evaluate(self, x):
-        start = time.time()
         u = self.mpc.step(x)
-        print(time.time() - start)
         return list(u)
 
 controller = AMPCController()
