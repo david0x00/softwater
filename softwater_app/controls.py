@@ -108,7 +108,7 @@ def auto_mpc(pressed):
         global handler
         handler.set_controller(ampc_controller.controller)
         handler.controller.data_dir = new_experiment_dir("Auto MPC")
-        handler.controller.timeout = 30
+        handler.controller.timeout = 50
 
 def pid(pressed):
     print("Visual Servo:", pressed)
@@ -116,7 +116,7 @@ def pid(pressed):
         global handler
         handler.set_controller(visual_servo.controller)
         handler.controller.data_dir = new_experiment_dir("Visual Servo")
-        handler.controller.timeout = 30
+        handler.controller.timeout = 50
 
 def open_loop(pressed):
     print("Open Loop:", pressed)
@@ -124,7 +124,7 @@ def open_loop(pressed):
         global handler
         handler.set_controller(simple_controller.controller)
         handler.controller.data_dir = new_experiment_dir("Open Loop")
-        handler.controller.timeout = 30
+        handler.controller.timeout = 50
 
 def manual(pressed):
     print("Manual:", pressed)

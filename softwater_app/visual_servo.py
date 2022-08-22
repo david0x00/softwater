@@ -56,9 +56,19 @@ class VisualServo(Controller):
 
         self.update_target_timeout = 5 
 
+        self.int_sat_min = np.array([
+            [-50],
+            [-50]
+        ])
+
+        self.int_sat_max = np.array([
+            [50],
+            [50]
+        ])
+
         self.Kp = np.array([
-            [0.25],
-            [0.5]
+            [0.15],
+            [0.4]
         ])
         self.Ki = np.array([
             [0.1],
@@ -86,6 +96,10 @@ class VisualServo(Controller):
             "TP1R",
             "TP2L",
             "TP2R",
+            "KPX",
+            "KPY",
+            "KIX",
+            "KIY"
         ]
         return headers
 
@@ -109,7 +123,11 @@ class VisualServo(Controller):
             self.target_pressures[0],
             self.target_pressures[1],
             self.target_pressures[2],
-            self.target_pressures[3]
+            self.target_pressures[3],
+            self.Kp[0][0],
+            self.Kp[1][0],
+            self.Ki[0][0],
+            self.Ki[1][0]
         ]
         return data
 
@@ -133,6 +151,9 @@ class VisualServo(Controller):
 
     def on_end(self):
         print("Controller End")
+
+    def clip_int_error(self):
+        self.integration_error = np.clip(self.integration_error, a_max=self.int_sat_max, a_min=self.int_sat_min)
     
     def adjust_target(self, x_ee_in):
         # Get dt and reset prev_time
@@ -152,6 +173,7 @@ class VisualServo(Controller):
 
         error = targ - x_ee
         self.integration_error = self.integration_error + (error * dt)
+        self.clip_int_error()
 
         P = self.Kp * error
         I = self.Ki * self.integration_error
