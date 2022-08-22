@@ -3,6 +3,7 @@ import pickle
 import autompc as ampc
 from autompc.costs import ThresholdCost
 import time
+import torch
 
 
 class AMPCController(Controller):

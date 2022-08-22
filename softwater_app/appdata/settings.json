@@ -16,6 +16,7 @@
     "AREA MAX": Infinity,
     "INERTIA MIN": 0.1,
     "INERTIA MAX": Infinity,
-    "FREQUENCY": 2,
-    "DURATION": 20
+    "FREQUENCY": 2.0,
+    "DURATION": 20,
+    "TARGET IDX": 0
 }

@@ -84,25 +84,28 @@ class ControlSelector(GridLayout):
         self.pos_hint = pos_hint
         self.padding = 20
         self.spacing = 10
-        self.cols = 2
-        self.rows = 4
+        self.cols = 3
+        self.rows = 2
 
-        self.auto_mpc_button = RoundToggleButton("Auto MPC", "Auto MPC", button_down_cc, button_up_cc, size_hint=(0.2, 1))
-        self.pid_button = RoundToggleButton("PID", "PID", button_down_cc, button_up_cc, size_hint=(0.2, 1))
-        self.open_loop_button = RoundToggleButton("Open Loop", "Open Loop", button_down_cc, button_up_cc, size_hint=(0.2, 1))
-        self.manual_button = RoundToggleButton("Manual", "Manual", button_down_cc, button_up_cc, size_hint=(0.2, 1))
-    
-        self.auto_mpc_selector = FileSelector(button_up_cc, button_down_cc)
-        self.pid_selector = FileSelector(button_up_cc, button_down_cc)
-        self.open_loop_selector = FileSelector(button_up_cc, button_down_cc)
+        self.auto_mpc_button = RoundToggleButton("Auto MPC", "Auto MPC", button_down_cc, button_up_cc)
+        self.pid_button = RoundToggleButton("PID", "PID", button_down_cc, button_up_cc)
+        self.open_loop_button = RoundToggleButton("Open Loop", "Open Loop", button_down_cc, button_up_cc)
+        self.manual_button = RoundToggleButton("Manual", "Manual", button_down_cc, button_up_cc)
+
+        self.target_text = ResizableLabel("Target IDX:", 0.25)
+        target_layout = BoxLayout(orientation='horizontal')
+        self.target = ResizableTextInput("", 0.25)
+        self.target_coords = ResizableLabel("N/A", 0.25)
 
         self.add_widget(self.auto_mpc_button)
-        self.add_widget(self.auto_mpc_selector)
         self.add_widget(self.pid_button)
-        self.add_widget(self.pid_selector)
+        self.add_widget(self.target_text)
         self.add_widget(self.open_loop_button)
-        self.add_widget(self.open_loop_selector)
         self.add_widget(self.manual_button)
+        self.add_widget(target_layout)
+
+        target_layout.add_widget(self.target)
+        target_layout.add_widget(self.target_coords)
 
         self.auto_mpc_button.add_callback(self._auto_mpc_pressed)
         self.pid_button.add_callback(self._pid_pressed)
@@ -381,7 +384,7 @@ class CameraPane(BoxLayout):
 
         label_layout = BoxLayout(orientation="horizontal")
         detector_status_label = ResizableLabel("Detector Status:", 0.4, halign="left")
-        self.detector_status = ResizableLabel("No Track", 0.4, halign="right", size_hint=(0.6, 1))
+        self.detector_status = ResizableLabel("No Track", 0.4, halign="right", size_hint=(0.7, 1))
 
         self.r = ResizableLabel("H", 0.3)
         self.g = ResizableLabel("S", 0.3)

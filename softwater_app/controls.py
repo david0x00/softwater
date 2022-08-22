@@ -3,6 +3,7 @@ import cv2
 from datalink import DataLink
 import datetime
 import os
+from rate import Rate
 from detect import RobotDetector
 from controller import ControllerHandler
 import simple_controller
@@ -128,6 +129,42 @@ def open_loop(pressed):
 def manual(pressed):
     print("Manual:", pressed)
 
+def check_ufloat(text):
+    try:
+        value = float(text)
+        if value >= 0:
+            return value
+    except:
+        pass
+    return None
+
+def check_int(text, min=None, max=None, is_odd=None):
+    try:
+        value = int(text)
+        passes = True
+        if min is not None and value < min:
+            passes = False
+        elif max is not None and value > max:
+            passes = False
+        elif is_odd is not None and (value % 2) == 0:
+            passes = False
+        if passes:
+            return value
+    except:
+        pass
+    return None
+
+def target_idx(instance, text):
+    num = check_int(text, min=0, max=39)
+    if num is None:
+        instance.text = str(app.settings['TARGET IDX'])
+    else:
+        app.settings['TARGET IDX'] = num
+        if handler.controller is None:
+            app.controller_select.target_coords = "N/A"
+        else:
+            app.controller_select.target_coords = str(handler.controller.convert_idx(num))
+
 def start_experiment(pressed):
     print("Start Experiment:", pressed)
     if (pressed):
@@ -145,7 +182,13 @@ def start_experiment(pressed):
             print("Duration:", log_duration)'''
         global handler
         if handler.controller is not None:
-            handler.controller.prepare((9, 27))
+            idx = check_int(app.controller_select.target.text)
+            if idx is None:
+                app.command_center.start_button.state = "normal"
+            targ = handler.controller.convert_idx(idx)
+            handler.controller.prepare(targ)
+            handler.controller.rate = Rate(float(app.command_center.frequency_text.text))
+            handler.controller.timeout = float(app.command_center.duration_text.text)
             handler.start()
 
 def stop_experiment(pressed):
@@ -204,31 +247,6 @@ def adjust_contrast(min, value, max):
 def adjust_saturation(min, value, max):
     change_cam_settings(cv2.CAP_PROP_SATURATION, value)
     app.settings['SATURATION'] = value
-
-def check_ufloat(text):
-    try:
-        value = float(text)
-        if value >= 0:
-            return value
-    except:
-        pass
-    return None
-
-def check_int(text, min=None, max=None, is_odd=None):
-    try:
-        value = int(text)
-        passes = True
-        if min is not None and value < min:
-            passes = False
-        elif max is not None and value > max:
-            passes = False
-        elif is_odd is not None and (value % 2) == 0:
-            passes = False
-        if passes:
-            return value
-    except:
-        pass
-    return None
 
 def adjust_hue_average(instance, text):
     value = check_int(text, 0, 180)
@@ -347,4 +365,17 @@ def adjust_inertia_max(instance, text):
         detector.params.maxInertiaRatio = value
         detector.update_params()
         app.settings['INERTIA MAX'] = value
-    
+
+def adjust_frequency(instance, text):
+    value = check_ufloat(text)
+    if value is None:
+        instance.text = str(app.settings['FREQUENCY'])
+    else:
+        app.settings['FREQUENCY'] = value
+
+def adjust_duration(instance, text):
+    value = check_ufloat(text)
+    if value is None:
+        instance.text = str(app.settings['DURATION'])
+    else:
+        app.settings['DURATION'] = value

@@ -108,6 +108,8 @@ if current_process().name == 'MainProcess':
 
             self.command_center.start_button.add_callback(controls.start_experiment)
             self.command_center.stop_button.add_callback(controls.stop_experiment)
+            self.command_center.frequency_text.add_callback(controls.adjust_frequency)
+            self.command_center.duration_text.add_callback(controls.adjust_duration)
 
             self.camera_pane.camera_view.add_callback(controls.camera_view)
             self.camera_pane.tracker_view.add_callback(controls.tracker_view)
@@ -179,7 +181,8 @@ if current_process().name == 'MainProcess':
                     'INERTIA MIN':  0.2,
                     'INERTIA MAX':  'inf',
                     'FREQUENCY':    2,
-                    'DURATION':     20
+                    'DURATION':     20,
+                    'TARGET IDX':   0
                 })
                 
                 with open("./appdata/settings.json", "w") as f:
@@ -206,6 +209,7 @@ if current_process().name == 'MainProcess':
                 settings_pane.inertia_max.text = str(self.settings['INERTIA MAX'])
                 self.command_center.frequency_text.text = str(self.settings['FREQUENCY'])
                 self.command_center.duration_text.text = str(self.settings['DURATION'])
+                self.controller_select.target.text = str(self.settings['TARGET IDX'])
 
                 controls.detector.main_color_hue = self.settings['HUE AVG']
                 controls.detector.main_color_hue_error = self.settings['HUE ERROR']

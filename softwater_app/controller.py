@@ -98,7 +98,6 @@ class Controller:
                 data = self._in_queue.get(timeout=1)
                 break
             except queue.Empty:
-                print('sheesh')
                 if self._check_cmd_queue():
                     return None
         
@@ -162,7 +161,8 @@ class Controller:
             return False
 
     def main_loop(self, in_queue, out_queue, cmd_queue):
-        start = time.perf_counter()
+        self.rate.set_start()
+        start = self.rate.get_start()
 
         if self.target is None:
             return
@@ -177,15 +177,14 @@ class Controller:
         self.on_start()
 
         while time.perf_counter() < start + self.timeout:
-            self._check_cmd_queue()
+            if self._check_cmd_queue():
+                break
             
             # Main Control tasks
             msg = self.get_observations()
             if msg is None:
-                print('done')
                 break
             t, x, img = msg
-
             u = self.evaluate(x)
             self.implement_controls(u)
 
@@ -197,6 +196,7 @@ class Controller:
         
         # send stop command to robot
         out_queue.put(('robot', ({'command': {'running': False}})))
+        out_queue.put(('robot', ({'command': {'rth': True}})))
 
         self.on_end()
 
