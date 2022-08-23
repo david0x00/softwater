@@ -49,6 +49,7 @@ def new_experiment_dir(name):
         os.mkdir(experiment_dir)
     timestamp = datetime.datetime.now()
     folder = f"{experiment_dir}/{new_name} {timestamp.hour}-{timestamp.minute}-{timestamp.second} {timestamp.month}-{timestamp.day}-{timestamp.year}/"
+    print("making experiment_dir")
     os.mkdir(folder)
     return folder
 
@@ -110,7 +111,7 @@ def auto_mpc(pressed):
     if pressed:
         global handler
         handler.set_controller(ampc_controller.controller)
-        handler.controller.data_dir = new_experiment_dir("Auto MPC")
+        handler.controller.data_dir = new_experiment_dir("Auto_MPC")
         handler.controller.timeout = 50
 
 def pid(pressed):
@@ -118,7 +119,7 @@ def pid(pressed):
     if pressed:
         global handler
         handler.set_controller(visual_servo.controller)
-        handler.controller.data_dir = new_experiment_dir("Visual Servo")
+        handler.controller.data_dir = new_experiment_dir("Visual_Servo")
         handler.controller.timeout = 50
 
 def open_loop(pressed):
@@ -126,7 +127,7 @@ def open_loop(pressed):
     if pressed:
         global handler
         handler.set_controller(simple_controller.controller)
-        handler.controller.data_dir = new_experiment_dir("Open Loop")
+        handler.controller.data_dir = new_experiment_dir("Open_Loop")
         handler.controller.timeout = 50
 
 def manual(pressed):
