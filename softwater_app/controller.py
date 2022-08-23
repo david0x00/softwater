@@ -185,7 +185,9 @@ class Controller:
             if msg is None:
                 break
             t, x, img = msg
+            st = time.perf_counter()
             u = self.evaluate(x)
+            print((time.perf_counter() - st) * 1000)
             self.implement_controls(u)
 
             # Save Data

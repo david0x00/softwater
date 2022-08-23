@@ -1,3 +1,0 @@
-
-class OptionalDependencyException(Exception):
-    pass
