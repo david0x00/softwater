@@ -36,6 +36,10 @@ class Controller:
         "M10Y"
     ]
 
+    o_headers = [
+        "ORIGX", "ORIGY"
+    ]
+
     xc = [[-9,-7,-5,-3,-1,1,3,5,7,9],
           [-9,-7,-5,-3,-1,1,3,5,7,9],
           [-7,-5,-3,-1,1,3,5,7],
@@ -117,30 +121,32 @@ class Controller:
         headers += self.t_headers
         headers += self.x_headers
         headers += self.u_headers
+        headers += self.o_headers
         headers += self.extra_headers()
         return headers
 
     def extra_headers(self):
         return []
 
-    def package_data(self, t, x, u):
+    def package_data(self, t, x, u, o):
         data = []
         data += t
         data += x
         data += u
+        data += o
         data += self.extra_data()
         return data
 
     def extra_data(self):
         return []
 
-    def save_data(self, t, x, u, img):
+    def save_data(self, t, x, u, origin, img):
         self.write_img(img)
 
         with open(self.data_file, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.column_headers)
 
-            data = self.package_data(t, x, u)
+            data = self.package_data(t, x, u, origin)
             row_dict = {}
 
             for idx, header in enumerate(self.column_headers):
@@ -184,14 +190,14 @@ class Controller:
             msg = self.get_observations()
             if msg is None:
                 break
-            t, x, img = msg
+            t, x, origin, img = msg
             st = time.perf_counter()
             u = self.evaluate(x)
             print((time.perf_counter() - st) * 1000)
             self.implement_controls(u)
 
             # Save Data
-            self.save_data(t, x, u, img)
+            self.save_data(t, x, u, origin, img)
 
             # Wait for end of control loop
             self.rate.sleep()
