@@ -68,7 +68,7 @@ class VisualServo(Controller):
 
         self.Kp = np.array([
             [0.15],
-            [0.4]
+            [0.20]
         ])
         self.Ki = np.array([
             [0.1],

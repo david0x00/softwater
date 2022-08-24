@@ -32,20 +32,24 @@ def package_data(m, p):
 
     x_home = m[0][0]
     y_home = m[0][1]
+    origin = [x_home, y_home]
 
     for i in range(1, detector.robot_segments):
         x.append(m[i][0] - x_home)
         x.append(y_home - m[i][1])
 
-    return x
+    return x, origin
 
 experiment_dir = "./experiments"
 
 def new_experiment_dir(name):
+    idx = check_int(app.controller_select.target.text)
+    new_name = name + " IDX" + str(idx)
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
     timestamp = datetime.datetime.now()
-    folder = f"{experiment_dir}/{name} {timestamp.hour}-{timestamp.minute}-{timestamp.second} {timestamp.month}-{timestamp.day}-{timestamp.year}/"
+    folder = f"{experiment_dir}/{new_name} {timestamp.hour}-{timestamp.minute}-{timestamp.second} {timestamp.month}-{timestamp.day}-{timestamp.year}/"
+    print("making experiment_dir")
     os.mkdir(folder)
     return folder
 
@@ -68,8 +72,8 @@ def main_callback(dt):
                     app.robot_state_image_pane.show_pressure(sensor, pvalues[sensor])
 
                 if tracking:
-                    x = package_data(detector.tracker.objects, pvalues)
-                    pipe_data = ([timestamp], x, img)
+                    x, origin = package_data(detector.tracker.objects, pvalues)
+                    pipe_data = ([timestamp], x, origin, img)
                 else:
                     pipe_data = None
     
@@ -103,27 +107,27 @@ def main_callback(dt):
     link.update()
 
 def auto_mpc(pressed):
-    print("Auto MPC:", pressed)
+    print("Auto_MPC:", pressed)
     if pressed:
         global handler
         handler.set_controller(ampc_controller.controller)
-        handler.controller.data_dir = new_experiment_dir("Auto MPC")
+        handler.controller.data_dir = new_experiment_dir("Auto_MPC")
         handler.controller.timeout = 50
 
 def pid(pressed):
-    print("Visual Servo:", pressed)
+    print("Visual_Servo:", pressed)
     if pressed:
         global handler
         handler.set_controller(visual_servo.controller)
-        handler.controller.data_dir = new_experiment_dir("Visual Servo")
+        handler.controller.data_dir = new_experiment_dir("Visual_Servo")
         handler.controller.timeout = 50
 
 def open_loop(pressed):
-    print("Open Loop:", pressed)
+    print("Open_Loop:", pressed)
     if pressed:
         global handler
         handler.set_controller(simple_controller.controller)
-        handler.controller.data_dir = new_experiment_dir("Open Loop")
+        handler.controller.data_dir = new_experiment_dir("Open_Loop")
         handler.controller.timeout = 50
 
 def manual(pressed):
