@@ -8,7 +8,7 @@ criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 s = 6
 b = 9
 
-square_size = 2.35 # cm
+square_size = 2.25 # cm
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((s*b,3), np.float32)
@@ -46,7 +46,7 @@ cv2.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
-img= cv2.imread("49d.jpg")
+img= cv2.imread("49.jpg")
 h, w = img.shape[:2]
 
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
