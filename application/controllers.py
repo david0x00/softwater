@@ -11,7 +11,7 @@ from markerdetector import MarkerDetector
 
 class Acc40Manager:
     directory = "/home/pi/Desktop/acc40/"
-    ampc_comb_dir = "ampc_comb_experimental/"
+    ampc_comb_dir = "ampc_comb_bc_horizon/"
     # ampc_comb_dir = "ampc_comb/"
     simple_comb_dir = "simple_comb/"
     run_limit = 10
@@ -322,12 +322,12 @@ class SimpleController(Controller):
 
 class AMPCController(Controller):
     # Original
-    controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
+    # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
     # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
     # controller_file = "/home/pi/Desktop/dohun_test/controller.pkl"
     tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
     #controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/0808_endtoend_upperlowerbarrier_defaultgoals_200/controller.pkl"
-    # controller_file = '/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl'
+    controller_file = '/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl'
 
     def __init__(self, robot):
         super().__init__(robot)
@@ -336,17 +336,18 @@ class AMPCController(Controller):
         #************** altering the tune
         # with open(self.tuner_file, "rb") as f:
         #     self.tune_result = pickle.load(f)
-        # config = self.tune_result.inc_cfg
-        # config["QuadCostFactory:M2-AR-OUT_R"] = 1
-        # config["QuadCostFactory:M2-AR-IN_R"] = 1
-        # config["QuadCostFactory:M2-AL-OUT_R"] = 1
-        # config["QuadCostFactory:M2-AL-IN_R"] = 1
-        # config["QuadCostFactory:M1-AR-OUT_R"] = 1
-        # config["QuadCostFactory:M1-AR-IN_R"] = 1
-        # config["QuadCostFactory:M1-AL-OUT_R"] = 1
-        # config["QuadCostFactory:M1-AL-IN_R"] = 1
+        # config = self.controller.get_config()
+        # config["SumTransformer:_sum_0:M2-AR-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AR-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AL-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AL-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AR-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AR-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AL-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AL-IN_R"] = 1
         # self.controller.set_config(config)
         # self.controller.reset()
+        # print(self.controller.optimizer.optimizer.ocp.get_cost()._costs[0]._R)
         #****************************************
 
         self.system = self.controller.system
@@ -383,6 +384,8 @@ class AMPCController(Controller):
             writer.writeheader()
 
     def run_controller(self):
+        import pandas as pd
+        self.controller.optimizer.optimizer.df = pd.DataFrame([],columns=['Obs','States','Ctrl','Cost'])
         start_time = datetime.datetime.now()
         loop_number = -1
         loop_period = 0.5
@@ -416,6 +419,7 @@ class AMPCController(Controller):
                 print(obs_time, ampc_time, imp_time, save_time, total_time)
             
         self.robot.turn_off_robot()
+        self.controller.optimizer.optimizer.df.to_csv(f"/home/pi/dohun/horizon_debug/{time.time()}.csv")
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
     
 
