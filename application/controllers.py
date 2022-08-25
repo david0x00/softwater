@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pickle
 import datetime
 import os
@@ -10,7 +11,8 @@ from markerdetector import MarkerDetector
 
 class Acc40Manager:
     directory = "/home/pi/Desktop/acc40/"
-    ampc_comb_dir = "ampc_comb/"
+    ampc_comb_dir = "ampc_comb_bc_horizon/"
+    # ampc_comb_dir = "ampc_comb/"
     simple_comb_dir = "simple_comb/"
     run_limit = 10
     xc = [[-9,-7,-5,-3,-1,1,3,5,7,9],
@@ -212,6 +214,52 @@ class Controller:
         init_img = self.robot.camera.get_opencv_img()
         self.md = MarkerDetector(init_img, color_threshold)
 
+class ClosedLoopIK(Controller):
+    model_file = "/Volumes/Flash/comb_bmodel/"
+
+    xmin = -15
+    xmax = 15
+    ymin = 0
+    ymax = 40
+
+    pmin = 95
+    pmax = 121
+
+    def rescale(self, p_list):
+        ret = []
+        for p in p_list:
+            ret.append((p * (pmax - pmin)) + pmin)
+        return ret
+
+    def normalize(self, x, y):
+        ret = np.zeros(2)
+        ret[0] = (x - self.xmin) / (self.xmax - self.xmin)
+        ret[1] = (y - self.ymin) / (self.ymax - self.ymin)
+        ret = ret.reshape(1,-1)
+        return ret
+        
+    def calc_pressures(self, x, y):
+        x_in = self.normalize(x, y)
+        comb_pred = self.ik_model.predict(x_in)
+        comb_final = self.rescale(list(comb_pred[0]))
+        return comb_final
+
+    def __init__(self, robot):
+        super().__init__(robot)
+        self.ik_model = keras.models.load_model(self.model_file)
+
+    def prepare(self, targ, data_dir):
+        super().prepare()
+
+        # Get initial pressures
+        ip = self.calc_pressures(targ[0], targ[1])
+
+
+    def run_controller(self):
+        # in a loop
+        # calculate the error in the cartesian space.
+        # 
+        pass
 
 class SimpleController(Controller):
     controller_file = "/home/pi/Desktop/acc40/controllers/simple1_comb.p"
@@ -268,7 +316,7 @@ class SimpleController(Controller):
                 if not self.check_emergency_stop():
                     self.implement_controls()
                 self.save_control_state(start_time)
-            
+
         self.robot.turn_off_robot()
         print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")'''
 
@@ -277,33 +325,33 @@ class AMPCController(Controller):
     # Original
     # controller_file = "/home/pi/Desktop/acc40/controllers/ampc1_comb.pkl"
     # tuner_file = "/home/pi/softwater/application/tune_result_altered.pkl"
-    barrier_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_barrier_defaultgoals/controller.pkl"
-    quad_file = "/home/pi/dohun/underwater_robot_autompc-0.2-dev-fix/experiment_scripts/endtoend_quad_defaultgoals/controller.pkl"
-    controller_file = quad_file
+    # controller_file = "/home/pi/Desktop/dohun_test/controller.pkl"
     tuner_file = "/home/pi/Desktop/dohun_test/tune_result.pkl"
+    #controller_file = "/home/pi/dohun/underwater_robot_autompc/experiment_scripts/0808_endtoend_upperlowerbarrier_defaultgoals_200/controller.pkl"
+    controller_file = '/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl'
 
     def __init__(self, robot):
         '''super().__init__(robot)
         with open(self.controller_file, "rb") as f:
             self.controller = pickle.load(f)
-        self.system = self.controller.system'''
         #************** altering the tune
-        '''
-        with open(self.tuner_file, "rb") as f:
-            self.tune_result = pickle.load(f)
-        config = self.tune_result.inc_cfg
-        config["QuadCostFactory:M2-AR-OUT_R"] = 1
-        config["QuadCostFactory:M2-AR-IN_R"] = 1
-        config["QuadCostFactory:M2-AL-OUT_R"] = 1
-        config["QuadCostFactory:M2-AL-IN_R"] = 1
-        config["QuadCostFactory:M1-AR-OUT_R"] = 1
-        config["QuadCostFactory:M1-AR-IN_R"] = 1
-        config["QuadCostFactory:M1-AL-OUT_R"] = 1
-        config["QuadCostFactory:M1-AL-IN_R"] = 1
-        self.controller.set_config(config)
-        self.controller.reset()
-        '''
+        # with open(self.tuner_file, "rb") as f:
+        #     self.tune_result = pickle.load(f)
+        # config = self.controller.get_config()
+        # config["SumTransformer:_sum_0:M2-AR-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AR-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AL-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M2-AL-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AR-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AR-IN_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AL-OUT_R"] = 1
+        # config["SumTransformer:_sum_0:M1-AL-IN_R"] = 1
+        # self.controller.set_config(config)
+        # self.controller.reset()
+        # print(self.controller.optimizer.optimizer.ocp.get_cost()._costs[0]._R)
         #****************************************
+
+        self.system = self.controller.system
 
     def prepare(self, targ, data_dir):
         '''super().prepare()
@@ -328,6 +376,7 @@ class AMPCController(Controller):
         print(self.system.controls)
 
         print(targ)
+        print(data_dir)
         self.data_file = data_dir + "control_data_" + str(int(targ[0])) + "_" + str(int(targ[1])) + ".csv"
         if os.path.exists(self.data_file):
             print("something wrong!!!")
@@ -336,7 +385,9 @@ class AMPCController(Controller):
             writer.writeheader()'''
 
     def run_controller(self):
-        '''start_time = datetime.datetime.now()
+        import pandas as pd
+        self.controller.optimizer.optimizer.df = pd.DataFrame([],columns=['Obs','States','Ctrl','Cost'])
+        start_time = datetime.datetime.now()
         loop_number = -1
         loop_period = 0.5
         timer = self.run_time
@@ -354,14 +405,23 @@ class AMPCController(Controller):
             if proposed_loop_number > loop_number:
                 #print(elapsed_time)
                 loop_number = proposed_loop_number
+                start = time.time()
                 self.get_observations()
+                obs_time = (time.time() - start ) * 1000
                 self.u = self.controller.step(self.obs)
+                ampc_time = (time.time() - start ) * 1000 - (obs_time)
                 if not self.check_emergency_stop():
                     self.implement_controls()
+                imp_time = (time.time() - start ) * 1000 - (ampc_time + obs_time)
                 self.save_control_state(start_time)
+                save_time = (time.time() - start ) * 1000 - (imp_time + ampc_time + obs_time)
+                total_time = (time.time() - start ) * 1000
+
+                print(obs_time, ampc_time, imp_time, save_time, total_time)
             
         self.robot.turn_off_robot()
-        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")'''
+        self.controller.optimizer.optimizer.df.to_csv(f"/home/pi/dohun/horizon_debug/{time.time()}.csv")
+        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
     
 
 

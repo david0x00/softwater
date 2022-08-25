@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 import glob
 
-directory = "/Volumes/Flash/autompc_data/"
-proj_name = "random"
+directory = "/Volumes/Flash/acc40/27/simple_comb/run0/imgs"
+proj_name = "simp_comb27"
 
 if __name__ == "__main__":
     img_array = []
 
-    proj_directory = directory + proj_name
+    proj_directory = directory #+ proj_name
     for filename in glob.glob(proj_directory + '/*.jpg'):
         img = cv2.imread(filename)
         height, width, layers = img.shape
