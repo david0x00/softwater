@@ -1,0 +1,22 @@
+{
+    "BRIGHTNESS": 50.0,
+    "CONTRAST": 0.0,
+    "SATURATION": 0.0,
+    "HUE AVG": 170,
+    "HUE ERROR": 8,
+    "SAT LOW": 55,
+    "SAT HIGH": 255,
+    "VALUE LOW": 80,
+    "VALUE HIGH": 255,
+    "GAUS BLUR X": 21,
+    "GAUS BLUR Y": 21,
+    "CIRC MIN": 0.1,
+    "CIRC MAX": Infinity,
+    "AREA MIN": 10.0,
+    "AREA MAX": Infinity,
+    "INERTIA MIN": 0.1,
+    "INERTIA MAX": Infinity,
+    "FREQUENCY": 2.0,
+    "DURATION": 50.0,
+    "TARGET IDX": 0
+}

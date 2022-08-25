@@ -1,0 +1,19 @@
+{
+    "BRIGHTNESS": 50,
+    "CONTRAST": 0,
+    "SATURATION": 0,
+    "HUE AVG": 170,
+    "HUE ERROR": 10,
+    "SAT LOW": 60,
+    "SAT HIGH": 255,
+    "VALUE LOW": 60,
+    "VALUE HIGH": 245,
+    "GAUS BLUR X": 25,
+    "GAUS BLUR Y": 25,
+    "CIRC MIN": 0.4,
+    "CIRC MAX": "inf",
+    "AREA MIN": 100,
+    "AREA MAX": "inf",
+    "INERTIA MIN": 0.2,
+    "INERTIA MAX": "inf"
+}

@@ -5,8 +5,8 @@ import datetime
 import os
 import csv
 import cv2
-import autompc as ampc
-from autompc.costs import ThresholdCost
+#import autompc as ampc
+#from autompc.costs import ThresholdCost
 from markerdetector import MarkerDetector
 
 class Acc40Manager:
@@ -265,12 +265,12 @@ class SimpleController(Controller):
     controller_file = "/home/pi/Desktop/acc40/controllers/simple1_comb.p"
 
     def __init__(self, robot):
-        super().__init__(robot)
+        '''super().__init__(robot)
         simple_controller = pickle.load( open( self.controller_file, "rb" ) )
-        self.controller = simple_controller["comb"]
+        self.controller = simple_controller["comb"]'''
 
     def prepare(self, targ, data_dir):
-        super().prepare()
+        '''super().prepare()
         self.pressures = self.controller[targ]
         print(self.pressures)
 
@@ -282,17 +282,18 @@ class SimpleController(Controller):
             print("something wrong!!!")
         with open(self.data_file, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
-            writer.writeheader()
+            writer.writeheader()'''
     
     def evaluate(self, obs):
-        u = np.zeros(8)
+        '''u = np.zeros(8)
         for i in range(4):
             if obs[i] < self.pressures[i]:
                 u[i*2] = 1
-        return u
+        return u'''
+        return 0
     
     def run_controller(self):
-        start_time = datetime.datetime.now()
+        '''start_time = datetime.datetime.now()
         loop_number = -1
         loop_period = 0.5
         timer = self.run_time
@@ -317,7 +318,7 @@ class SimpleController(Controller):
                 self.save_control_state(start_time)
 
         self.robot.turn_off_robot()
-        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")
+        print("Done! Final Dest = (" + str(self.obs[-2]) + ", " + str(self.obs[-1]) + ")")'''
 
 
 class AMPCController(Controller):
@@ -330,7 +331,7 @@ class AMPCController(Controller):
     controller_file = '/home/pi/dohun/underwater_robot_autompc/experiment_scripts/Timeout_TuneIters200_TuneModeendtoend,_TuneGoals10_TuneMetriccost_Costbarrier_Ctrlfreq1/controller.pkl'
 
     def __init__(self, robot):
-        super().__init__(robot)
+        '''super().__init__(robot)
         with open(self.controller_file, "rb") as f:
             self.controller = pickle.load(f)
         #************** altering the tune
@@ -353,7 +354,7 @@ class AMPCController(Controller):
         self.system = self.controller.system
 
     def prepare(self, targ, data_dir):
-        super().prepare()
+        '''super().prepare()
 
         self.get_observations()
 
@@ -381,7 +382,7 @@ class AMPCController(Controller):
             print("something wrong!!!")
         with open(self.data_file, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.control_headers)
-            writer.writeheader()
+            writer.writeheader()'''
 
     def run_controller(self):
         import pandas as pd
