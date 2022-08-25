@@ -24,8 +24,7 @@ dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]]
 
 camera_to_markers_dist = 57.055 #cm
 
-directory = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/Visual_Servo IDX0 14-33-53 8-23-2022/"
-imgs_dir = directory + "imgs/"
+data_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/Visual_Servo IDX0 14-33-53 8-23-2022/"
 proj_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/analysis/"
 proj_name = "vs0"
 
@@ -54,7 +53,8 @@ def world2pix(x, y):
         # return world_objects
 
 def handle_run(run_dir, out):
-    csv_file = glob.glob(directory + '/*.csv')[0]
+    csv_file = glob.glob(run_dir + '/*.csv')[0]
+    imgs_dir = run_dir + "imgs/"
     df = pd.read_csv(csv_file)
     
     radius = 5
@@ -232,5 +232,7 @@ if __name__ == "__main__":
     avi_codec = cv2.VideoWriter_fourcc(*'DIVX')
     out = cv2.VideoWriter(file_name, mp4_codec, fps, size)
 
-    
+    for run_dir in data_dir:
+        #handle_run(run_dir, out)
+
     out.release()
