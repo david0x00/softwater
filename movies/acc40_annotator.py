@@ -43,7 +43,7 @@ def world2pix(x, y):
         coord_2d = np.matmul(newcameramtx, coord_3d)
         return int(coord_2d[0]), int(coord_2d[1])
 
-def handle_run(run_dir, out):
+def handle_run(run_dir, run_idx, out):
     csv_file = glob.glob(run_dir + '/*.csv')[0]
     imgs_dir = run_dir + "imgs/"
     df = pd.read_csv(csv_file)
@@ -173,18 +173,16 @@ def handle_run(run_dir, out):
                 cv2.putText(img, tp_text, tp_val_p, font, fontScale, red, thickness)
                 cv2.rectangle(img, pbox_p1, pbox_p2, black, 3)
 
-        error =     (round(df.iloc[idx]["ERRORX"    ], 1), round(df.iloc[idx]["ERRORY"      ], 1))
+        error =     (round(df.iloc[idx]["ERRORX"    ], 2), round(df.iloc[idx]["ERRORY"      ], 2))
         rmse = round(math.sqrt(error[0] * error[0] + error[1] * error[1]), 2)
-        run_idx = 0
-        targ_round =      (round(tx - oxw, 1), round(oyw - ty, 1))
-        adjtarg_round =   (round(atx- oxw, 1), round(oyw - aty, 1))
-        xee_round =       (round(xw - oxw, 1), round(oyw - yw, 1))
-        error =     (round(df.iloc[idx]["ERRORX"    ], 1), round(df.iloc[idx]["ERRORY"      ], 1))
-        int_error = (round(df.iloc[idx]["INT_ERRX"  ], 1), round(df.iloc[idx]["INT_ERRY"    ], 1))
-        P =     (round(df.iloc[idx]["PX"  ], 1), round(df.iloc[idx]["PY"    ], 1))
-        I =     (round(df.iloc[idx]["IX"  ], 1), round(df.iloc[idx]["IY"    ], 1))
-        KP =    (round(df.iloc[idx]["KPX" ], 1), round(df.iloc[idx]["KPY"   ], 1))
-        KI =    (round(df.iloc[idx]["KIX" ], 1), round(df.iloc[idx]["KIY"   ], 1))
+        targ_round =      (round(tx - oxw, 2), round(oyw - ty, 2))
+        adjtarg_round =   (round(atx- oxw, 2), round(oyw - aty,2))
+        xee_round =       (round(xw - oxw, 2), round(oyw - yw, 2))
+        int_error = (round(df.iloc[idx]["INT_ERRX"  ], 2), round(df.iloc[idx]["INT_ERRY"    ], 2))
+        P =     (round(df.iloc[idx]["PX"  ], 2), round(df.iloc[idx]["PY"    ], 2))
+        I =     (round(df.iloc[idx]["IX"  ], 2), round(df.iloc[idx]["IY"    ], 2))
+        KP =    (round(df.iloc[idx]["KPX" ], 2), round(df.iloc[idx]["KPY"   ], 2))
+        KI =    (round(df.iloc[idx]["KIX" ], 2), round(df.iloc[idx]["KIY"   ], 2))
 
         details = []
         details.append("DETAILS")
@@ -206,7 +204,7 @@ def handle_run(run_dir, out):
         dp_x = 5
         dp_y = 470
         dp_del = 20
-        cv2.rectangle(img, (0,dp_y-20), (300,720), white, -1)
+        cv2.rectangle(img, (0,dp_y-20), (320,730), white, -1)
         for i, text in enumerate(details):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
@@ -241,6 +239,6 @@ if __name__ == "__main__":
                 run_dir = rd + "/"
                 break
         print(run_dir)
-        handle_run(run_dir, out)
+        handle_run(run_dir, i, out)
 
     out.release()
