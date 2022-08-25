@@ -24,7 +24,7 @@ dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]]
 
 camera_to_markers_dist = 57.055 #cm
 
-data_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/Visual_Servo IDX0 14-33-53 8-23-2022/"
+data_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/"
 proj_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/analysis/"
 proj_name = "vs0"
 
@@ -42,15 +42,6 @@ def world2pix(x, y):
         ])
         coord_2d = np.matmul(newcameramtx, coord_3d)
         return int(coord_2d[0]), int(coord_2d[1])
-
-        # world_objects = []
-        # for obj_id in objects.keys():
-        #     coord_2d = np.array([[objects[obj_id].x],
-        #                             [objects[obj_id].y],
-        #                             [1]])
-        #     coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
-        #     world_objects.append((coord_3d[0][0], coord_3d[1][0]))
-        # return world_objects
 
 def handle_run(run_dir, out):
     csv_file = glob.glob(run_dir + '/*.csv')[0]
@@ -83,9 +74,6 @@ def handle_run(run_dir, out):
         orig = world2pix(oxw, oyw)
         targ = world2pix(tx, ty)
         adjtarg = world2pix(atx, aty)
-        cv2.circle(img, xee, radius, red, 3)
-        cv2.circle(img, targ, radius, green, 3)
-        cv2.circle(img, adjtarg, radius, blue, 3)
         cv2.drawMarker(img, orig, red, cv2.MARKER_CROSS, thickness=3)
 
         for j in range(len(xee_prev)):
@@ -102,7 +90,7 @@ def handle_run(run_dir, out):
             my = oyw - df.iloc[idx]["M" + str(i) + "Y"]
             m = world2pix(mx, my)
             cv2.circle(img, m, radius, red, 3)
-        
+
         ptop = 220
         pbot = 720
         pleft = 990
@@ -188,9 +176,9 @@ def handle_run(run_dir, out):
         error =     (round(df.iloc[idx]["ERRORX"    ], 1), round(df.iloc[idx]["ERRORY"      ], 1))
         rmse = round(math.sqrt(error[0] * error[0] + error[1] * error[1]), 2)
         run_idx = 0
-        targ =      (round(tx - oxw, 1), round(oyw - ty, 1))
-        adjtarg =   (round(atx- oxw, 1), round(oyw - aty, 1))
-        xee =       (round(xw - oxw, 1), round(oyw - yw, 1))
+        targ_round =      (round(tx - oxw, 1), round(oyw - ty, 1))
+        adjtarg_round =   (round(atx- oxw, 1), round(oyw - aty, 1))
+        xee_round =       (round(xw - oxw, 1), round(oyw - yw, 1))
         error =     (round(df.iloc[idx]["ERRORX"    ], 1), round(df.iloc[idx]["ERRORY"      ], 1))
         int_error = (round(df.iloc[idx]["INT_ERRX"  ], 1), round(df.iloc[idx]["INT_ERRY"    ], 1))
         P =     (round(df.iloc[idx]["PX"  ], 1), round(df.iloc[idx]["PY"    ], 1))
@@ -203,9 +191,9 @@ def handle_run(run_dir, out):
         details.append("Playback Speed: " + str(speed) + "x")
         details.append("Run IDX:    " + str(run_idx))
         details.append("RMSE (cm):       " + str(rmse))
-        details.append("Xee (cm):        " + str(xee))
-        details.append("Target (cm):     " + str(targ))
-        details.append("Adj Target (cm): " + str(adjtarg))
+        details.append("Xee (cm):        " + str(xee_round))
+        details.append("Target (cm):     " + str(targ_round))
+        details.append("Adj Target (cm): " + str(adjtarg_round))
         details.append("Error:      " + str(error))
         details.append("Int Error:  " + str(int_error))
         details.append("Kp:         " + str(KP))
@@ -221,8 +209,19 @@ def handle_run(run_dir, out):
         cv2.rectangle(img, (0,dp_y-20), (300,720), white, -1)
         for i, text in enumerate(details):
             details_p = (dp_x, dp_y + (dp_del * i)) 
-            cv2.putText(img, text, details_p, font, fontScale, black, thickness)
+            color = black
+            if "Xee" in text:
+                color = red
+            elif "Adj Target" in text:
+                color = blue
+            elif "Target" in text:
+                color = green
+            cv2.putText(img, text, details_p, font, fontScale, color, thickness)
 
+        cv2.circle(img, xee, radius, red, 3)
+        cv2.circle(img, targ, radius, green, 3)
+        cv2.circle(img, adjtarg, radius, blue, 3)
+        
         out.write(img)
 
 
@@ -231,8 +230,17 @@ if __name__ == "__main__":
     mp4_codec = cv2.VideoWriter_fourcc(*'X264')
     avi_codec = cv2.VideoWriter_fourcc(*'DIVX')
     out = cv2.VideoWriter(file_name, mp4_codec, fps, size)
+    #Visual_Servo IDX0 14-33-53 8-23-2022/
 
-    for run_dir in data_dir:
-        #handle_run(run_dir, out)
+    run_dirs = glob.glob(data_dir + "/*")
+    run_num = 40
+    for i in range(run_num):
+        run_dir = ""
+        for rd in run_dirs:
+            if (" IDX" + str(i) + " ") in rd:
+                run_dir = rd + "/"
+                break
+        print(run_dir)
+        handle_run(run_dir, out)
 
     out.release()
