@@ -47,6 +47,8 @@ class Controller:
           [-3,-1,1,3],
           [-1,1]]
     yc = 25
+
+    ext_goals = [[-13,25],[-13,27],[-13,29],[-11,31],[-9,33],[-7,35],[-5,37],[-3,39],[-1,39],[1,39],[3,39],[5,37],[7,35],[9,33],[11,31],[13,29],[13,27],[13,25]]
     
     def __init__(self):
         self.column_headers = self.package_headers()
@@ -57,7 +59,8 @@ class Controller:
         for i, row in enumerate(self.xc):
             for x in row:
                 y = self.yc + i*2
-                self.idx_coords.append((x,y))
+                self.idx_coords.append([x,y])
+        self.idx_coords += self.ext_goals
 
     def convert_idx(self, idx):
         ret = self.idx_coords[idx]

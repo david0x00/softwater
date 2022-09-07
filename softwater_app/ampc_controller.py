@@ -53,20 +53,22 @@ class AMPCController(Controller):
         self.ocp.set_cost(
             ThresholdCost(
                 system=self.system, goal=targ,
-                threshold=2.0, observations=["M10X", "M10Y"]
+                threshold=1.0, observations=["M10X", "M10Y"]
             )
         )
+
         for obs in ['M1-PL', 'M1-PR', 'M2-PL', 'M2-PR']:
-            self.ocp.set_obs_bound(obs, 97, 110)
+            self.ocp.set_obs_bound(obs, 97, 118)
         for ctrl in self.system.controls:
             self.ocp.set_ctrl_bound(ctrl, 0, 1)
+
         self.mpc.set_ocp(self.ocp)
         self.mpc.reset()
-        self.mpc.optimizer.optimizer.log_df = pd.DataFrame(columns=['States', 'Ctrls', 'Cost', 'Quad', 'Barrier'])
+        self.mpc.optimizer.optimizer.log_df = pd.DataFrame(columns=['States', 'Ctrls', 'Cost', 'Quad', 'Barrier', 'ActiveBarrier','BarrierHorizon', 'Timeout'])
         print(self.mpc.optimizer.optimizer.ocp.get_cost()._costs[1].scales)
 
     def on_end(self):
-        self.mpc.optimizer.optimizer.log_df.to_csv('./debug_log.csv')
+        self.mpc.optimizer.optimizer.log_df.to_csv(self.data_dir + '/debug_log.csv')
         print("Controller End")
 
     def evaluate(self, x):
