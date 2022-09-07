@@ -25,8 +25,8 @@ def get_end_rmse(directory):
             df = pd.read_csv(filename)
             end_targ = (float(df["M10X"].iloc[-1]), float(df["M10Y"].iloc[-1]))
             #rms = mean_squared_error(targ, end_targ, squared=False)
-            rms = math.sqrt((targ[0] - end_targ[0])*(targ[0] - end_targ[0]) + (targ[1] - end_targ[1])*(targ[1] - end_targ[1]))
-            #rms = df["RMSE"].iloc[-1]
+            # rms = math.sqrt((targ[0] - end_targ[0])*(targ[0] - end_targ[0]) + (targ[1] - end_targ[1])*(targ[1] - end_targ[1]))
+            rms = df["RMSE"].iloc[-1]
             print("Goal: " + str(targ) + ", Actual: " + str(end_targ) + ", RMSE: " + str(rms) + " cm")
             return targ, end_targ, rms
 
