@@ -13,9 +13,11 @@ import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap, Normalize
 from PIL import Image
 
+plt.rcParams['figure.dpi'] = 200
+
 # directory = "/Users/davidnull/phd/data/new_controller_noresample"
-# directory = "/Users/davidnull/phd/data/Acc40_Ampc_r1/"
-directory = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1"
+directory = "/Users/davidnull/phd/data/Acc40_Ampc_r1/"
+#directory = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1"
 
 def get_end_rmse(directory):
     for filename in glob.glob(directory + "*.csv"):

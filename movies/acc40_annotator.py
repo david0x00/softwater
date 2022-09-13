@@ -52,6 +52,7 @@ def handle_run(run_dir, run_idx, out):
     red = (0, 0, 255)
     green = (0, 255, 0)
     blue = (255, 0, 0)
+    orange = (0), 165, 255)
     white = (255, 255, 255)
     black = (0, 0, 0)
 
