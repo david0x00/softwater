@@ -50,6 +50,7 @@ radius = 5
 red = (0, 0, 255)
 green = (0, 255, 0)
 orange = (0, 165, 255)
+yellow = (0, 255, 255)
 blue = (255, 0, 0)
 white = (255, 255, 255)
 black = (0, 0, 0)
@@ -81,11 +82,11 @@ for idx, imgname in enumerate(imgs):
         p2x = ox + float(simp_pathx[j+1])
         p2y = oy - float(simp_pathy[j+1])
         p2 = world2pix(p2x, p2y)
-        cv2.line(img, p1, p2, blue, thickness=3)
+        cv2.line(img, p1, p2, yellow, thickness=3)
 
         if j == 0:
-            cv2.circle(img, p1, 5, blue, 3)
-    cv2.circle(img, p2, 5, blue, 3)
+            cv2.circle(img, p1, 5, yellow, 3)
+    cv2.circle(img, p2, 5, yellow, 3)
 
     vs_pathx = " ".join(data["vs_pathx"].iloc[0][1:-1].split("\n")).split()
     vs_pathy = " ".join(data["vs_pathy"].iloc[0][1:-1].split("\n")).split()
@@ -121,7 +122,8 @@ for idx, imgname in enumerate(imgs):
             cv2.circle(img, p1, 5, red, 3)
     cv2.circle(img, p2, 5, red, 3)
     
-    cv2.drawMarker(img, targ, orange, cv2.MARKER_CROSS, thickness=3)
+    cv2.drawMarker(img, targ, black, cv2.MARKER_CROSS, thickness=3)
+    cv2.circle(img, targ, 10, black, 3)
     if idx == 0:
         cv2.imwrite("./leftann.jpg", img)
     if idx == 1:
