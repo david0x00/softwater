@@ -61,7 +61,7 @@ for idx, imgname in enumerate(imgs):
     targ = targs[idx]
 
     data1 = df.loc[df['x'] == targ[0]]
-    data = data1.loc[df['y'] == targ[1]]
+    data = data1.loc[data1['y'] == targ[1]]
 
     ox = data["origx_ampc"].iloc[0]
     oy = data["origy_ampc"].iloc[0]

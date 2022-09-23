@@ -35,6 +35,9 @@ def get_end_rmse(directory):
             if ampc_dir in directory:
                 origx = float(df["ORIGX"].iloc[-1])
                 origy = float(df["ORIGY"].iloc[-1])
+            elif vs_dir in directory:
+                origx = float(df["ORIGX"].iloc[-1])
+                origy = float(df["ORIGY"].iloc[-1])
             else:
                 origx = None
                 origy = None
@@ -59,11 +62,14 @@ for targ_dir in glob.glob(ampc_dir + "/*"):
 for targ_dir in glob.glob(vs_dir + "/*"):
     details = get_end_rmse(targ_dir + "/")
     if details != None:
-        targ_vs, end_targ_vs, rms_vs, m10x_vs, m10y_vs, _, _= details
+        targ_vs, end_targ_vs, rms_vs, m10x_vs, m10y_vs, origx, origy = details
         data[targ_vs]["vs_end"] = end_targ_vs
         data[targ_vs]["vs_rms"] = rms_vs
         data[targ_vs]["vs_pathx"] = m10x_vs
         data[targ_vs]["vs_pathy"] = m10y_vs
+        data[targ_vs]["origx_vs"] = origx
+        data[targ_vs]["origy_vs"] = origy
+
 
 for targ_dir in glob.glob(ol_dir + "/*"):
     if targ_dir.split("/")[-1].isnumeric():
