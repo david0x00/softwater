@@ -267,6 +267,7 @@ class RobotDetector:
         
         show_mask = cv2.cvtColor(mask_blurred, cv2.COLOR_GRAY2BGR)
         detection = self.draw_objects(show_mask, objects)
+        undistorted_img = self.draw_objects(undistorted_img, objects)
 
         ids = self.tracker.objects.keys()
         for i in range(self.robot_segments):
