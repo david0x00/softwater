@@ -202,6 +202,11 @@ class Controller:
             # Save Data
             self.save_data(t, x, u, origin, img)
 
+            # emergency stop if pressure exceeeds 118 kPa
+            maxp = max(x[:4])
+            if maxp > 118 and maxp < 120:
+                break
+
             # Wait for end of control loop
             self.rate.sleep()
         
