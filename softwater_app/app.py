@@ -38,14 +38,14 @@ if current_process().name == 'MainProcess':
             Window.minimum_width, Window.minimum_height = min_window
 
             content_div_cc = ColorComponent(sunset_orange, sunset_purple, POS_LEFT, POS_RIGHT)
-            content_background_cc = ColorComponent(dim_gray, dark_gray, POS_TOP_CENTER, POS_BOT_CENTER)
+            content_background_cc = ColorComponent(light_gray, gray, POS_TOP_CENTER, POS_BOT_CENTER)
             select_cc = ColorComponent(sunset_orange, sunset_purple, POS_TOP_LEFT, POS_BOT_RIGHT)
             button_up_cc = ColorComponent(sunset_purple, gunmetal, POS_BOT_LEFT, POS_RIGHT)
             button_down_cc = ColorComponent(sunset_orange, gunmetal, POS_BOT_LEFT, POS_RIGHT)
 
             window = BoxLayout(orientation="vertical")
 
-            main_layout = MainContentPane("./assets/title.png", "./assets/background.jpg")
+            main_layout = MainContentPane("./assets/title.png", "./assets/white_background.jpg")
             title_layout = FloatLayout(size_hint=(1, 0.15), pos_hint={"x": 0, "top": 1})
 
             title = ImagePane("./assets/title.png", size_hint=(0.3, 0.9), pos_hint={"x": 0.05, "center_y": 0.5})
