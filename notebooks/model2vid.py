@@ -134,10 +134,10 @@ def draw_pressures(img, pressures, targ_pressures):
     cv2.putText(img, text, ptitle_p, font, fontScale, black, thickness)
 
 
-    pressures = [
-        [df.iloc[idx]["M2-PL"], df.iloc[idx]["M2-PR"]],
-        [df.iloc[idx]["M1-PL"], df.iloc[idx]["M1-PR"]]
-    ]
+    # pressures = [
+    #     [df.iloc[idx]["M2-PL"], df.iloc[idx]["M2-PR"]],
+    #     [df.iloc[idx]["M1-PL"], df.iloc[idx]["M1-PR"]]
+    # ]
     # targ_pressures = [
     #     [df.iloc[idx]["TP2L"], df.iloc[idx]["TP2R"]],
     #     [df.iloc[idx]["TP1L"], df.iloc[idx]["TP1R"]]
@@ -220,14 +220,11 @@ def annotate_image(data_df, index, img):
     for i in range(fk_pred.shape[0]):
         fk_pred[i][0] += ox
         fk_pred[i][1] = oy - fk_pred[i][1]
-
-    print(actual)
     
     data = actual[1::].reshape(len(ik_x))
     data = scale_data(downscale, data, ik_x).reshape(1, len(ik_x))
-    print(data)
-    pred_ik = ikmodel.predict(data)[0]
-    print(scale_data(upscale, pred_ik, ik_y))
+    pred_ik = ikmodel.predict(data, verbose=0)[0]
+    pred_ik = scale_data(upscale, pred_ik, ik_y)
 
     # drawing stuff
     
@@ -249,6 +246,11 @@ def annotate_image(data_df, index, img):
 
     draw_circle_line(img, actual, (0, 255, 0))
     draw_circle_line(img, fk_pred, (0, 0, 255))
+
+    line = data_df.loc[index]
+    actual_pressures = [[line["M2-PL"], line["M2-PR"]], [line["M1-PL"], line["M1-PR"]]]
+    ik_pressures = [[pred_ik[2], pred_ik[3]], [pred_ik[0], pred_ik[1]]]
+    draw_pressures(img, ik_pressures, actual_pressures)
 
     cv2.imshow("img", img)
     cv2.waitKey(1)
