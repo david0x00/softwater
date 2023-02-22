@@ -9,6 +9,7 @@ from controller import ControllerHandler
 import simple_controller
 import visual_servo
 import ampc_controller
+import manual_controller
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -132,6 +133,11 @@ def open_loop(pressed):
 
 def manual(pressed):
     print("Manual:", pressed)
+    if pressed:
+        global handler
+        handler.set_controller(manual_controller.controller)
+        handler.controller.data_dir = new_experiment_dir("Manual")
+        handler.controller.timeout = 50
 
 def check_ufloat(text):
     try:

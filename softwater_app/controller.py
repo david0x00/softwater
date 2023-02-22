@@ -47,6 +47,8 @@ class Controller:
           [-3,-1,1,3],
           [-1,1]]
     yc = 25
+
+    ext_goals = [[-13,25],[-13,27],[-13,29],[-11,31],[-9,33],[-7,35],[-5,37],[-3,39],[-1,39],[1,39],[3,39],[5,37],[7,35],[9,33],[11,31],[13,29],[13,27],[13,25]]
     
     def __init__(self):
         self.column_headers = self.package_headers()
@@ -57,7 +59,8 @@ class Controller:
         for i, row in enumerate(self.xc):
             for x in row:
                 y = self.yc + i*2
-                self.idx_coords.append((x,y))
+                self.idx_coords.append([x,y])
+        self.idx_coords += self.ext_goals
 
     def convert_idx(self, idx):
         ret = self.idx_coords[idx]
@@ -109,9 +112,7 @@ class Controller:
         return data
     
     def evaluate(self, x):
-        u = []
-        for _ in range(self.solenoid_count):
-            u.append(False)
+        return [False for _ in range(self.solenoid_count)]
     
     def implement_controls(self, u):
         self._out_queue.put(('robot', {'command': {'set solenoids': u}}))
@@ -191,13 +192,16 @@ class Controller:
             if msg is None:
                 break
             t, x, origin, img = msg
-            st = time.perf_counter()
             u = self.evaluate(x)
-            print((time.perf_counter() - st) * 1000)
             self.implement_controls(u)
 
             # Save Data
             self.save_data(t, x, u, origin, img)
+
+            # emergency stop if pressure exceeeds 118 kPa
+            maxp = max(x[:4])
+            if maxp > 118 and maxp < 120:
+                break
 
             # Wait for end of control loop
             self.rate.sleep()

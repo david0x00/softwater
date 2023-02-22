@@ -50,7 +50,7 @@ class ResizableTextInput(TextInput):
 
 
 class ResizableLabel(Label):
-    def __init__(self, text, resize, size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5}, width=100, height=100, halign="center", valign="middle", shorten=False):
+    def __init__(self, text, resize, size_hint=(1, 1), pos_hint={"center_x": 0.5, "center_y": 0.5}, width=100, height=100, halign="center", valign="middle", shorten=False, color="#070707"):
         super(ResizableLabel, self).__init__()
         self.text = text
         self.resize = resize
@@ -61,6 +61,7 @@ class ResizableLabel(Label):
         self.halign = halign
         self.valign = valign
         self.shorten = shorten
+        self.color = color
 
         self.bind(size=self.update, pos=self.update)
     
