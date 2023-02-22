@@ -39,7 +39,7 @@ def package_data(m, p):
         x.append(m[i][0] - x_home)
         x.append(y_home - m[i][1])
 
-    return x, origin, u
+    return x, origin
 
 experiment_dir = "./experiments"
 
