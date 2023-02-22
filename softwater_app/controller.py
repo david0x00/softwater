@@ -112,9 +112,7 @@ class Controller:
         return data
     
     def evaluate(self, x):
-        u = []
-        for _ in range(self.solenoid_count):
-            u.append(False)
+        return [False for _ in range(self.solenoid_count)]
     
     def implement_controls(self, u):
         self._out_queue.put(('robot', {'command': {'set solenoids': u}}))

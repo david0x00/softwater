@@ -3,7 +3,7 @@
     "CONTRAST": 0.0,
     "SATURATION": 0.0,
     "HUE AVG": 170,
-    "HUE ERROR": 6,
+    "HUE ERROR": 10,
     "SAT LOW": 65,
     "SAT HIGH": 255,
     "VALUE LOW": 90,
