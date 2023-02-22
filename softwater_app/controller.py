@@ -116,6 +116,7 @@ class Controller:
     
     def implement_controls(self, u):
         self._out_queue.put(('robot', {'command': {'set solenoids': u}}))
+        return True
 
     def package_headers(self):
         headers = []
@@ -191,9 +192,10 @@ class Controller:
             msg = self.get_observations()
             if msg is None:
                 break
-            t, x, origin, img = msg
+            t, x, origin, img, uval = msg
             u = self.evaluate(x)
-            self.implement_controls(u)
+            if not self.implement_controls(u):
+                u = uval
 
             # Save Data
             self.save_data(t, x, u, origin, img)

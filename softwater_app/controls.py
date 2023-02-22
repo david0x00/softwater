@@ -39,7 +39,7 @@ def package_data(m, p):
         x.append(m[i][0] - x_home)
         x.append(y_home - m[i][1])
 
-    return x, origin
+    return x, origin, u
 
 experiment_dir = "./experiments"
 
@@ -66,7 +66,7 @@ def main_callback(dt):
         if 'data' in msg.keys():
             data = msg['data']
             if 'keyframe' in data.keys():
-                timestamp, img, pvalues = data['keyframe']
+                timestamp, img, pvalues, uvalues = data['keyframe']
                 tracking, camera_image, tracker_image = detector.detect(img)
                 app.camera_pane.set_detector_status(tracking)
                 for sensor in range(len(pvalues)):
@@ -74,7 +74,7 @@ def main_callback(dt):
 
                 if tracking:
                     x, origin = package_data(detector.tracker.objects, pvalues)
-                    pipe_data = ([timestamp], x, origin, img)
+                    pipe_data = ([timestamp], x, origin, img, uvalues)
                 else:
                     pipe_data = None
     

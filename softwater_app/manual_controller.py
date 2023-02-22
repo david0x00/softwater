@@ -5,6 +5,6 @@ class ManualController(Controller):
         super().__init__()
     
     def implement_controls(self, u):
-        return
+        return False
 
 controller = ManualController()

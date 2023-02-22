@@ -12,6 +12,8 @@ if __name__ == "__main__":
     link = DataLink("SoftWaterRobot", True)
     robot = WaterRobot(4, 8)
 
+    sval = [False for i in range(8)]
+
     try:
         while True:
             if send_rate.ready():
@@ -19,7 +21,7 @@ if __name__ == "__main__":
                 img = None
                 while img is None:
                     img = camera.get()
-                link.send({'data': {'keyframe': (time.perf_counter(), img, robot.values)}})
+                link.send({'data': {'keyframe': (time.perf_counter(), img, robot.values, sval)}})
             
             if link.data_available():
                 msg = link.get()['data']
@@ -52,6 +54,7 @@ if __name__ == "__main__":
                         for i in range(8):
                             if values[i]:
                                 any_on = True
+                            sval[i] = values[i]
                             robot.set_solenoid(i, values[i])
                         robot.set_gate_valve(any_on)
                     elif 'rth' in cmd.keys():
