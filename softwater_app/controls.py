@@ -137,7 +137,7 @@ def manual(pressed):
         global handler
         handler.set_controller(manual_controller.controller)
         handler.controller.data_dir = new_experiment_dir("Manual")
-        handler.controller.timeout = 50
+        handler.controller.timeout = 500
 
 def check_ufloat(text):
     try:
@@ -198,7 +198,7 @@ def start_experiment(pressed):
             targ = handler.controller.convert_idx(idx)
             handler.controller.prepare(targ)
             handler.controller.rate = Rate(float(app.command_center.frequency_text.text))
-            handler.controller.timeout = float(app.command_center.duration_text.text)
+            #handler.controller.timeout = float(app.command_center.duration_text.text)
             handler.start()
 
 def stop_experiment(pressed):
