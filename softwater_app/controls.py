@@ -10,6 +10,7 @@ import simple_controller
 import visual_servo
 import ampc_controller
 import manual_controller
+import trpo_controller
 
 is_camera_view = True
 link = DataLink("App", False, "169.254.11.63")
@@ -135,9 +136,14 @@ def manual(pressed):
     print("Manual:", pressed)
     if pressed:
         global handler
-        handler.set_controller(manual_controller.controller)
-        handler.controller.data_dir = new_experiment_dir("Manual")
-        handler.controller.timeout = 500
+        # handler.set_controller(manual_controller.controller)
+        # handler.controller.data_dir = new_experiment_dir("Manual")
+
+        # NOTE: Temporary TRPO controller
+        handler.set_controller(trpo_controller.controller)
+        handler.controller.data_dir = new_experiment_dir("TRPO")
+
+        handler.controller.timeout = 50
 
 def check_ufloat(text):
     try:

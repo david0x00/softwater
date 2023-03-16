@@ -11,6 +11,7 @@ from collections import namedtuple
 import fwd_dynamics
 from fwd_dynamics import LSTM_DYNAMICS
 
+SAVE_THIS_MODEL = True
 
 class SOFTROBOTSIM:
     def __init__(self):
@@ -48,7 +49,14 @@ class SOFTROBOTSIM:
             x_t, y_t, e_x, e_y
         ])
 
-        self.reward = -1 * np.sqrt((e_x*e_x) + (e_y*e_y))
+        x_ee_s = fwd_dynamics.inverse_scale_data(x_ee, x_marker=True)
+        y_ee_s = fwd_dynamics.inverse_scale_data(y_ee, y_marker=True)
+        x_t_s = fwd_dynamics.inverse_scale_data(x_t, x_marker=True)
+        y_t_s = fwd_dynamics.inverse_scale_data(y_t, y_marker=True)
+        e_x_s = x_t_s - x_ee_s
+        e_y_s = y_t_s - y_ee_s
+
+        self.reward = -1 * np.sqrt((e_x_s*e_x_s) + (e_y_s*e_y_s))
         self.rl_state = np.concatenate((stuff, full), 0)
     
     def init_state(self):
@@ -122,6 +130,7 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
 
             samples = []
 
+            reward_list = []
             while not done:
                 if render_frequency is not None and global_rollout % render_frequency == 0:
                     env.render()
@@ -131,10 +140,13 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
 
                 next_state, reward, done, _ = env.step(action)
 
+                reward_list.append(reward)
+
                 # Collect samples
                 samples.append((state, action, reward, next_state))
 
                 state = next_state
+            # print(min(reward_list))
 
             # Transpose our samples
             states, actions, rewards, next_states = zip(*samples)
@@ -159,9 +171,10 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
     plt.show()
 
 
-actor_hidden = 32
+actor_hidden = 64
 actor = nn.Sequential(nn.Linear(state_size, actor_hidden),
-                      nn.ReLU(),
+                      # nn.ReLU(),
+                      nn.Tanh(),
                       nn.Linear(actor_hidden, num_actions),
                       nn.Softmax(dim=1))
 
@@ -187,7 +200,8 @@ def update_critic(advantages):
 
 
 # delta, maximum KL divergence
-max_d_kl = 0.01
+# max_d_kl = 0.01
+max_d_kl = 0.005
 
 
 def update_agent(rollouts):
@@ -314,4 +328,7 @@ def apply_update(grad_flattened):
 
 
 # Train our agent
-train(epochs=50, num_rollouts=10, render_frequency=50)
+train(epochs=100, num_rollouts=10, render_frequency=50)
+
+if SAVE_THIS_MODEL:
+    torch.save(actor, "actor_trpo.pt")
