@@ -10,19 +10,38 @@ from torch.distributions import Categorical
 from collections import namedtuple
 import fwd_dynamics
 from fwd_dynamics import LSTM_DYNAMICS
+import game_sim
+import time
 
-SAVE_THIS_MODEL = True
+SAVE_THIS_MODEL = False
 
 class SOFTROBOTSIM:
+    x_targs = [-9, -1, -5, -3, -1, 9, 1, 5, 3, 1]
+    y_targs = [25, 25, 27, 31, 35, 25, 25, 27, 31, 35]
+    # x_targs = [-1]
+    # y_targs = [33]
+
     def __init__(self):
-        self.state_size = 2 + 2 + 20
-        self.action_size = 8
+        self.state_size = 2 + 2 + 4
+        #self.action_size = 2
+        self.action_size = 256
         self.model = torch.load("lstm_model_1.pt")
         self.model.eval()
-        targ_x = fwd_dynamics.scale_data(7, x_marker=True)
-        targ_y = fwd_dynamics.scale_data(27, y_marker=True)
-        self.target = torch.FloatTensor([targ_x, targ_y])
+        self.targ_idx = 0
+        self.new_target()
         self.init_state()
+    
+    def new_target(self):
+        self.targ_idx = (self.targ_idx + 1) % len(self.x_targs)
+        targ_x = fwd_dynamics.scale_data(self.x_targs[self.targ_idx], x_marker=True)
+        targ_y = fwd_dynamics.scale_data(self.y_targs[self.targ_idx], y_marker=True)
+        self.target = torch.FloatTensor([targ_x, targ_y])
+    
+    def set_target(self, x, y):
+        targ_x = fwd_dynamics.scale_data(x, x_marker=True)
+        targ_y = fwd_dynamics.scale_data(y, y_marker=True)
+        self.target = torch.FloatTensor([targ_x, targ_y])
+
 
     def fwd_dynamics_step(self, x):
         with torch.no_grad():
@@ -40,11 +59,16 @@ class SOFTROBOTSIM:
     def update_rl_state(self):
         x_ee = self.dynamics_output[0][13]
         y_ee = self.dynamics_output[0][23]
+        x_mid = self.dynamics_output[0][8]
+        y_mid = self.dynamics_output[0][18]
         x_t = self.target[0]
         y_t = self.target[1]
         e_x = x_t - x_ee
         e_y = y_t - y_ee
-        full = self.dynamics_output[0][4:].numpy()
+        # full = self.dynamics_output[0][4:].numpy()
+        full = np.array([
+            x_ee, y_ee, x_mid, y_mid
+        ])
         stuff = np.array([
             x_t, y_t, e_x, e_y
         ])
@@ -73,7 +97,7 @@ class SOFTROBOTSIM:
         self.dynamics_output = self.fwd_dynamics_step(self.dynamics_input)
 
         self.update_rl_state()
-        
+ 
 
     def reset(self):
         self.init_state()
@@ -85,7 +109,11 @@ class SOFTROBOTSIM:
     def step(self, action):
         self.count += 1
         action_tensor = torch.ones(8) * -1
-        action_tensor[action] = 1
+        # action_tensor[action] = 1
+        b = [action >> i & 1 for i in range(7,-1,-1)]
+        for idx, v in enumerate(b):
+            if v == 1:
+                action_tensor[idx] = 1
 
         new_input = torch.cat((action_tensor, self.dynamics_output[0]), 0)
         new_input = new_input[None, None, :]
@@ -93,7 +121,6 @@ class SOFTROBOTSIM:
         self.dynamics_input = torch.cat((self.dynamics_input, new_input), 1)
         self.dynamics_output = self.fwd_dynamics_step(self.dynamics_input)
         self.update_rl_state()
-
 
         next_state = self.rl_state
         reward = self.reward
@@ -119,12 +146,17 @@ Rollout = namedtuple('Rollout', ['states', 'actions', 'rewards', 'next_states', 
 def train(epochs=100, num_rollouts=10, render_frequency=None):
     mean_total_rewards = []
     global_rollout = 0
+    start_time = time.time()
 
     for epoch in range(epochs):
         rollouts = []
         rollout_total_rewards = []
 
+        if epoch == 0 or (epoch % 100):
+            torch.save(actor, "./policy_iterations/" + str(epoch) + ".pt")
+
         for t in range(num_rollouts):
+            env.new_target()
             state = env.reset()
             done = False
 
@@ -140,13 +172,13 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
 
                 next_state, reward, done, _ = env.step(action)
 
-                reward_list.append(reward)
+                # reward_list.append(reward)
 
                 # Collect samples
                 samples.append((state, action, reward, next_state))
 
                 state = next_state
-            # print(min(reward_list))
+            # print(reward_list)
 
             # Transpose our samples
             states, actions, rewards, next_states = zip(*samples)
@@ -166,6 +198,10 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
         print(f'E: {epoch}.\tMean total reward across {num_rollouts} rollouts: {mtr}')
 
         mean_total_rewards.append(mtr)
+
+    end_time = time.time()
+    print("-----Time----")
+    print(end_time-start_time)
 
     plt.plot(mean_total_rewards)
     plt.show()
@@ -327,8 +363,10 @@ def apply_update(grad_flattened):
         n += numel
 
 
-# Train our agent
-train(epochs=100, num_rollouts=10, render_frequency=50)
+if __name__ == '__main__':
+    # Train our agent
+    train(epochs=300, num_rollouts=10, render_frequency=50)
 
-if SAVE_THIS_MODEL:
-    torch.save(actor, "actor_trpo.pt")
+    if SAVE_THIS_MODEL:
+        torch.save(actor, "actor_trpo.pt")
+        torch.save(critic, "critic_trpo.pt")

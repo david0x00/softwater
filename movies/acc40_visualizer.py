@@ -16,7 +16,8 @@ from PIL import Image
 plt.rcParams['figure.dpi'] = 200
 
 # directory = "/Users/davidnull/phd/data/new_controller_noresample"
-directory = "/Users/davidnull/phd/data/Acc40_Ampc_r1/"
+#directory = "/Users/davidnull/phd/data/Acc40_Ampc_r1/"
+directory = "/Users/davidnull/phd/data/Acc40_TRPO_r1/"
 #directory = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1"
 
 def get_end_rmse(directory):
@@ -25,10 +26,11 @@ def get_end_rmse(directory):
             data_arr = filename.split("/")[-1].split(".")[0].split("_")
             targ = (float(data_arr[-2]), float(data_arr[-1]))
             df = pd.read_csv(filename)
+            print(directory)
             end_targ = (float(df["M10X"].iloc[-1]), float(df["M10Y"].iloc[-1]))
             #rms = mean_squared_error(targ, end_targ, squared=False)
-            # rms = math.sqrt((targ[0] - end_targ[0])*(targ[0] - end_targ[0]) + (targ[1] - end_targ[1])*(targ[1] - end_targ[1]))
-            rms = df["RMSE"].iloc[-1]
+            rms = math.sqrt((targ[0] - end_targ[0])*(targ[0] - end_targ[0]) + (targ[1] - end_targ[1])*(targ[1] - end_targ[1]))
+            # rms = df["RMSE"].iloc[-1]
             print("Goal: " + str(targ) + ", Actual: " + str(end_targ) + ", RMSE: " + str(rms) + " cm")
             return targ, end_targ, rms
 

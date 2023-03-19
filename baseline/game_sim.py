@@ -19,12 +19,19 @@ def x2pix(x,y):
     return new_x, new_y
 
 def draw_robot(x, y, p):
+    for i in range(10):
+        pygame.draw.circle(screen,red,x2pix(0,0),5)
     pass
 
 
 class Simulator: 
     def __init__(self):
-        self.x = [0] * 24
+        pygame.init()
+        self.screen = pygame.display.set_mode((X_RES,Y_RES))
+        pygame.display.set_caption("Soft Robot Simulator")
+
+    def draw_frame(self, x, y, p, t):
+        pass
 
     def main(self , screen):
         clock = pygame.time.Clock()

@@ -26,8 +26,8 @@ SOLENOID_MAX_VAL = 1
 
 FILE_DATA_IDX = "data_index"
 
-TRAIN_PERCENTAGE = 0.75
-VALIDATION_PERCENTAGE = 0.10
+TRAIN_PERCENTAGE = 0.80
+VALIDATION_PERCENTAGE = 0.05
 TEST_PERCENTAGE = 0.15
 
 SEQUENCE_LENGTH = 4
@@ -199,7 +199,7 @@ class LSTM_DYNAMICS(nn.Module):
 
 ## Istantiate the model
 learning_rate = 5e-5
-num_hidden_units = 32
+num_hidden_units = 128
 
 loss_function = nn.MSELoss()
 

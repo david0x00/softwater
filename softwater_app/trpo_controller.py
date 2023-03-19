@@ -41,7 +41,6 @@ class TRPOController(Controller):
         super().__init__()
         self.agent = torch.load(self.controller_file)
         self.agent.eval()
-        self.target = (7,27)
     
     def on_start(self):
         print("TRPO Start")
@@ -52,24 +51,44 @@ class TRPOController(Controller):
     def evaluate(self, x):
         x_m = np.array(x[4::2])
         y_m = np.array(x[5::2])
-        x_m_s = scale_data(x_m, x_marker=True)
-        y_m_s = scale_data(y_m, y_marker=True)
+        x_m = scale_data(x_m, x_marker=True)
+        y_m = scale_data(y_m, y_marker=True)
+        # print("Information:")
+        # print(len(x_m), len(y_m))
+        # print(x_m[0], y_m[0])
+        # print(self.target)
+
+        x_ee = x_m[-1]
+        y_ee = y_m[-1]
+        x_mid = x_m[4]
+        y_mid = y_m[4]
+
         x_t = scale_data(self.target[0], x_marker=True)
         y_t = scale_data(self.target[1], y_marker=True)
-        x_ee = x_m_s[-1]
-        y_ee = y_m_s[-1]
+
         e_x = x_t - x_ee
         e_y = y_t - y_ee
+        # full = self.dynamics_output[0][4:].numpy()
+        full = np.array([
+            x_ee, y_ee, x_mid, y_mid
+        ])
         stuff = np.array([
             x_t, y_t, e_x, e_y
         ])
-        curr_state = np.concatenate((stuff, x_m_s, y_m_s), 0)
+        curr_state = np.concatenate((stuff, full), 0)
+
         curr_state = torch.tensor(curr_state).float().unsqueeze(0)
-        dist = Categorical(self.agent(curr_state))
-        number = dist.sample().item()
+        with torch.no_grad():
+            dist = Categorical(self.agent(curr_state))
+        action = dist.sample().item()
         u = [False for _ in range(self.solenoid_count)]
-        u[number] = True
-        print(u)
+
+        b = [action >> i & 1 for i in range(7,-1,-1)]
+        for idx, v in enumerate(b):
+            if v == 1:
+                u[idx] = True
+
+        # print(b, u)
         return u
 
 
