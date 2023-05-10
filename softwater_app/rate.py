@@ -10,10 +10,13 @@ class Rate:
         self._inv_rate = 1 / rate
         self._cycles = 0
         self._missed = 0
-        self._start = time.perf_counter()
+        self._start = time.perf_counter() - self._inv_rate
 
     def set_start(self):
         self._start = time.perf_counter()
+    
+    def make_ready(self):
+        self._start = time.perf_counter() - self._inv_rate
 
     def get_start(self):
         return self._start

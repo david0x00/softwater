@@ -3,24 +3,25 @@ import numpy as np
 import time
 from scipy.spatial import distance
 from collections import OrderedDict
+import skg
 
 mtx = np.array([
-    [1535.10668 / 1.5, 0, 954.393136 / 1.5],
-    [0, 1530.80529 / 1.5, 543.030187 / 1.5],
-    [0,0,1]
+    [1142.77, 0, 920.91],
+    [0, 1138.46, 545.01],
+    [0, 0, 1]
 ])
 
 newcameramtx = np.array([
-    [1559.8905 / 1.5, 0, 942.619458 / 1.5],
-    [0, 1544.98389 / 1.5, 543.694259 / 1.5],
-    [0,0,1]
+    [1135.68, 0, 919.23],
+    [0, 1132.81, 543.06],
+    [0, 0, 1]
 ])
 
 inv_camera_mtx = np.linalg.inv(newcameramtx)
 
-dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
+dist = np.array([[ 0.20121649, -0.49210822, -0.00094167, -0.00054018, 0.29212259]])
 
-camera_to_markers_dist = 57.055 #cm
+camera_to_markers_dist = 77.47 #cm
 
 class TrackingPoint:
     x:      float
@@ -182,21 +183,19 @@ class RobotDetector:
         self.first = True
         self.timestamp = None
         self.tracker = RobotTracker()
-        self.robot_segments = 11
+        self.robot_segments = 16
         self.detector = cv2.SimpleBlobDetector_create(self.params)
 
-        self.init_undistort()
+        self.set_dims(1920, 1280)
     
     def update_params(self):
         self.detector = cv2.SimpleBlobDetector_create(self.params)
     
     def reset(self):
         self.tracker.clear()
-
-    def init_undistort(self):
-        h = 720
-        w = 1280
-        self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), cv2.CV_32FC1)
+    
+    def set_dims(self, width, height):
+        self.mapx, self.mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (width, height), cv2.CV_32FC1)
     
     def pix2world(self, objects):
         world_objects = []
@@ -248,9 +247,12 @@ class RobotDetector:
             (low_hue, self.main_color_low_sat, self.main_color_low_val), 
             (high_hue, self.main_color_high_sat, self.main_color_high_val))
 
-        mask_blurred = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT)
+        mask = cv2.GaussianBlur(mask, self.gaussian_blur, cv2.BORDER_DEFAULT).astype(np.float32) / 255
+        mask = mask ** 0.5
+        mask *= 255
+        mask = mask.astype(np.uint8)
 
-        keypoints = self.detector.detect(mask_blurred)
+        keypoints = self.detector.detect(mask)
 
         pts = []
         for pt in keypoints:
@@ -261,11 +263,11 @@ class RobotDetector:
             check = True
         objects = self.tracker.update(pts, dt)
 
-        if (check):
+        if check:
             if len(objects) != self.robot_segments:
                 self.tracker.clear()
         
-        show_mask = cv2.cvtColor(mask_blurred, cv2.COLOR_GRAY2BGR)
+        show_mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         detection = self.draw_objects(show_mask, objects)
         undistorted_img = self.draw_objects(undistorted_img, objects)
 

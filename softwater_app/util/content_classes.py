@@ -5,6 +5,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 import cv2
 import numpy as np
+import serial.tools.list_ports
 
 
 class CommandCenter(BoxLayout):
@@ -16,20 +17,41 @@ class CommandCenter(BoxLayout):
         self.spacing = 10
         self.orientation = "vertical"
 
-        layout1 = BoxLayout(orientation="horizontal", spacing=40)
-        layout3 = BoxLayout(orientation="horizontal", spacing=40)
-        layout4 = BoxLayout(orientation="horizontal", spacing=40)
+        layout1 = BoxLayout(orientation="horizontal", spacing=30)
+        layout1_5 = BoxLayout(orientation="horizontal", spacing=30)
+        layout2 = BoxLayout(orientation="horizontal", spacing=30)
+        layout3 = BoxLayout(orientation="horizontal", spacing=30)
+        layout4 = BoxLayout(orientation="horizontal", spacing=30)
 
-        robot_status_title_label = ResizableLabel("Robot Status:", 0.4, halign="left")
-        self.robot_status_label = ResizableLabel("Not Connected", 0.4)
-        self.robot_status_ping = ResizableLabel("", 0.4, halign="right")
-        self.log_button = RoundToggleButton("Log", "Log", button_down_cc, button_up_cc)
+        layout1a = BoxLayout(orientation="horizontal")
+        layout1b = BoxLayout(orientation="horizontal")
+        
+        receiver_status_title_label = ResizableLabel("Receiver:", 0.4, halign='left')
+        self.receiver_status_label = ResizableLabel("", 0.4, size_hint=(1.5, 1))
+        robot_status_title_label = ResizableLabel("Robot:", 0.4, halign="left")
+        self.robot_status_label = ResizableLabel("", 0.4, size_hint=(1.5, 1))
+        self.robot_status_ping = ResizableLabel("", 0.4, halign="right", size_hint=(0.5, 1))
+        layout1a.add_widget(receiver_status_title_label)
+        layout1a.add_widget(self.receiver_status_label)
+        layout1b.add_widget(robot_status_title_label)
+        layout1b.add_widget(self.robot_status_label)
 
-        self.start_button = RoundToggleButton("Start", "Start", button_down_cc, button_up_cc)
-        self.stop_button = RoundToggleButton("Stop", "Stop", button_down_cc, button_up_cc)
+        self.set_receiver_status(False)
+        self.set_robot_status(False, "N/A ms")
+
+        self.scan = RoundToggleButton("Scan", "Scan", button_down_cc, button_up_cc, spring=True)
+        self.connect = RoundToggleButton("Connect", "Connect", button_down_cc, button_up_cc, spring=True)
+        com_label = ResizableLabel("COM Port:", 0.4, halign="left", size_hint=(0.4, 1))
+        self.com_select = ResizableTextInput("", 0.4)
+        cam_label = ResizableLabel("CAM Source:", 0.4, halign="left", size_hint=(0.4, 1))
+        self.cam_select = ResizableTextInput("", 0.4)
+
+        self.start_button = RoundToggleButton("Start", "Start", button_down_cc, button_up_cc, spring=True)
+        self.stop_button = RoundToggleButton("Stop", "Stop", button_down_cc, button_up_cc, spring=True)
 
         self.add_widget(layout1)
-        self.add_widget(self.log_button)
+        self.add_widget(layout1_5)
+        self.add_widget(layout2)
         self.add_widget(layout3)
         self.add_widget(layout4)
 
@@ -47,17 +69,32 @@ class CommandCenter(BoxLayout):
         layout3_2.add_widget(self.duration_text)
         layout3_2.add_widget(ResizableLabel("sec", 0.3, size_hint=(0.5, 1)))
 
-        layout1.add_widget(robot_status_title_label)
-        layout1.add_widget(self.robot_status_label)
+        layout1.add_widget(layout1a)
+        layout1.add_widget(layout1b)
         layout1.add_widget(self.robot_status_ping)
+        layout1_5.add_widget(self.scan)
+        layout1_5.add_widget(self.connect)
+        layout2.add_widget(com_label)
+        layout2.add_widget(self.com_select)
+        layout2.add_widget(cam_label)
+        layout2.add_widget(self.cam_select)
         layout3.add_widget(layout3_1)
         layout3.add_widget(layout3_2)
         
         layout4.add_widget(self.start_button)
         layout4.add_widget(self.stop_button)
 
+        self.scan.add_callback(self._scan)
         self.start_button.add_callback(self._start_pressed)
         self.stop_button.add_callback(self._stop_presssed)
+
+    def set_receiver_status(self, connected):
+        if connected:
+            self.receiver_status_label.text = "Connected"
+            self.receiver_status_label.color = "#00FF00"
+        else:
+            self.receiver_status_label.text = "Not Connected"
+            self.receiver_status_label.color = "#FF0000"
     
     def set_robot_status(self, connected, ping):
         if connected:
@@ -69,12 +106,23 @@ class CommandCenter(BoxLayout):
         self.robot_status_ping.text = ping
     
     def _start_pressed(self, pressed):
-        if (pressed):
+        if pressed:
             self.stop_button.state = "normal"
 
     def _stop_presssed(self, pressed):
-        if (pressed):
+        if pressed:
             self.start_button.state = "normal"
+        
+    def _scan(self, pressed):
+        if pressed:
+            ports = serial.tools.list_ports.comports()
+            text = ""
+            for (i, port) in enumerate(ports):
+                if i != 0:
+                    text = f"{text}, {port.device}"
+                else:
+                    text = port.device
+            self.com_select.set(text)
 
 
 class ControlSelector(GridLayout):
@@ -378,8 +426,8 @@ class CameraPane(BoxLayout):
 
         self.camera_view = RoundToggleButton("Camera", "Camera", button_down_cc, button_up_cc)
         self.tracker_view = RoundToggleButton("Tracker", "Tracker", button_down_cc, button_up_cc)
-        self.reset_zoom = RoundToggleButton("Reset Zoom", "Reset Zoom", button_down_cc, button_up_cc)
-        self.reset_detector = RoundToggleButton("Reset Detector", "Reset Detector", button_down_cc, button_up_cc)
+        self.reset_zoom = RoundToggleButton("Reset Zoom", "Reset Zoom", button_down_cc, button_up_cc, spring=True)
+        self.reset_detector = RoundToggleButton("Reset Detector", "Reset Detector", button_down_cc, button_up_cc, spring=True)
         self.rgb_layout = BoxLayout(orientation="horizontal", size_hint=(1, 1))
 
         label_layout = BoxLayout(orientation="horizontal")

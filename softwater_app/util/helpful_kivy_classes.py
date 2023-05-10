@@ -375,7 +375,7 @@ class CV2Image(Image):
 
 
 class RoundToggleButton(ToggleButtonBehavior, FloatLayout):
-    def __init__(self, text_down, text_up, cc_down, cc_up, text_size=0.3, radius=10, size_hint=(1, 1), pos_hint={}):
+    def __init__(self, text_down, text_up, cc_down, cc_up, text_size=0.3, radius=10, size_hint=(1, 1), pos_hint={}, spring=False):
         super(RoundToggleButton, self).__init__()
         self.text_down = text_down
         self.text_up = text_up
@@ -385,6 +385,7 @@ class RoundToggleButton(ToggleButtonBehavior, FloatLayout):
         self.text_size = text_size
         self.size_hint = size_hint
         self.pos_hint = pos_hint
+        self.spring = spring
 
         self._callbacks = []
 
@@ -405,11 +406,16 @@ class RoundToggleButton(ToggleButtonBehavior, FloatLayout):
         if pressed:
             self.rect.texture = self.cc_down.texture
             self.label.text = self.text_down
+            if self.spring:
+                Clock.schedule_once(self._spring, 0.4)
         else:
             self.rect.texture = self.cc_up.texture
             self.label.text = self.text_up
         for func in self._callbacks:
             func(value == "down")
+    
+    def _spring(self, dt):
+        self.state = "normal"
 
     def update(self, *args):
         self.rect.size = self.size

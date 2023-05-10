@@ -14,8 +14,8 @@ class Controller:
 
     rate = Rate(2)
     timeout = 10
-    pressure_sensor_count = 4
-    solenoid_count = 8
+    pressure_sensor_count = 6
+    solenoid_count = 12
     target = None
 
     t_headers = [
@@ -23,17 +23,17 @@ class Controller:
     ]
 
     u_headers = [
-        "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN",
-        "M1-AR-OUT", "M2-AL-IN", "M2-AL-OUT",
-        "M2-AR-IN", "M2-AR-OUT"
+        "M1-AL-IN", "M1-AL-OUT", "M1-AR-IN", "M1-AR-OUT", 
+        "M2-AL-IN", "M2-AL-OUT", "M2-AR-IN", "M2-AR-OUT", 
+        "M3-AL-IN", "M3-AL-OUT", "M3-AR-IN", "M3-AR-OUT"
     ]
 
     x_headers = [
-        "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M1X",
-        "M1Y", "M2X", "M2Y", "M3X", "M3Y", "M4X",
-        "M4Y", "M5X", "M5Y", "M6X", "M6Y", "M7X",
-        "M7Y", "M8X", "M8Y", "M9X", "M9Y", "M10X",
-        "M10Y"
+        "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M3-PL", "M3-PR", 
+        "M1X", "M1Y", "M2X", "M2Y", "M3X", "M3Y", "M4X", "M4Y", 
+        "M5X", "M5Y", "M6X", "M6Y", "M7X", "M7Y", "M8X", "M8Y", 
+        "M9X", "M9Y", "M10X", "M10Y", "M11X", "M11Y", "M12X", "M12Y",
+        "M13X", "M13Y", "M14X", "M14Y", "M15X", "M15Y", "M16X", "M16Y"
     ]
 
     o_headers = [

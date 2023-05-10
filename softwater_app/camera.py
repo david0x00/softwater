@@ -1,31 +1,48 @@
 import cv2
 import threading
 import queue
+import os
+import time
+from rate import Rate
 
 class Camera:
-    def __init__(self, width=1280, height=720, framerate=30):
-        self._camera = cv2.VideoCapture(0)
-        self._camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self._camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        self._camera.set(cv2.CAP_PROP_FPS, framerate)
+    def __init__(self, width=1920, height=1080, framerate=30):
+        self._source = None
         self._width = width
         self._height = height
         self._framerate = framerate
         self._running = False
-        self._thread = threading.Thread(target=self._capture)
-        self._queue = queue.Queue(10)
+        self._thread = None
+        self._queue = queue.Queue(1)
+        self._settings = queue.Queue()
     
-    def start(self):
-        self._running = True
-        self._thread.start()
+    def start(self, source):
+        if not self._running: 
+            self._source = source
+            self._thread = threading.Thread(target=self._capture)
+            self._thread.start()
+    
+    def dims(self):
+        return (self._width, self._height)
+    
+    def change_source(self, source):
+        if self._running:
+            self.stop()
+            self.start(source)
+        else:
+            self._source = source            
     
     def stop(self):
-        self._running = False
-        self._camera.release()
-        self._thread.join()
+        if self._running:
+            self._running = False
+            print("Camera stopping")
+            self._thread.join()
     
     def set(self, setting, value):
-        self._camera.set(setting, value)
+        self._settings.put((setting, value))
+    
+    def running(self):
+        return self._running
 
     def get(self, latest=True):
         img = None
@@ -40,7 +57,26 @@ class Camera:
         return img
 
     def _capture(self):
-        while (self._running):
-            ret, image = self._camera.read()
-            if (ret):
+        print("Camera opened")
+        if self._source == 0:
+            cap = cv2.CAP_ANY
+        else:
+            cap = cv2.CAP_DSHOW
+        camera = cv2.VideoCapture(self._source, cap)
+        camera.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+        camera.set(cv2.CAP_PROP_FRAME_WIDTH, self._width)
+        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self._height)
+        camera.set(cv2.CAP_PROP_FPS, self._framerate)
+        r = Rate(self._framerate)
+        self._running = True
+        while self._running:
+            while not self._settings.empty():
+                setting, value = self._settings.get()
+                camera.set(setting, value)
+            ret, image = camera.read()
+            if ret:
                 self._queue.put(image)
+            r.sleep()
+        print("Closing camera")
+        camera.release()
+        print("Camera closed")

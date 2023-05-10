@@ -80,7 +80,8 @@ class AMPCController(Controller):
         self.x_ee = x[-2:]
         self.error = [(self.target[0] - self.x_ee[0]), (self.target[1] - self.x_ee[1])]
         self.rmse = math.sqrt((self.error[0] * self.error[0]) + (self.error[1] * self.error[1]))
-        return list(u)
+        u = [i > 0.5 for i in u]
+        return u
 
 controller = AMPCController()
 
