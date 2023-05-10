@@ -607,6 +607,9 @@ def handle_vs_run(run_idx, ol_path, out):
 
     return vs_path
 
+def handle_trpo_run(img, tw=None, targ=None, orig=None, color=blue):
+    pass
+
 def draw_target_ampc(img, tw=None, targ=None, orig=None, color=red):
     cv2.circle(img, orig, radius, red, 3)
     tx = tw[0]

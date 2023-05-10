@@ -152,7 +152,7 @@ def train(epochs=100, num_rollouts=10, render_frequency=None):
         rollouts = []
         rollout_total_rewards = []
 
-        if epoch == 0 or (epoch % 100):
+        if epoch == 0 or (epoch % 100) == 99:
             torch.save(actor, "./policy_iterations/" + str(epoch) + ".pt")
 
         for t in range(num_rollouts):
@@ -365,7 +365,7 @@ def apply_update(grad_flattened):
 
 if __name__ == '__main__':
     # Train our agent
-    train(epochs=300, num_rollouts=10, render_frequency=50)
+    train(epochs=5000, num_rollouts=10, render_frequency=50)
 
     if SAVE_THIS_MODEL:
         torch.save(actor, "actor_trpo.pt")

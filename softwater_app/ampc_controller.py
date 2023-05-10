@@ -7,10 +7,18 @@ import numpy as np
 from autompc.costs import ThresholdCost
 import time
 import math
-
+import CQLPolicy
+from CQLPolicy import D3RLPyMultiTaskPolicy
 
 class AMPCController(Controller):
+    # box cost
     controller_file = "./controller.pkl"
+    
+    # CQL
+    # controller_file = "active_controllers/cql.pkl"
+
+    # Distance cost
+    # controller_file = "active_controllers/distance_cost.pkl"
 
     def __init__(self):
         super().__init__()
@@ -18,6 +26,7 @@ class AMPCController(Controller):
             self.mpc = pickle.load(f)
         self.system = self.mpc.system
         self.ocp = ampc.OCP(self.system)
+        # NOTE: Comment out for CQL
         self.mpc.model._device = "cpu"
         
     def extra_headers(self):
@@ -64,11 +73,19 @@ class AMPCController(Controller):
 
         self.mpc.set_ocp(self.ocp)
         self.mpc.reset()
+
+        # NOTE: Comment out for CQL
         self.mpc.optimizer.optimizer.log_df = pd.DataFrame(columns=['States', 'Ctrls', 'Cost', 'Quad', 'Barrier', 'ActiveBarrier','BarrierHorizon', 'Timeout'])
         print(self.mpc.optimizer.optimizer.ocp.get_cost()._costs[1].scales)
 
     def on_end(self):
+        # NOTE: Comment out for CQL
         self.mpc.optimizer.optimizer.log_df.to_csv(self.data_dir + '/debug_log.csv')
+
+        print("Model: " + self.controller_file)
+        print("Target: " + str(self.target))
+        print("End EE Coords: " + str(self.x_ee))
+        print("End Distance: " + str(self.rmse))
         print("Controller End")
 
     def evaluate(self, x):

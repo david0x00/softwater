@@ -27,11 +27,43 @@ def get_end_rmse(directory):
             targ = (float(data_arr[-2]), float(data_arr[-1]))
             df = pd.read_csv(filename)
             print(directory)
+
+            # get closest end_targ to the targ
+            # end_targ = (-1,-1)
+            # min_dist = 10000
+            # for i in range(len(df)):
+            #     temp_targ = (float(df["M10X"].iloc[i]), float(df["M10Y"].iloc[i]))
+            #     temp_dist = math.sqrt((targ[0] - temp_targ[0])*(targ[0] - temp_targ[0]) + (targ[1] - temp_targ[1])*(targ[1] - temp_targ[1]))
+            #     if temp_dist < min_dist:
+            #         min_dist = temp_dist
+            #         end_targ = temp_targ
+        
+
+            # get end_targ at end of the run of 50 sec
             end_targ = (float(df["M10X"].iloc[-1]), float(df["M10Y"].iloc[-1]))
             #rms = mean_squared_error(targ, end_targ, squared=False)
             rms = math.sqrt((targ[0] - end_targ[0])*(targ[0] - end_targ[0]) + (targ[1] - end_targ[1])*(targ[1] - end_targ[1]))
             # rms = df["RMSE"].iloc[-1]
             print("Goal: " + str(targ) + ", Actual: " + str(end_targ) + ", RMSE: " + str(rms) + " cm")
+
+            sx = 7
+            sy = 27
+            x_ee = df["M10X"].to_numpy()
+            y_ee = df["M10Y"].to_numpy()
+            if targ[0] == sx and targ[1] == sy:
+                fig2, ax2 = plt.subplots()
+                ax2.set_ylim((19,41))
+                ax2.set_xlim((-11,11))
+                rx = [sx - 1, sx + 1, sx + 1, sx - 1, sx - 1]
+                ry = [sy - 1, sy - 1, sy + 1, sy + 1, sy - 1]
+                ax2.plot(rx, ry, color="red")
+                ax2.plot(x_ee, y_ee)
+                # plt.plot(actions)
+                # plt.plot(reward_list)
+                # print(inverse_scale_data(env.dynamics_output[0][4:14], x_marker=True))
+                # print(inverse_scale_data(env.dynamics_output[0][14:24], y_marker=True))
+                plt.show()
+
             return targ, end_targ, rms
 
 data = {}
@@ -74,6 +106,7 @@ if e == 0:
     simp_data_label = "simp_rms"
 elif e == 1:
     ax.set_title(r"$\bf{AutoMPC}$ Accuracy")
+    ax.set_title(r"$\bf{TRPO}$ Accuracy")
     ampc_data_label = "ampc_rms"
     ax.set(adjustable="box", aspect='equal')
 elif e == 2:

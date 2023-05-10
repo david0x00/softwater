@@ -114,7 +114,10 @@ def auto_mpc(pressed):
         global handler
         handler.set_controller(ampc_controller.controller)
         handler.controller.data_dir = new_experiment_dir("Auto_MPC")
-        handler.controller.timeout = 50
+        # handler.controller.timeout = 50
+
+        # For out of distrubution tasks
+        handler.controller.timeout = 70
 
 def pid(pressed):
     print("Visual_Servo:", pressed)
@@ -122,7 +125,10 @@ def pid(pressed):
         global handler
         handler.set_controller(visual_servo.controller)
         handler.controller.data_dir = new_experiment_dir("Visual_Servo")
-        handler.controller.timeout = 50
+        # handler.controller.timeout = 50
+
+        # For out of distrubution tasks
+        handler.controller.timeout = 70
 
 def open_loop(pressed):
     print("Open_Loop:", pressed)
@@ -130,20 +136,29 @@ def open_loop(pressed):
         global handler
         handler.set_controller(simple_controller.controller)
         handler.controller.data_dir = new_experiment_dir("Open_Loop")
-        handler.controller.timeout = 50
+        # handler.controller.timeout = 50
+
+        # For out of distrubution tasks
+        handler.controller.timeout = 70
 
 def manual(pressed):
     print("Manual:", pressed)
     if pressed:
         global handler
+
+        # NOTE: Actual Manual Controller
         # handler.set_controller(manual_controller.controller)
         # handler.controller.data_dir = new_experiment_dir("Manual")
+        # handler.controller.timeout = 500
 
         # NOTE: Temporary TRPO controller
         handler.set_controller(trpo_controller.controller)
         handler.controller.data_dir = new_experiment_dir("TRPO")
+        # handler.controller.timeout = 50
 
-        handler.controller.timeout = 50
+        # For out of distrubution tasks
+        handler.controller.timeout = 70
+
 
 def check_ufloat(text):
     try:

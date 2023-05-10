@@ -126,18 +126,18 @@ for loc in tb:
 for loc in bb:
     img = draw_line(img, loc, bottom=True)
 
-lb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
-rb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
-bb = [(-13,25), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (11,31), (9,33), (7,35), (5,37)]
-tb = [(-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,29), (11,31), (9,33), (7,35), (5,37)]
-for loc in lb:
-    img = draw_line(img, loc, left=True, color=(0,255,0))
-for loc in rb:
-    img = draw_line(img, loc, right=True, color=(0,255,0))
-for loc in tb:
-    img = draw_line(img, loc, top=True, color=(0,255,0))
-for loc in bb:
-    img = draw_line(img, loc, bottom=True, color=(0,255,0))
+# lb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
+# rb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
+# bb = [(-13,25), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (11,31), (9,33), (7,35), (5,37)]
+# tb = [(-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,29), (11,31), (9,33), (7,35), (5,37)]
+# for loc in lb:
+#     img = draw_line(img, loc, left=True, color=(0,255,0))
+# for loc in rb:
+#     img = draw_line(img, loc, right=True, color=(0,255,0))
+# for loc in tb:
+#     img = draw_line(img, loc, top=True, color=(0,255,0))
+# for loc in bb:
+#     img = draw_line(img, loc, bottom=True, color=(0,255,0))
 
 lb = [(-9,25), (-5,27), (-3, 31), (-1,35), (-1,25), (9,25), (5,27), (3, 31), (1,35), (1,25)]
 rb = [(-9,25), (-5,27), (-3, 31), (-1,35), (-1,25), (9,25), (5,27), (3, 31), (1,35), (1,25)]
@@ -153,12 +153,17 @@ for loc in bb:
     img = draw_line(img, loc, bottom=True, color=(0,0,255), side_length=0.75)
 
 # plt.imshow(img)
+# plt.show()
+# final_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+# cv2.imwrite('/Users/davidnull/phd/data/acc40_data/combined_data_visualv2.png', final_img)
+
+# fig_new, ax_new = plt.subplots()
+# norm = Normalize(vmin=0, vmax=abs_max_count, clip=False)
+# cbar = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap_train), ax=ax_new)
+# cbar.set_label('# of Training Samples')
+# plt.savefig('/Users/davidnull/phd/data/acc40_data/combined_data_visual_cbarv1.png')
+
+
 plt.show()
 final_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-cv2.imwrite('/Users/davidnull/phd/data/acc40_data/combined_data_visualv2.png', final_img)
-
-fig_new, ax_new = plt.subplots()
-norm = Normalize(vmin=0, vmax=abs_max_count, clip=False)
-cbar = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap_train), ax=ax_new)
-cbar.set_label('# of Training Samples')
-plt.savefig('/Users/davidnull/phd/data/acc40_data/combined_data_visual_cbarv1.png')
+cv2.imwrite('/Users/davidnull/phd/data/acc40_data/combined_data_visual_taskspace_tasks.png', final_img)

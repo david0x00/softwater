@@ -246,24 +246,100 @@ if __name__ == "__main__":
     test_model(test_loader, model, loss_function)
     print()
 
-    for ix_epoch in range(20):
+    for ix_epoch in range(2):
         print(f"Epoch {ix_epoch}\n---------")
         train_model(train_loader, model, loss_function, optimizer=optimizer)
         test_model(test_loader, model, loss_function)
         print()
 
-    x, y = val_dataset[0]
-    x = x[None, :, :]
-    y = y[None, :]
+    # x, y = val_dataset[0]
+    # x = x[None, :, :]
+    # y = y[None, :]
+    # model.eval()
+    # with torch.no_grad():
+    #     y_pred = model(x)
+
+    # print(x)
+    # print(y)
+    # print(y_pred)
+
+    # loss = loss_function(y_pred, y)
+    # print(loss)
+
+    # torch.save(model, "lstm_model_1.pt")
+
+    # model = torch.load("lstm_model_1.pt")
     model.eval()
-    with torch.no_grad():
-        y_pred = model(x)
 
-    print(x)
-    print(y)
-    print(y_pred)
+    train_set_errors = []
+    for val in train_dataset:
+        x, y = val
+        x = x[None, :, :]
+        y = y[None, :]
+        with torch.no_grad():
+            y_pred = model(x)
+        
+        xe_true = y[0][13]
+        xe_pred = y_pred[0][13]
+        xe_true_inv = inverse_scale_data(xe_true, x_marker=True)
+        xe_pred_inv = inverse_scale_data(xe_pred, x_marker=True)
 
-    loss = loss_function(y_pred, y)
-    print(loss)
+        ye_true = y[0][23]
+        ye_pred = y_pred[0][23]
+        ye_true_inv = inverse_scale_data(ye_true, y_marker=True)
+        ye_pred_inv = inverse_scale_data(ye_pred, y_marker=True)
 
-    torch.save(model, "lstm_model_1.pt")
+        xe_error = xe_true_inv - xe_pred_inv
+        # print(xe_true_inv)
+        # print(xe_pred_inv)
+        # print(xe_error)
+        ye_error = ye_true_inv - ye_pred_inv
+        # print(ye_true_inv)
+        # print(ye_pred_inv)
+        # print(ye_error)
+        error = np.sqrt(xe_error*xe_error + ye_error*ye_error)
+        # print(error)
+        train_set_errors.append(error)
+
+    train_iqr_arr = np.array(train_set_errors)
+    print("Train Set")
+    print("Average Error: " + str(train_iqr_arr.mean()) + " cm")
+    q3, q1 = np.percentile(train_iqr_arr, [75 ,25])
+    print("IQR (cm): " + str(q1) + ", " + str(q3))
+
+
+    test_set_errors = []
+    for val in test_dataset:
+        x, y = val
+        x = x[None, :, :]
+        y = y[None, :]
+        with torch.no_grad():
+            y_pred = model(x)
+        
+        xe_true = y[0][13]
+        xe_pred = y_pred[0][13]
+        xe_true_inv = inverse_scale_data(xe_true, x_marker=True)
+        xe_pred_inv = inverse_scale_data(xe_pred, x_marker=True)
+
+        ye_true = y[0][23]
+        ye_pred = y_pred[0][23]
+        ye_true_inv = inverse_scale_data(ye_true, y_marker=True)
+        ye_pred_inv = inverse_scale_data(ye_pred, y_marker=True)
+
+        xe_error = xe_true_inv - xe_pred_inv
+        # print(xe_true_inv)
+        # print(xe_pred_inv)
+        # print(xe_error)
+        ye_error = ye_true_inv - ye_pred_inv
+        # print(ye_true_inv)
+        # print(ye_pred_inv)
+        # print(ye_error)
+        error = np.sqrt(xe_error*xe_error + ye_error*ye_error)
+        # print(error)
+        test_set_errors.append(error)
+
+    test_iqr_arr = np.array(test_set_errors)
+    print("Testing Set")
+    print("Average Error: " + str(test_iqr_arr.mean()) + " cm")
+    q3, q1 = np.percentile(test_iqr_arr, [75 ,25])
+    print("IQR (cm): " + str(q1) + ", " + str(q3))
