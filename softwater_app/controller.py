@@ -6,6 +6,7 @@ import time
 import os
 import cv2
 import csv
+import numpy as np
 
 class Controller:
     _cmd_queue = Queue()
@@ -29,12 +30,15 @@ class Controller:
     ]
 
     x_headers = [
-        "M1-PL", "M1-PR", "M2-PL", "M2-PR", "M3-PL", "M3-PR", 
         "M1X", "M1Y", "M2X", "M2Y", "M3X", "M3Y", "M4X", "M4Y", 
         "M5X", "M5Y", "M6X", "M6Y", "M7X", "M7Y", "M8X", "M8Y", 
         "M9X", "M9Y", "M10X", "M10Y", "M11X", "M11Y", "M12X", "M12Y",
         "M13X", "M13Y", "M14X", "M14Y", "M15X", "M15Y", "M16X", "M16Y"
     ]
+
+    p_headers = ["M1-PL", "M1-PR", "M2-PL", "M2-PR", "M3-PL", "M3-PR"]
+
+    a_headers = ["A1", "A2", "A3", "A4"]
 
     o_headers = [
         "ORIGX", "ORIGY"
@@ -111,7 +115,7 @@ class Controller:
         print(f"got -- {(time.perf_counter() - t) * 1000} ms")
         return data
     
-    def evaluate(self, x):
+    def evaluate(self, *args):
         u = []
         for _ in range(self.solenoid_count):
             u.append(False)
@@ -123,6 +127,8 @@ class Controller:
         headers = []
         headers += self.t_headers
         headers += self.x_headers
+        headers += self.p_headers
+        headers += self.a_headers
         headers += self.u_headers
         headers += self.o_headers
         headers += self.extra_headers()
@@ -131,10 +137,11 @@ class Controller:
     def extra_headers(self):
         return []
 
-    def package_data(self, t, x, u, o):
-        data = []
-        data += t
+    def package_data(self, t, x, p, a, u, o):
+        data = [t]
         data += x
+        data += p
+        data += a
         data += u
         data += o
         data += self.extra_data()
@@ -143,13 +150,13 @@ class Controller:
     def extra_data(self):
         return []
 
-    def save_data(self, t, x, u, origin, img):
+    def save_data(self, t, x, p, angles, u, origin, img):
         self.write_img(img)
 
         with open(self.data_file, 'a', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=self.column_headers)
 
-            data = self.package_data(t, x, u, origin)
+            data = self.package_data(t, x, p, angles, u, origin)
             row_dict = {}
 
             for idx, header in enumerate(self.column_headers):
@@ -193,15 +200,21 @@ class Controller:
             msg = self.get_observations()
             if msg is None:
                 break
-            t, x, origin, img = msg
-            u = self.evaluate(x)
+            t, origin, x, p, num_segments, img = msg
+            lines = x[num_segments * 2:len(x)]
+            angles = []
+            for i in range(0, len(lines), 4):
+                px = lines[i + 2] - lines[i]
+                py = lines[i + 3] - lines[i + 1]
+                angles.append(np.degrees(np.arctan2(py, px)))
+            u = self.evaluate(x[0:num_segments * 2], p, angles)
             self.implement_controls(u)
 
             # Save Data
-            self.save_data(t, x, u, origin, img)
+            self.save_data(t, x[0:num_segments * 2], p, angles, u, origin, img)
 
             # emergency stop if pressure exceeeds 118 kPa
-            maxp = max(x[:4])
+            maxp = max(x[:6])
             if maxp > 118 and maxp < 120:
                 break
 

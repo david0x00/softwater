@@ -3,10 +3,10 @@
     "CONTRAST": 100.0,
     "SATURATION": 100.0,
     "HUE AVG": 177,
-    "HUE ERROR": 7,
-    "SAT LOW": 75,
+    "HUE ERROR": 10,
+    "SAT LOW": 70,
     "SAT HIGH": 255,
-    "VALUE LOW": 100,
+    "VALUE LOW": 80,
     "VALUE HIGH": 255,
     "GAUS BLUR X": 3,
     "GAUS BLUR Y": 3,
@@ -17,6 +17,6 @@
     "INERTIA MIN": 0.4,
     "INERTIA MAX": Infinity,
     "FREQUENCY": 2.0,
-    "DURATION": 100.0,
+    "DURATION": 10.0,
     "TARGET IDX": 0
 }

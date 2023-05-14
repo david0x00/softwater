@@ -13,7 +13,7 @@ class ManualController(Controller):
     def implement_controls(self, u):
         pass
 
-    def evaluate(self, x):
+    def evaluate(self, *args):
         return [False for _ in range(len(self.u_headers))]
 
 controller = ManualController()

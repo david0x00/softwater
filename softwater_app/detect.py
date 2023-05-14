@@ -58,6 +58,9 @@ class TrackingPoint:
     
     def int_xy(self):
         return [int(self.x), int(self.y)]
+
+    def __repr__(self):
+        return f'({self.x}, {self.y})'
         
 
 class RobotTracker():
@@ -85,7 +88,7 @@ class RobotTracker():
             self.deregister(id)
         self.nextObjectID = 0
 
-    def update(self, pts, dt: float):
+    def update(self, pts, dt: float, sort_y=True):
         for obj_id in self.objects.keys():
             self.objects[obj_id].model_motion(dt)
         
@@ -108,16 +111,19 @@ class RobotTracker():
             inputCentroids[i] = (pts[i].x, pts[i].y)
 
         if len(self.objects) == 0:
-            ordered_pts = []
-            while len(pts) > 0:
-                max_y = None
-                idx = -1
-                for i in range(len(pts)):
-                    if idx == -1 or max_y < pts[i].y:
-                        idx = i
-                        max_y = pts[i].y
-                ordered_pts.append(pts[idx])
-                pts.pop(idx)
+            if sort_y:
+                ordered_pts = []
+                while len(pts) > 0:
+                    max_y = None
+                    idx = -1
+                    for i in range(len(pts)):
+                        if idx == -1 or max_y < pts[i].y:
+                            idx = i
+                            max_y = pts[i].y
+                    ordered_pts.append(pts[idx])
+                    pts.pop(idx)
+            else:
+                ordered_pts = pts
             for i in range(len(ordered_pts)):
                 self.register(ordered_pts[i])
         else:
@@ -184,9 +190,10 @@ class RobotDetector:
         self.timestamp = None
         self.tracker = RobotTracker()
         self.robot_segments = 16
+        self.max_pts = self.robot_segments + 2 * (int(self.robot_segments / 5) + 1)
         self.detector = cv2.SimpleBlobDetector_create(self.params)
 
-        self.set_dims(1920, 1280)
+        self.set_dims(1920, 1080)
     
     def update_params(self):
         self.detector = cv2.SimpleBlobDetector_create(self.params)
@@ -206,6 +213,21 @@ class RobotDetector:
             coord_3d = np.matmul(inv_camera_mtx, coord_2d) * camera_to_markers_dist
             world_objects.append((coord_3d[0][0], coord_3d[1][0]))
         return world_objects
+
+    def _order(self, pts):
+        ordered = []
+        for pt in pts:
+            if len(ordered) == 0:
+                ordered.append(pt)
+            else:
+                inserted = False
+                for i in range(len(ordered)):
+                    if pt.x <= ordered[i].x:
+                        ordered.insert(i, pt)
+                        inserted = True
+                if not inserted:
+                    ordered.append(pt)
+        return ordered
 
     def detect(self, image):
         undistorted_img = cv2.remap(image, self.mapx, self.mapy, interpolation=cv2.INTER_LINEAR)
@@ -253,29 +275,49 @@ class RobotDetector:
         mask = mask.astype(np.uint8)
 
         keypoints = self.detector.detect(mask)
-
         pts = []
         for pt in keypoints:
             pts.append(TrackingPoint(pt.pt[0], pt.pt[1], size=pt.size))
         
-        check = False
         if len(self.tracker.objects) == 0:
-            check = True
-        objects = self.tracker.update(pts, dt)
-
-        if check:
-            if len(objects) != self.robot_segments:
+            if len(pts) == self.max_pts:
+                objects = self.tracker.update(pts, dt)
+                spine_pts = []
+                angle_pts = []
+                sp = sorted([objects[0], objects[1], objects[2]], key=lambda pt : pt.x)
+                spine_pts.append(sp[1])
+                sp.pop(1)
+                angle_pts += sp
+                i = 3
+                while i < self.max_pts:
+                    for _ in range(4):
+                        spine_pts.append(objects[i])
+                        i += 1
+                    sp = sorted([objects[i], objects[i + 1], objects[i + 2]], key=lambda pt : pt.x)
+                    spine_pts.append(sp[1])
+                    sp.pop(1)
+                    angle_pts += sp
+                    i += 3
                 self.tracker.clear()
+                self.tracker.update(spine_pts + angle_pts, dt, sort_y=False)
+            else:
+                objects = dict()
+        else:
+            objects = self.tracker.update(pts, dt)
+
+        detection = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         
-        show_mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-        detection = self.draw_objects(show_mask, objects)
-        undistorted_img = self.draw_objects(undistorted_img, objects)
-
-        ids = self.tracker.objects.keys()
-        for i in range(self.robot_segments):
-            if not i in ids:
+        for i in range(self.max_pts):
+            if not i in objects.keys():
                 return False, undistorted_img, detection
-
+        
+        lines = []
+        for i in range(self.robot_segments, self.max_pts, 2):
+            lines.append([objects[i], objects[i + 1]])
+        
+        detection = self.draw_objects(detection, objects)
+        undistorted_img = self.draw_lines(undistorted_img, lines, thickness=2)
+        undistorted_img = self.draw_objects(undistorted_img, objects)
         return True, undistorted_img, detection
     
     def draw_keypoints(self, image, pts, color=(0, 255, 0)):
@@ -294,35 +336,34 @@ class RobotDetector:
             xy[1] -= (radius + int(size[1] / 2))
             cv2.putText(image, str(obj_id), xy, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 1, cv2.LINE_AA)
         return image
+    
+    def draw_lines(self, image, lines, color=(255, 0, 255), thickness=1):
+        for line in lines:
+            x1 = int(line[0].x)
+            y1 = int(line[0].y)
+            x2 = int(line[1].x)
+            y2 = int(line[1].y)
+            image = cv2.line(image, (x1, y1), (x2, y2), color, thickness)
+        return image
 
 
 if __name__ == "__main__":
     detector = RobotDetector()
+    detector.main_color_hue = 177
+    detector.main_color_hue_error = 7
+    detector.main_color_low_sat = 65
+    detector.main_color_low_val = 80
+    detector.gaussian_blur = (3, 3)
+    detector.params.minCircularity = 0.0
+    detector.params.minArea = 10
+    detector.params.minInertiaRatio = 0.2
+    detector.update_params()
 
-    cap = cv2.VideoCapture("./data/robot_test.mp4")
-
-    detector.main_color_hue = 174
-    detector.main_color_hue_error = 6
-
-    start = time.time()
-    count = 0
-    changed = False
-    while True:
-        ret, img = cap.read()
-        if not ret:
-            break
-
-        count = count + 1
-        if count < 10:
-           continue
-        count = 0
-
-        pts, detection = detector.detect(img)
-
-        if not changed and time.time() - start > 2:
-            detector.main_color_hue = 172
-            changed = True
-
-        cv2.imshow('detect', detection)
-        cv2.waitKey(1)
-        time.sleep(0.5)
+    img = cv2.imread("./data/test2.jpg")
+    img = cv2.resize(img, (1920, 1080))
+    detecting, image, track = detector.detect(img)
+    image = cv2.resize(image, (960, 720))
+    track = cv2.resize(track, (960, 720))
+    cv2.imshow('image', image)
+    cv2.imshow('track', track)
+    cv2.waitKey(0)
