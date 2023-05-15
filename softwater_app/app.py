@@ -328,21 +328,18 @@ if current_process().name == 'MainProcess':
             return folder
 
         def package_data(self, m, p, img):
-            x = []
-            x += p
-            x += [0, 0]
-
             m = self.detector.pix2world(m)
 
             x_home = m[0][0]
             y_home = m[0][1]
             origin = [x_home, y_home]
 
-            for i in range(1, self.detector.robot_segments):
+            x = []
+            for i in range(0, self.detector.max_pts):
                 x.append(m[i][0] - x_home)
                 x.append(y_home - m[i][1])
 
-            return ([time.perf_counter()], x, origin, img)
+            return (time.perf_counter(), origin, x, p, self.detector.robot_segments, img)
 
         def main_callback(self, dt):
             img = self.camera.get()
@@ -368,7 +365,6 @@ if current_process().name == 'MainProcess':
                 while len(self.link.messages) > 0:
                     msg = self.link.messages.pop()
                     if msg.type == 1:
-                        
                         self.last_ping_return = time.time()
                         self.ping = time.time() - self.last_ping_start
                         app.command_center.set_robot_status(True, "{:.2f} ms".format(self.ping * 1000))
@@ -390,7 +386,8 @@ if current_process().name == 'MainProcess':
                     if 'set solenoids' in data['command'].keys():
                         u = data['command']['set solenoids']
                         arr = struct.pack('%s?' % len(u), *u)
-                        self.link.send(3, arr)
+                        if self.link:
+                            self.link.send(3, arr)
                         print(u)
                 elif type == 'app':
                     if not self.tracking:
