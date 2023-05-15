@@ -131,11 +131,11 @@ add_data(vs_dir, "vs")
 add_data(trpo_dir, "trpo")
 add_data(cql_dir, "cql")
 
-add_data(ol_ood_dir, "simp_ood", ood=True)
-add_data(ampc_ood_dir, "ampc_ood", ood=True)
-add_data(vs_ood_dir, "vs_ood", ood=True)
-add_data(trpo_ood_dir, "trpo_ood", ood=True)
-add_data(cql_ood_dir, "cql_ood", ood=True)
+add_data(ol_ood_dir, "simp", ood=True)
+add_data(ampc_ood_dir, "ampc", ood=True)
+add_data(vs_ood_dir, "vs", ood=True)
+add_data(trpo_ood_dir, "trpo", ood=True)
+add_data(cql_ood_dir, "cql", ood=True)
 
 
 

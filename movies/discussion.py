@@ -10,6 +10,9 @@ def outperformed():
     for index, row in df.iterrows():
         ampc_error = row["ampc_dist"]
         other_error = [row["simp_dist"], row["vs_dist"], row["cql_dist"], row["trpo_dist"], ]
+        if index == 47:
+            print(ampc_error)
+            print(other_error)
         won_err = True
         for err in other_error:
             if err < ampc_error:
@@ -38,32 +41,34 @@ def outperformed():
     
 
 def print_stats(prefix):
+    df_task = df.iloc[:40]
     print(prefix + " STATS:")
     print("Task Space")
-    dist = df[prefix + "_dist"]
+    dist = df_task[prefix + "_dist"]
     mean = round(dist.mean(), 3)
     std = round(dist.std(), 3)
     print("Dist Err Mean: " + str(mean) + ", STD: " + str(std))
-    reached = df[prefix + "_reached"].sum()
+    reached = df_task[prefix + "_reached"].sum()
     rp = round(100 * reached / 40.0, 0)
-    reached_end = df[prefix + "_reached_end"].sum()
+    reached_end = df_task[prefix + "_reached_end"].sum()
     rep = round(100 * reached_end / 40.0, 0)
     print("Reached at all: " + str(reached) + "/40 " + str(rp) + "%, Reached at end: " + str(reached_end) + "/40 " + str(rep) + "%")
-    time_outside = df[prefix + "_time_outside_goal"]
+    time_outside = df_task[prefix + "_time_outside_goal"]
     mean = round(time_outside.mean(), 3)
     std = round(time_outside.std(), 3)
     print("Time Outside Goal Mean: " + str(mean) + ", STD: " + str(std))
     print("OOD space")
-    dist = df[prefix + "_ood_dist"]
+    df_ood = df.iloc[40:]
+    dist = df_ood[prefix + "_dist"]
     mean = round(dist.mean(), 3)
     std = round(dist.std(), 3)
     print("Dist Err Mean: " + str(mean) + ", STD: " + str(std))
-    reached = df[prefix + "_ood_reached"].sum()
+    reached = df_ood[prefix + "_reached"].sum()
     rp = round(100 * reached / 18.0, 0)
-    reached_end = df[prefix + "_ood_reached_end"].sum()
+    reached_end = df_ood[prefix + "_reached_end"].sum()
     rep = round(100 * reached_end / 18.0, 0)
     print("Reached at all: " + str(reached) + "/18 " + str(rp) + "%, Reached at end: " + str(reached_end) + "/18 " + str(rep) + "%")
-    time_outside = df[prefix + "_ood_time_outside_goal"]
+    time_outside = df_ood[prefix + "_time_outside_goal"]
     mean = round(time_outside.mean(), 3)
     std = round(time_outside.std(), 3)
     print("Time Outside Goal Mean: " + str(mean) + ", STD: " + str(std))

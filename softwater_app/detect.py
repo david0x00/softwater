@@ -3,7 +3,7 @@ import numpy as np
 import time
 from scipy.spatial import distance
 from collections import OrderedDict
-import skg
+# import skg
 
 mtx = np.array([
     [1142.77, 0, 920.91],
