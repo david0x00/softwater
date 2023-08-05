@@ -1,6 +1,7 @@
 from controller import Controller
 
 class ManualController(Controller):
+
     def __init__(self):
         super().__init__()
     
@@ -14,6 +15,7 @@ class ManualController(Controller):
         pass
 
     def evaluate(self, *args):
-        return [False for _ in range(len(self.u_headers))]
+        u = self.pressed_valve_state
+        return u
 
 controller = ManualController()

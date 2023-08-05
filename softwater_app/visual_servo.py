@@ -188,7 +188,7 @@ class VisualServo(Controller):
 
         self.target_pressures = self.ik.calc(self.adjusted_target)
 
-    def evaluate(self, x):
+    def evaluate(self, x, p, angles):
         pressures = x[0:4]
         x_ee = x[-2:]
         self.x_ee = x_ee

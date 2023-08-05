@@ -21,6 +21,8 @@ if current_process().name == 'MainProcess':
     import simple_controller
     import visual_servo
     import ampc_controller
+    import random_controller
+    import length_controller
     from usbcom import USBMessageBroker
     import struct
     import time
@@ -293,6 +295,8 @@ if current_process().name == 'MainProcess':
         camera = Camera(1920, 1280)
         link = None
 
+        pressed_valve_state = [False]*12
+
         is_camera_view = True
         raw_image = None
         tracking = False
@@ -339,7 +343,7 @@ if current_process().name == 'MainProcess':
                 x.append(m[i][0] - x_home)
                 x.append(y_home - m[i][1])
 
-            return (time.perf_counter(), origin, x, p, self.detector.robot_segments, img)
+            return (time.perf_counter(), origin, x, p, self.detector.robot_segments, img, self.pressed_valve_state)
 
         def main_callback(self, dt):
             img = self.camera.get()
@@ -387,7 +391,10 @@ if current_process().name == 'MainProcess':
                         u = data['command']['set solenoids']
                         arr = struct.pack('%s?' % len(u), *u)
                         if self.link:
-                            self.link.send(3, arr)
+                            # BUG: something weird happening here
+                            # self.link.send(3, arr)
+                            for idx, u_val in enumerate(u[:4]):
+                                self.link.send(4, struct.pack('>BB?', 0, idx, u_val))
                         print(u)
                 elif type == 'app':
                     if not self.tracking:
@@ -415,9 +422,12 @@ if current_process().name == 'MainProcess':
 
         def manual(self, pressed):
             if pressed:
-                print('mode: manual')
-                self.handler.set_controller(manual.controller)
-                self.data_dir_name = 'Manual'
+                print('mode: length')
+                self.handler.set_controller(length_controller.controller)
+                self.data_dir_name = 'Length'
+                # print('mode: manual')
+                # self.handler.set_controller(manual.controller)
+                # self.data_dir_name = 'Manual'
         
         def connect(self, pressed):
             if pressed:
@@ -473,15 +483,17 @@ if current_process().name == 'MainProcess':
                 return self.tracker_image is not None, self.tracker_image
             
         def pressurize(self, id, pressed):
+            stage = id // 2
+            valve = 2 * (id % 2)
+            self.pressed_valve_state[(4 * stage) + valve] = pressed
             if self.link:
-                stage = id // 2
-                valve = 2 * (id % 2)
                 self.link.send(4, struct.pack('>BB?', stage, valve, pressed))
 
         def depressurize(self, id, pressed):
+            stage = id // 2
+            valve = 2 * (id % 2) + 1
+            self.pressed_valve_state[(4 * stage) + valve] = pressed
             if self.link:
-                stage = id // 2
-                valve = 2 * (id % 2) + 1            
                 self.link.send(4, struct.pack('>BB?', stage, valve, pressed))
 
         def pump(self, pressed):

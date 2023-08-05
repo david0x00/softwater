@@ -189,7 +189,7 @@ class RobotDetector:
         self.first = True
         self.timestamp = None
         self.tracker = RobotTracker()
-        self.robot_segments = 16
+        self.robot_segments = 11
         self.max_pts = self.robot_segments + 2 * (int(self.robot_segments / 5) + 1)
         self.detector = cv2.SimpleBlobDetector_create(self.params)
 

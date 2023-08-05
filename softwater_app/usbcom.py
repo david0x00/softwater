@@ -134,8 +134,10 @@ class USBMessageBroker:
                 serial_data = self._device.read_all()
                 self._received += len(serial_data)
                 self._buf.extend(list(serial_data))
-            except serial.serialutil.SerialException:
+            # except serial.serialutil.SerialException:
+            except:
                 problem = True
+            # print(serial_data)
                        
             while len(self._buf) >= self._header_size:
                 if not self._header and len(self._buf) >= self._header_size:

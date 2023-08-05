@@ -19,6 +19,8 @@ class Controller:
     solenoid_count = 12
     target = None
 
+    pressed_valve_state = [False]*12
+
     t_headers = [
         "TIME"
     ]
@@ -200,8 +202,10 @@ class Controller:
             msg = self.get_observations()
             if msg is None:
                 break
-            t, origin, x, p, num_segments, img = msg
-            lines = x[num_segments * 2:len(x)]
+            t, origin, x, p, num_segments, img, self.pressed_valve_state = msg
+            num_segments = 2
+            # lines = x[num_segments * 2:len(x)]
+            lines = x[num_segments * 2:num_segments * 2 + 6]
             angles = []
             for i in range(0, len(lines), 4):
                 px = lines[i + 2] - lines[i]
@@ -214,8 +218,8 @@ class Controller:
             self.save_data(t, x[0:num_segments * 2], p, angles, u, origin, img)
 
             # emergency stop if pressure exceeeds 118 kPa
-            maxp = max(x[:6])
-            if maxp > 118 and maxp < 120:
+            maxp = max(p)
+            if maxp > 125 and maxp < 127:
                 break
 
             # Wait for end of control loop
