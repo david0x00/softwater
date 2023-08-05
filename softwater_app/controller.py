@@ -205,9 +205,11 @@ class Controller:
             t, origin, x, p, num_segments, img, self.pressed_valve_state = msg
             num_segments = 2
             # lines = x[num_segments * 2:len(x)]
-            lines = x[num_segments * 2:num_segments * 2 + 6]
+            lines = x[num_segments * 2:]
             angles = []
-            for i in range(0, len(lines), 4):
+            # 3 for 2 stage
+            # 4 for 3 stage
+            for i in range(0, 3, 4):
                 px = lines[i + 2] - lines[i]
                 py = lines[i + 3] - lines[i + 1]
                 angles.append(np.degrees(np.arctan2(py, px)))
