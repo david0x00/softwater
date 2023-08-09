@@ -396,6 +396,8 @@ if current_process().name == 'MainProcess':
                             for idx, u_val in enumerate(u[:4]):
                                 self.link.send(4, struct.pack('>BB?', 0, idx, u_val))
                         print(u)
+                        if 'running' in data['command'].keys():
+                            self.pump(data['command']['running'])
                 elif type == 'app':
                     if not self.tracking:
                         self.handler.controller.stop()

@@ -128,10 +128,10 @@ class Controller:
     def package_headers(self):
         headers = []
         headers += self.t_headers
-        headers += self.x_headers
-        headers += self.p_headers
-        headers += self.a_headers
-        headers += self.u_headers
+        headers += self.x_headers[0:20]
+        headers += self.p_headers[:4]
+        headers += self.a_headers[:3]
+        headers += self.u_headers[:8]
         headers += self.o_headers
         headers += self.extra_headers()
         return headers
@@ -141,10 +141,10 @@ class Controller:
 
     def package_data(self, t, x, p, a, u, o):
         data = [t]
-        data += x
-        data += p
-        data += a
-        data += u
+        data += x[2:22]
+        data += p[:4]
+        data += a[:3]
+        data += u[:8]
         data += o
         data += self.extra_data()
         return data
@@ -203,17 +203,18 @@ class Controller:
             if msg is None:
                 break
             t, origin, x, p, num_segments, img, self.pressed_valve_state = msg
-            num_segments = 2
             # lines = x[num_segments * 2:len(x)]
             lines = x[num_segments * 2:]
             angles = []
             # 3 for 2 stage
             # 4 for 3 stage
-            for i in range(0, 3, 4):
+            for i in range(0, 4*3, 4):
                 px = lines[i + 2] - lines[i]
                 py = lines[i + 3] - lines[i + 1]
                 angles.append(np.degrees(np.arctan2(py, px)))
+            print(x[0:num_segments*2])
             u = self.evaluate(x[0:num_segments * 2], p, angles)
+            print(u)
             self.implement_controls(u)
 
             # Save Data

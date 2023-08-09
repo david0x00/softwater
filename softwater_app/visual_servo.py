@@ -200,7 +200,7 @@ class VisualServo(Controller):
         
         self.update_target_counter += 1
 
-        for i in range(self.pressure_sensor_count):
+        for i in range(4):
             target_bottom = self.target_pressures[i] - self.pressure_error_threshold
             target_top = self.target_pressures[i] + self.pressure_error_threshold
             if pressures[i] < target_bottom:
