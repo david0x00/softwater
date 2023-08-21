@@ -11,6 +11,9 @@ class ManualController(Controller):
     def on_end(self):
         print("Controller End")
     
+    def update_target(self, new_target):
+        pass
+    
     def implement_controls(self, u):
         pass
 

@@ -72,9 +72,12 @@ class Controller:
         ret = self.idx_coords[idx]
         print("Coordinates: " + str(ret))
         return ret
+    
+    def set_target(self, target):
+        self.target = target
 
     def prepare(self, target):
-        self.target = target
+        self.set_target(target)
         self.img_arr = []
         self.data_file = str(
             self.data_dir
@@ -203,6 +206,7 @@ class Controller:
             if msg is None:
                 break
             t, origin, x, p, num_segments, img, self.pressed_valve_state = msg
+            p = p[:2] + p[4:] + p[2:4]
             # lines = x[num_segments * 2:len(x)]
             lines = x[num_segments * 2:]
             angles = []
@@ -212,9 +216,9 @@ class Controller:
                 px = lines[i + 2] - lines[i]
                 py = lines[i + 3] - lines[i + 1]
                 angles.append(np.degrees(np.arctan2(py, px)))
-            print(x[0:num_segments*2])
+            # print(x[0:num_segments*2])
             u = self.evaluate(x[0:num_segments * 2], p, angles)
-            print(u)
+            # print(u)
             self.implement_controls(u)
 
             # Save Data

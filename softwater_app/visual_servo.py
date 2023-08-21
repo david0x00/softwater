@@ -1,6 +1,7 @@
 from controller import Controller
 from multiprocessing import current_process
 
+# import keras
 if current_process().name != 'MainProcess':
     import keras
 import numpy as np
@@ -50,11 +51,12 @@ class IK:
 class VisualServo(Controller):
     def __init__(self):
         super().__init__()
-        
+
 
         self.pressure_error_threshold = 0.1
 
-        self.update_target_timeout = 5 
+        # self.update_target_timeout = 5 
+        self.update_target_timeout = 1 
 
         self.int_sat_min = np.array([
             [-50],
@@ -131,11 +133,12 @@ class VisualServo(Controller):
         ]
         return data
 
-    
-    def on_start(self):
-        print("Controller Start")
+    def update_target(self, new_target):
+        if new_target is None:
+            return
+
+        self.target = new_target
         self.adjusted_target = self.target
-        self.ik = IK()
         self.target_pressures = self.ik.calc(self.adjusted_target)
 
         self.update_target_counter = 0
@@ -148,6 +151,26 @@ class VisualServo(Controller):
         self.error = np.zeros((2, 1))
         self.P = np.zeros((2, 1))
         self.I = np.zeros((2, 1))
+
+    
+    def on_start(self):
+        print("Controller Start")
+        self.ik = IK()
+        self.update_target(self.target)
+        # self.adjusted_target = self.target
+        # self.ik = IK()
+        # self.target_pressures = self.ik.calc(self.adjusted_target)
+
+        # self.update_target_counter = 0
+        # self.integration_error = np.zeros((2, 1))
+
+        # self.start_time = time.perf_counter()
+        # self.prev_time = self.start_time
+
+        # self.dt = 0
+        # self.error = np.zeros((2, 1))
+        # self.P = np.zeros((2, 1))
+        # self.I = np.zeros((2, 1))
 
     def on_end(self):
         print("Controller End")
@@ -189,7 +212,7 @@ class VisualServo(Controller):
         self.target_pressures = self.ik.calc(self.adjusted_target)
 
     def evaluate(self, x, p, angles):
-        pressures = x[0:4]
+        pressures = p
         x_ee = x[-2:]
         self.x_ee = x_ee
         u = [False for _ in range(self.solenoid_count)]

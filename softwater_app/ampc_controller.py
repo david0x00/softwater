@@ -46,9 +46,8 @@ class AMPCController(Controller):
         ]
         return data
 
-    def on_start(self):
-        print("Controller Start")
-
+    def update_target(self, new_target):
+        self.target = new_target
         targ = [float(self.target[0]), float(self.target[1])]
         self.ocp.set_cost(
             ThresholdCost(
@@ -64,16 +63,41 @@ class AMPCController(Controller):
 
         self.mpc.set_ocp(self.ocp)
         self.mpc.reset()
-        self.mpc.optimizer.optimizer.log_df = pd.DataFrame(columns=['States', 'Ctrls', 'Cost', 'Quad', 'Barrier', 'ActiveBarrier','BarrierHorizon', 'Timeout'])
-        print(self.mpc.optimizer.optimizer.ocp.get_cost()._costs[1].scales)
+
+    def on_start(self):
+        print("Controller Start")
+
+        # targ = [float(self.target[0]), float(self.target[1])]
+        # self.ocp.set_cost(
+        #     ThresholdCost(
+        #         system=self.system, goal=targ,
+        #         threshold=1.0, observations=["M10X", "M10Y"]
+        #     )
+        # )
+
+        # for obs in ['M1-PL', 'M1-PR', 'M2-PL', 'M2-PR']:
+        #     self.ocp.set_obs_bound(obs, 97, 118)
+        # for ctrl in self.system.controls:
+        #     self.ocp.set_ctrl_bound(ctrl, 0, 1)
+
+        # self.mpc.set_ocp(self.ocp)
+        # self.mpc.reset()
+        # self.mpc.optimizer.optimizer.log_df = pd.DataFrame(columns=['States', 'Ctrls', 'Cost', 'Quad', 'Barrier', 'ActiveBarrier','BarrierHorizon', 'Timeout'])
+        # print(self.mpc.optimizer.optimizer.ocp.get_cost()._costs[1].scales)
 
     def on_end(self):
-        self.mpc.optimizer.optimizer.log_df.to_csv(self.data_dir + '/debug_log.csv')
+        # self.mpc.optimizer.optimizer.log_df.to_csv(self.data_dir + '/debug_log.csv')
         print("Controller End")
 
-    def evaluate(self, x):
+    def evaluate(self, x, p, angles):
+        full_x = np.array(list(p[:4]) + list(x[2:22]))
+        # print("the full x")
+        # print(x)
+        # print(p)
+        # print(full_x)
+        # print(f'{self.system.observations=}')
         start_time = time.perf_counter()
-        u = self.mpc.step(x)
+        u = self.mpc.step(full_x)
         end_time = time.perf_counter()
 
         self.ampc_dt = (end_time - start_time) * 1000

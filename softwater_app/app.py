@@ -21,6 +21,7 @@ if current_process().name == 'MainProcess':
     import simple_controller
     import visual_servo
     import ampc_controller
+    import trajectory_controller
     import random_controller
     import length_controller
     from usbcom import USBMessageBroker
@@ -373,6 +374,7 @@ if current_process().name == 'MainProcess':
                         self.ping = time.time() - self.last_ping_start
                         app.command_center.set_robot_status(True, "{:.2f} ms".format(self.ping * 1000))
                     if msg.type == 2:
+                        # print("got pressure message" + str(msg.data))
                         self.pvals = struct.unpack(f'<{"f" * int(len(msg.data) / 4)}', msg.data)
                         for (i, val) in enumerate(self.pvals):
                             app.robot_state_image_pane.show_pressure(i, val)
@@ -395,9 +397,13 @@ if current_process().name == 'MainProcess':
                             # self.link.send(3, arr)
                             for idx, u_val in enumerate(u[:4]):
                                 self.link.send(4, struct.pack('>BB?', 0, idx, u_val))
+                            for idx, u_val in enumerate(u[4:8]):
+                                self.link.send(4, struct.pack('>BB?', 2, idx, u_val))
                         print(u)
-                        if 'running' in data['command'].keys():
-                            self.pump(data['command']['running'])
+                    if 'running' in data['command'].keys():
+                        self.pump(data['command']['running'])
+                        self.gate(data['command']['running'])
+
                 elif type == 'app':
                     if not self.tracking:
                         self.handler.controller.stop()
@@ -424,9 +430,14 @@ if current_process().name == 'MainProcess':
 
         def manual(self, pressed):
             if pressed:
-                print('mode: length')
-                self.handler.set_controller(length_controller.controller)
-                self.data_dir_name = 'Length'
+                print('mode: trajectory')
+                self.handler.set_controller(trajectory_controller.controller)
+                self.data_dir_name = 'Trajectory'
+
+                # print('mode: length')
+                # self.handler.set_controller(length_controller.controller)
+                # self.data_dir_name = 'Length'
+
                 # print('mode: manual')
                 # self.handler.set_controller(manual.controller)
                 # self.data_dir_name = 'Manual'

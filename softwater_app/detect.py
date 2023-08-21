@@ -21,7 +21,10 @@ inv_camera_mtx = np.linalg.inv(newcameramtx)
 
 dist = np.array([[ 0.20121649, -0.49210822, -0.00094167, -0.00054018, 0.29212259]])
 
-camera_to_markers_dist = 77.47 #cm
+#camera_to_markers_dist = 77.47 #cm
+camera_to_markers_dist = 78.5 #cm
+
+#24.765
 
 class TrackingPoint:
     x:      float
