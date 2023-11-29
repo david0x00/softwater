@@ -104,6 +104,7 @@ class TrajectoryController(Controller):
         self.x_ee = x[-2:]
         self.total_dist = self.get_distance(self.x_ee, self.curr_waypoint)
         print(f'{self.has_started}')
+        print(f'{self.x_ee}')
         print(f'{self.total_dist}')
 
         if not self.has_started:

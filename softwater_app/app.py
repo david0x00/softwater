@@ -374,8 +374,8 @@ if current_process().name == 'MainProcess':
                         self.ping = time.time() - self.last_ping_start
                         app.command_center.set_robot_status(True, "{:.2f} ms".format(self.ping * 1000))
                     if msg.type == 2:
-                        # print("got pressure message" + str(msg.data))
                         self.pvals = struct.unpack(f'<{"f" * int(len(msg.data) / 4)}', msg.data)
+                        # print("got pressure message" + str(self.pvals))
                         for (i, val) in enumerate(self.pvals):
                             app.robot_state_image_pane.show_pressure(i, val)
                 
