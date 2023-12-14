@@ -144,7 +144,7 @@ class USBMessageBroker:
                         if self._header.dhash == hash32(self._msgdarr):
                             self._msgs += 1
                             if self._header.type == self._PING:
-                                self._send(self._REPING, 0, self._msgdarr)
+                                self._send(self._REPING, 0, bytes(self._msgdarr))
                             elif self._header.type == self._REPING:
                                 if (int.from_bytes(bytes(self._msgdarr), 'little') == self._ping_id):
                                     self._ping_time = time.perf_counter() - self._last_ping_send
