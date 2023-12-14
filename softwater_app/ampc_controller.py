@@ -7,10 +7,72 @@ import numpy as np
 from autompc.costs import ThresholdCost
 import time
 import math
+# import d3rlpy
+# import copy
+# import gym
+# import CQLPolicy
+# from CQLPolicy import D3RLPyMultiTaskPolicy
 
+# class AutoMPCDynamicsGym(gym.Env):
+#     def __init__(self, system):
+#         self.system = system
+#     @property
+#     def action_space(self):
+#         return gym.spaces.Box(0, 1, shape=(self.system.ctrl_dim,))
+#     def reset(self, seed = None, options = None,):
+#         pass
+
+#     def step(self, actions):
+#         pass
+
+#     @property
+#     def observation_space(self):
+#         low = [90]*4+[-15, 22]*11
+#         high = [125]*4+[15, 48]*11
+#         return gym.spaces.Box(np.array(low), np.array(high))
+
+# class D3RLPyMultiTaskPolicy(ampc.Policy):
+#     def __init__(self, system):
+#         super().__init__(system)
+
+#     def clone(self):
+#         return copy.deepcopy(self)
+
+#     def set_ocp(self, ocp):
+#         self.ocp = ocp
+
+#     def load_trained_algo(self, algoName, algoPath):
+#         action_scaler = d3rlpy.preprocessing.MinMaxActionScaler(minimum=np.zeros(8), maximum=np.ones(8))
+#         if algoName == 'CQL':
+#             self.algo = d3rlpy.algos.CQL(action_scaler=action_scaler, use_gpu=False)
+#         elif algoName == 'IQL':
+#             self.algo = d3rlpy.algos.IQL(action_scaler=action_scaler, use_gpu=False)
+#         self.algo.build_with_env(AutoMPCDynamicsGym(self.system))
+#         self.algo.load_model(algoPath)
+
+#     def step(self, obs):
+#         obs = np.concatenate([obs, self.ocp.cost.goal[-2:]])
+#         action = self.algo.predict(obs[None, :])
+#         if isinstance(self.algo, d3rlpy.algos.DiscreteCQL):
+#             actions = []
+#             for i in range(8):
+#                 actions.append(action%2)
+#                 action = action //2
+#             actions = np.array(actions)
+#         else:
+#             actions = (action>0.5).astype(float)
+#         actions = actions.squeeze()
+#         return actions
+
+#     def pickle(self, filename):
+#         with open(filename, 'wb') as f:
+#             pickle.dump(self, f)
 
 class AMPCController(Controller):
     controller_file = "./controller.pkl"
+
+    # CQL
+    # controller_file = "../softwater_app_2mod/active_controllers/cql.pkl"
 
     def __init__(self):
         super().__init__()
@@ -18,6 +80,7 @@ class AMPCController(Controller):
             self.mpc = pickle.load(f)
         self.system = self.mpc.system
         self.ocp = ampc.OCP(self.system)
+        # NOTE: Comment out for CQL
         self.mpc.model._device = "cpu"
         
     def extra_headers(self):

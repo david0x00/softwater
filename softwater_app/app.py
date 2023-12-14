@@ -1,4 +1,6 @@
 from multiprocessing import current_process
+import CQLPolicy
+from CQLPolicy import D3RLPyMultiTaskPolicy
 
 if current_process().name == 'MainProcess':
     from kivy.config import Config

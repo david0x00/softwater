@@ -14,12 +14,50 @@ from matplotlib.colors import ListedColormap, LinearSegmentedColormap, Normalize
 from PIL import Image
 plt.rcParams['figure.dpi'] = 200
 
-# im = Image.open('/Users/davidnull/phd/data/acc40_data/0.jpg')
+##### 720 image #######
+# mtx = np.array([
+#     [1535.10668 / 1.5, 0, 954.393136 / 1.5],
+#     [0, 1530.80529 / 1.5, 543.030187 / 1.5],
+#     [0,0,1]
+# ])
+
+# newcameramtx = np.array([
+#     [1559.8905 / 1.5, 0, 942.619458 / 1.5],
+#     [0, 1544.98389 / 1.5, 543.694259 / 1.5],
+#     [0,0,1]
+# ])
+
+# inv_camera_mtx = np.linalg.inv(newcameramtx)
+
+# dist = np.array([[0.19210016, -0.4423498, 0.00093771, -0.00542759, 0.25832642 ]])
+
+# camera_to_markers_dist = 57.055 #cm
+######################
+
+######### 1080 image ################
+
+newcameramtx = np.array([
+    [1559.8905, 0, 942.619458],
+    [0, 1544.98389, 543.694259],
+    [0,0,1]
+])
+camera_to_markers_dist = 57.055
+
+#####################################
+
+im_height = 1080
+# im_height = 720
+# y_offset = 489
+y_offset = 550
+x_offset = 1
+
+im = Image.open('/Users/davidnull/phd/data/acc40_data/0.jpg')
 all_df = pd.read_csv('/Users/davidnull/phd/data/acc40_data/all_df_combined.csv')
 
 x_data = all_df["M10X"]
 y_data = all_df["M10Y"]
 
+all_points = []
 train_count = {}
 for x in range(-21,21,2):
     for y in range(19, 41,2):
@@ -28,6 +66,7 @@ half_side = 1
 for i in range(len(x_data)):
     x = x_data.iloc[i]
     y = y_data.iloc[i]  
+    all_points.append((x,y))
     for key in train_count.keys():
         xu = key[0] + half_side
         xl = key[0] - half_side
@@ -46,12 +85,21 @@ newcolors_train = viridis_train(np.linspace(0, scaler, levels))
 cmap_train = ListedColormap(newcolors_train)
 half_side = 1
 
-newcameramtx = np.array([
-    [1559.8905, 0, 942.619458],
-    [0, 1544.98389, 543.694259],
-    [0,0,1]
-])
-camera_to_markers_dist = 57.055
+
+xc = [[-9,-7,-5,-3,-1,1,3,5,7,9],
+      [-9,-7,-5,-3,-1,1,3,5,7,9],
+      [-7,-5,-3,-1,1,3,5,7],
+      [-5,-3,-1,1,3,5],
+      [-3,-1,1,3],
+      [-1,1]]
+yc = 25
+task_points = []
+for i, row in enumerate(xc):
+    for x in row:
+        y = yc + i*2
+        task_points.append([x,y])
+
+ood_points = [[-13,25],[-13,27],[-13,29],[-11,31],[-9,33],[-7,35],[-5,37],[-3,39],[-1,39],[1,39],[3,39],[5,37],[7,35],[9,33],[11,31],[13,29],[13,27],[13,25]]
 
 def world2pix(x, y):
     coord_3d = np.array([[float(x) / camera_to_markers_dist],
@@ -73,8 +121,8 @@ def draw_rectangle(img, loc, count):
     coord_2d_p1 = world2pix(xl, yt)
     coord_2d_p2 = world2pix(xr, yb)
     
-    p1 = (int(coord_2d_p1[0]), 1080-(int(coord_2d_p1[1])-489))
-    p2 = (int(coord_2d_p2[0]), 1080-(int(coord_2d_p2[1])-489))
+    p1 = (int(coord_2d_p1[0]), im_height-(int(coord_2d_p1[1])-y_offset))
+    p2 = (int(coord_2d_p2[0]), im_height-(int(coord_2d_p2[1])-y_offset))
     norm_count = (count - min_count) / (max_count - min_count)
     colorv = viridis_train(norm_count)
     color = (colorv[0] * 256, colorv[1] * 256, colorv[2] * 256)
@@ -102,29 +150,45 @@ def draw_line(img, loc, left=False, right=False, top=False, bottom=False, color=
         coord_2d_p1 = 0
         coord_2d_p2 = 0
     
-    p1 = (int(coord_2d_p1[0]), 1080-(int(coord_2d_p1[1])-489))
-    p2 = (int(coord_2d_p2[0]), 1080-(int(coord_2d_p2[1])-489))
+    p1 = (int(coord_2d_p1[0]), im_height-(int(coord_2d_p1[1])-y_offset))
+    p2 = (int(coord_2d_p2[0]), im_height-(int(coord_2d_p2[1])-y_offset))
     return cv2.line(img,p1,p2,color,5)
 
 
-img = cv2.imread('/Users/davidnull/phd/data/acc40_data/0.jpg')
+def draw_point(img, loc, color=(0,0,0), radius=2):
+    x, y = world2pix(loc[0], loc[1])
+    loc_pix = (int(x), im_height - (int(y) - y_offset))
+    return cv2.circle(img, loc_pix, radius=radius, color=color, thickness=-1)
+
+
+# img = cv2.imread('/Users/davidnull/phd/data/acc40_data/0.jpg')
+# img = cv2.imread('/Users/davidnull/phd/data/Acc40_Visual_Servo_OOD_r1/Visual_Servo IDX52 12-9-15 4-12-2023/imgs/img0.jpg')
+img = np.ones((1080,1920,3), np.uint8) * 255
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 print(img.shape)
-for key in train_count.keys():
-    img = draw_rectangle(img, key, train_count[key])
+# for key in train_count.keys():
+    # img = draw_rectangle(img, key, train_count[key])
+for point in all_points:
+    img = draw_point(img, point, radius=2)
 
-lb = [(-9,25),(-9,27),(-7,29),(-5,31),(-3,33),(-1,35)]
-rb = [(9,25),(9,27),(7,29),(5,31),(3,33),(1,35)]
-tb = [(-9,27),(-7,29),(-5,31),(-3,33),(-1,35),(9,27),(7,29),(5,31),(3,33),(1,35)]
-bb = [(-9,25),(-7,25),(-5,25),(-3,25),(-1,25),(1,25),(3,25),(5,25),(7,25),(9,25)]
-for loc in lb:
-    img = draw_line(img, loc, left=True)
-for loc in rb:
-    img = draw_line(img, loc, right=True)
-for loc in tb:
-    img = draw_line(img, loc, top=True)
-for loc in bb:
-    img = draw_line(img, loc, bottom=True)
+for point in task_points:
+    img = draw_point(img, point, color=(255,0,0), radius=8)
+
+for point in ood_points:
+    img = draw_point(img, point, color=(0,140,0), radius=8)
+
+# lb = [(-9,25),(-9,27),(-7,29),(-5,31),(-3,33),(-1,35)]
+# rb = [(9,25),(9,27),(7,29),(5,31),(3,33),(1,35)]
+# tb = [(-9,27),(-7,29),(-5,31),(-3,33),(-1,35),(9,27),(7,29),(5,31),(3,33),(1,35)]
+# bb = [(-9,25),(-7,25),(-5,25),(-3,25),(-1,25),(1,25),(3,25),(5,25),(7,25),(9,25)]
+# for loc in lb:
+#     img = draw_line(img, loc, left=True)
+# for loc in rb:
+#     img = draw_line(img, loc, right=True)
+# for loc in tb:
+#     img = draw_line(img, loc, top=True)
+# for loc in bb:
+#     img = draw_line(img, loc, bottom=True)
 
 # lb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
 # rb = [(-13,25), (-13,27), (-13,29), (-11,31), (-9,33), (-7,35), (-5,37), (13,25), (13,27), (13,29), (11,31), (9,33), (7,35), (5,37)]
@@ -166,4 +230,5 @@ for loc in bb:
 
 plt.show()
 final_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-cv2.imwrite('/Users/davidnull/phd/data/acc40_data/combined_data_visual_taskspace_tasks.png', final_img)
+# cv2.imwrite('/Users/davidnull/phd/data/acc40_data/combined_data_visual_taskspace_tasks.png', final_img)
+cv2.imwrite('/Users/davidnull/phd/papers/RA-L 2023/Revision/fig3_base.png', final_img)

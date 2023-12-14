@@ -90,6 +90,7 @@ void setup()
     adc.setConversionMode(ADS1120::Continuous);
     adc.setVoltageRef(ADS1120::External_REFP0_REFN0); 
     adc.setMux(ADS1120::AIN0_AVSS);
+    adc.setGain(ADS1120::Gain1);
 }
 
 void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, bool degrees=false)
@@ -110,6 +111,9 @@ void quaternionToEuler(float qr, float qi, float qj, float qk, euler_t* ypr, boo
         ypr->roll *= RAD_TO_DEG;
     }
 }
+
+Rate mpctoggle(0.2);
+bool high = true;
 
 void loop()
 {
@@ -157,5 +161,13 @@ void loop()
         logc(ypr.pitch, false);
         logc("\tRoll: ", false);
         logc(ypr.roll);
+        log("MCP", mcp.read8());
     }
+
+//    if (mpctoggle.isReady())
+//    {
+//      for (unsigned i = 0; i < 8; i++)
+//        mcp.write(i, high);
+//      high = !high;
+//    }
 }

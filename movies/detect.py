@@ -160,11 +160,17 @@ class RobotTracker():
 
 class RobotDetector:
     def __init__(self):
+        # self.main_color_hue = 175
+        # self.main_color_hue_error = 4
+        # self.main_color_low_sat = 40
+        # self.main_color_high_sat = 255
+        # self.main_color_low_val = 100
+        # self.main_color_high_val = 230
         self.main_color_hue = 175
-        self.main_color_hue_error = 4
-        self.main_color_low_sat = 40
+        self.main_color_hue_error = 6
+        self.main_color_low_sat = 30
         self.main_color_high_sat = 255
-        self.main_color_low_val = 100
+        self.main_color_low_val = 90
         self.main_color_high_val = 230
         self.gaussian_blur = (25, 25)
         self.params = cv2.SimpleBlobDetector_Params()

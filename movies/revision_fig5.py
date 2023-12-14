@@ -1,7 +1,10 @@
 import pandas as pd
 import glob
 import math
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 end_data_file = "end_data_new.csv"
 df = pd.read_csv(end_data_file)
@@ -29,6 +32,22 @@ for index, row in df.iterrows():
         cq[int(row["cql_dist"])] += 1
         tr[int(row["trpo_dist"])] += 1
 
+data_in = [[],[],[],[],[]]
+data_out = [[],[],[],[],[]]
+for index, row in df.iterrows():
+    if index < 40:
+        data_in[0].append(row["simp_dist"])
+        data_in[1].append(row["vs_dist"])
+        data_in[2].append(row["cql_dist"])
+        data_in[3].append(row["trpo_dist"])
+        data_in[4].append(row["ampc_dist"])
+    else:
+        data_out[0].append(row["simp_dist"])
+        data_out[1].append(row["vs_dist"])
+        data_out[2].append(row["cql_dist"])
+        data_out[3].append(row["trpo_dist"])
+        data_out[4].append(row["ampc_dist"])
+
 
 # tags = ('<1cm', '1-2cm', '2-3cm', '3-4cm', '4-5cm', '5-6cm', '6-7cm', '7-8cm', '8-9cm', '9-10cm')
 tags_ood = ('<1cm', '1-2cm', '2-3cm', '3-4cm', '4-5cm', '5-6cm', '6-7cm', '7-8cm', '8-9cm', '9-10cm',
@@ -42,11 +61,31 @@ tags_ood = ('<1cm', '1-2cm', '2-3cm', '3-4cm', '4-5cm', '5-6cm', '6-7cm', '7-8cm
 # d = (1, 0.3495, 0.4888, 1, 0.4861, 0.4985, 0.5213)
 # # create a dataframe
 # df = pd.DataFrame({"Learned IK": ik, "Visual Servo": vs, "CQL": cq, "TRPO": tr, "AutoMPC": a}, index=tags)
-df = pd.DataFrame({"Learned IK": ik, "Visual Servo": vs, "CQL": cq, "TRPO": tr, "AutoMPC": a}, index=tags_ood)
-df.plot.bar(rot=0, figsize=(12, 5))
+
+size=13
+fig = plt.figure()
+fig.set_size_inches(8, 4)
+
+ax1 = fig.add_subplot(121)
+ax2 = fig.add_subplot(122)
+
+# df = pd.DataFrame({"Learned IK": ik, "Visual Servo": vs, "CQL": cq, "TRPO": tr, "AutoMPC": a}, index=tags_ood)
+label_list = ["Open Loop IK", "Visual Servo", "CQL", "TRPO", "AutoMPC"]
+ax1.boxplot(data_in, patch_artist = True, notch ='True')
+ax2.boxplot(data_out, patch_artist = True, notch ='True')
+ax1.set_xticklabels(label_list, rotation=30, size=size)
+ax2.set_xticklabels(label_list, rotation=30, size=size)
+ax1.set_title("Task Space Final Error Distributions", size=size)
+ax2.set_title("OOD Final Error Distributions", size=size)
+ax1.tick_params(labelsize=size)
+ax1.label_outer()
+ax2.tick_params(labelsize=size)
+ax2.label_outer()
+ax1.set_ylim((0,10))
+ax2.set_ylim((0,10))
+# df.plot.bar(rot=0, figsize=(12, 5))
 # plt.title("Distribution of Distance Error for Task Space 40 Targets")
-plt.title("Distribution of Distance Error for Task Space 18 OOD Targets")
-plt.xlabel("Distance Error (cm)")
-plt.ylabel("Number of Runs")
+ax1.set_ylabel("Final Distance Error (cm)", size=size)
 plt.tight_layout()  # fit labels etc. nicely into the plot
-plt.show()
+# plt.show()
+plt.savefig('TaskBox.pdf', bbox_inches='tight')

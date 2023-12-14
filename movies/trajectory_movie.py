@@ -9,7 +9,12 @@ import pandas as pd
 from detect import RobotDetector
 
 traj_dir = "/Users/davidnull/phd/data/Trajectories/"
-dir_name = "TRPO_R1"
+dir_name = "trpo_arc_down_left_100"
+
+left=True
+right = not left
+up = False
+down = not up
 
 radius = 5
 red = (0, 0, 255)
@@ -37,6 +42,119 @@ inv_camera_mtx = np.linalg.inv(newcameramtx)
 dist = np.array([[ 0.20121649, -0.49210822, -0.00094167, -0.00054018, 0.29212259]])
 
 camera_to_markers_dist = 78.5 #cm
+
+class Arc:
+    num_waypoints = 100
+
+    def __init__(self, left=False, right=False, up=False, down=False):
+        if left is True:
+            if up is True:
+                self.center = (-7, 24)
+                xc = 7
+                yc = 5
+                xf = np.cos
+                yf = np.sin
+            elif down is True:
+                self.center = (0, 29)
+                xc = -7
+                yc = -5
+                xf = np.sin
+                yf = np.cos
+        if right is True:
+            if up is True:
+                self.center = (7, 24)
+                xc = -7
+                yc = 5
+                xf = np.cos
+                yf = np.sin
+            elif down is True:
+                self.center = (0, 29)
+                xc = 7
+                yc = -5
+                xf = np.sin
+                yf = np.cos
+         
+        waypoints = []
+        for i in range(self.num_waypoints+1):
+            angle = np.pi * i / self.num_waypoints / 2
+            x = self.center[0] + xc * xf(angle)
+            y = self.center[1] + yc * yf(angle)
+            waypoints.append((x, y))
+        # waypoints.append(waypoints[0])
+        self.waypoints = np.array(waypoints)
+    
+    def get_waypoints(self):
+        return self.waypoints
+
+class Circle:
+    center = (0, 29)
+    radius = 4
+    num_waypoints = 500
+
+    def __init__(self):
+        waypoints = []
+        for i in range(self.num_waypoints):
+            angle = 2 * np.pi * i / self.num_waypoints
+            x = self.center[0] - self.radius * np.sin(angle)
+            y = self.center[1] - self.radius * np.cos(angle)
+            waypoints.append((x, y))
+        waypoints.append(waypoints[0])
+        self.waypoints = np.array(waypoints)
+    
+    def get_waypoints(self):
+        return self.waypoints
+
+class BlockI:
+    logo_vertices = np.array([
+        [0, 25],
+        [3, 25],
+        [3, 27],
+        [1.5, 27],
+        [1.5, 31],
+        [3, 31],
+        [3, 33],
+        [-3, 33],
+        [-3, 31],
+        [-1.5, 31],
+        [-1.5, 27],
+        [-3, 27],
+        [-3, 25],
+        [0, 25]
+    ])
+
+    num_waypoints = 500
+
+    def __init__(self):
+        # Calculate the total length of the logo's perimeter
+        total_logo_length = np.sum(np.linalg.norm(np.diff(self.logo_vertices, axis=0), axis=1))
+    
+        # Define the number of desired waypoints and calculate the step size
+        step_size = total_logo_length / self.num_waypoints
+    
+        # Generate the waypoints along the perimeter
+        self.waypoints = []
+        current_distance = 0
+        for i in range(len(self.logo_vertices) - 1):
+            start = self.logo_vertices[i]
+            end = self.logo_vertices[i + 1]
+            segment_length = np.linalg.norm(end - start)
+
+            while current_distance + step_size < segment_length:
+                t = (current_distance + step_size) / segment_length
+                interpolated_point = (1 - t) * start + t * end
+                self.waypoints.append(interpolated_point)
+                current_distance += step_size
+
+            current_distance -= segment_length
+
+        # Add the last vertex as a waypoint
+        self.waypoints.append(self.logo_vertices[-1])
+
+        # Extract x and y coordinates from the waypoints
+        self.waypoints = np.array(self.waypoints)
+    
+    def get_waypoints(self):
+        return self.waypoints
 
 class TrajGenerator:
     def __init__(self):
@@ -133,8 +251,14 @@ def create_video(out):
         ty = oyw - df.iloc[idx]["WAYY"]
         tw = (tx, ty)
 
-        t_values = np.linspace(0, 2*np.pi, 1000)
-        x, y = TrajGenerator().figure_eight(t_values)
+        # t_values = np.linspace(0, 2*np.pi, 1000)
+        # x, y = TrajGenerator().figure_eight(t_values)
+
+        # wp = Circle().get_waypoints()
+        wp = Arc(left=left, right=right, up=up, down=down).get_waypoints()
+        x = wp[:,0]
+        y = wp[:,1]
+
         for index, x_val in enumerate(x):
             new_x = oxw + x[index]
             new_y = oyw - y[index] 

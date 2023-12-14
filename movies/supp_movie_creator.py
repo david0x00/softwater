@@ -45,11 +45,15 @@ camera_to_markers_dist = 57.055 #cm
 
 detector = RobotDetector()
 
+cql_dir = "/Users/davidnull/phd/data/Acc40_CQL_r1/"
+trpo_dir = "/Users/davidnull/phd/data/Acc40_TRPO_r1/"
 ampc_dir = "/Users/davidnull/phd/data/Acc40_Ampc_r1/"
 vs_dir = "/Users/davidnull/phd/data/Acc40_Visual_Servo_r1/"
 ol_dir = "/Users/davidnull/phd/data/acc40/"
 
-proj_dir = "/Users/davidnull/phd/papers/ICRA_2023/supp_video/"
+proj_dir = "/Users/davidnull/phd/papers/RA-L 2023/Rev2/"
+
+# proj_dir = "/Users/davidnull/phd/papers/ICRA_2023/supp_video/"
 proj_name = "supplementary_video"
 proj_ext = ".mp4"
 
@@ -58,7 +62,8 @@ file_name = proj_dir + proj_name + proj_ext
 hz = 2
 speed = 4
 fps = speed * hz
-targ_list = [0, 19, 39]
+# targ_list = [0, 19, 39]
+targ_list = [10, 19, 36]
 radius = 5
 red = (0, 0, 255)
 green = (0, 255, 0)
@@ -67,6 +72,16 @@ yellow = (0, 255, 255)
 blue = (255, 0, 0)
 white = (255, 255, 255)
 black = (0, 0, 0)
+light_green = (144, 238, 144)
+dark_green = (0, 150, 0)
+light_blue = (211, 156, 75)
+blue = (150, 0, 0)
+
+ol_color = light_blue
+vs_color = blue
+cql_color = light_green
+trpo_color = dark_green
+ampc_color = red
 
 dfed = pd.read_csv("./end_data.csv")
 
@@ -165,7 +180,12 @@ def handle_ol_run(run_idx, out):
         img = cv2.imread(filename)
         img = cv2.resize(img, size)
         tracking, camera_image, tracker_image = detector.detect(img)
+        # cv2.imshow("title", tracker_image)
+        # cv2.waitKey(0)
+        # cv2.imshow("title", camera_image)
+        # cv2.waitKey(0)
         m = detector.pix2world(detector.tracker.objects)
+        print(m)
         if idx == 0:
             ox = m[0][0]
             oy = m[0][1]
@@ -191,13 +211,13 @@ def handle_ol_run(run_idx, out):
 
         for j in range(len(xee_prev)):
             if j == 0:
-                cv2.circle(img, xee_prev[j], radius, yellow, 3)
+                cv2.circle(img, xee_prev[j], radius, ol_color, 3)
             p1 = xee_prev[j]
             if j < len(xee_prev)-1:
                 p2 = xee_prev[j+1]
             else:
                 p2 = xee
-            cv2.line(img, p1, p2, yellow, thickness=3)
+            cv2.line(img, p1, p2, ol_color, thickness=3)
         xee_prev.append(xee)
 
         ptop = 220
@@ -316,7 +336,7 @@ def handle_ol_run(run_idx, out):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
             if "Xee" in text:
-                color = black
+                color = ol_color
             elif "Target" in text:
                 color = red
             cv2.putText(img, text, details_p, font, fontScale, color, thickness)
@@ -326,7 +346,7 @@ def handle_ol_run(run_idx, out):
         dp_del = 40
         fontScale = 1
         cv2.rectangle(img, (0,0), (250,110), white, -1)
-        cv2.rectangle(img, (100,67), (200,83), yellow, -1)
+        cv2.rectangle(img, (100,67), (200,83), ol_color, -1)
         cv2.rectangle(img, (100,67), (200,83), black, 1)
         for i, text in enumerate(title):
             details_p = (dp_x, dp_y + (dp_del * i)) 
@@ -335,7 +355,7 @@ def handle_ol_run(run_idx, out):
         
 
 
-        cv2.circle(img, xee, radius, yellow, 3)
+        cv2.circle(img, xee, radius, ol_color, 3)
 
         out.write(img)
 
@@ -420,7 +440,7 @@ def handle_vs_run(run_idx, ol_path, out):
             my = oyw - df.iloc[idx]["M" + str(i) + "Y"]
             m = world2pix(mx, my)
             cv2.circle(img, m, radius, red, 3)
-        draw_prev_path(img, ol_path, origin, yellow)
+        draw_prev_path(img, ol_path, origin, ol_color)
         xw = oxw + df.iloc[idx]["XEEX"]
         yw = oyw - df.iloc[idx]["XEEY"]
         tx = oxw + df.iloc[idx]["TARGX"]
@@ -441,13 +461,13 @@ def handle_vs_run(run_idx, ol_path, out):
 
         for j in range(len(xee_prev)):
             if j == 0:
-                cv2.circle(img, xee_prev[j], radius, green, 3)
+                cv2.circle(img, xee_prev[j], radius, vs_color, 3)
             p1 = xee_prev[j]
             if j < len(xee_prev)-1:
                 p2 = xee_prev[j+1]
             else:
                 p2 = xee
-            cv2.line(img, p1, p2, green, thickness=3)
+            cv2.line(img, p1, p2, vs_color, thickness=3)
         xee_prev.append(xee)
 
 
@@ -481,6 +501,11 @@ def handle_vs_run(run_idx, ol_path, out):
             [df.iloc[idx]["M2-PL"], df.iloc[idx]["M1-PL"]],
             [df.iloc[idx]["M2-PR"], df.iloc[idx]["M1-PR"]]
         ]
+        for a in range(2):
+            for b in range(2):
+                if pressures[a][b] > 120:
+                    pressures[a][b] = 120
+
         targ_pressures = [
             [df.iloc[idx]["TP2L"], df.iloc[idx]["TP1L"]],
             [df.iloc[idx]["TP2R"], df.iloc[idx]["TP1R"]]
@@ -580,7 +605,7 @@ def handle_vs_run(run_idx, ol_path, out):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
             if "Xee" in text:
-                color = green
+                color = vs_color
             elif "Adj Target" in text:
                 color = red
             elif "Target" in text:
@@ -592,14 +617,14 @@ def handle_vs_run(run_idx, ol_path, out):
         dp_del = 40
         fontScale = 1
         cv2.rectangle(img, (0,0), (250,110), white, -1)
-        cv2.rectangle(img, (100,67), (200,83), green, -1)
+        cv2.rectangle(img, (100,67), (200,83), vs_color, -1)
         cv2.rectangle(img, (100,67), (200,83), black, 1)
         for i, text in enumerate(title):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
             cv2.putText(img, text, details_p, font, fontScale, color, thickness)
 
-        cv2.circle(img, xee, radius, green, 3)
+        cv2.circle(img, xee, radius, vs_color, 3)
         # cv2.circle(img, targ, radius, green, 3)
         # cv2.circle(img, adjtarg, radius, blue, 3)
         
@@ -607,8 +632,367 @@ def handle_vs_run(run_idx, ol_path, out):
 
     return vs_path
 
-def handle_trpo_run(img, tw=None, targ=None, orig=None, color=blue):
-    pass
+def handle_cql_run(run_idx, ol_path, vs_path, out):
+    run_dir, csv_file, imgs_dir = get_run_dirs(cql_dir, run_idx)
+    df = pd.read_csv(csv_file)
+
+    xee_prev = []
+    cql_path = [[],[]]
+
+    time_outside_g = -0.5
+    for idx, filename in enumerate(sorted(glob.glob(imgs_dir + '/*.jpg'), key=os.path.getmtime)):
+        print(filename)
+        img = cv2.imread(filename)
+        img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+        oxw = df.iloc[idx]["ORIGX"]
+        oyw = df.iloc[idx]["ORIGY"]
+        origin = (oxw, oyw)
+        for i in range(1,10):
+            mx = oxw + df.iloc[idx]["M" + str(i) + "X"]
+            my = oyw - df.iloc[idx]["M" + str(i) + "Y"]
+            m = world2pix(mx, my)
+            cv2.circle(img, m, radius, red, 3)
+        draw_prev_path(img, ol_path, origin, ol_color)
+        draw_prev_path(img, vs_path, origin, vs_color)
+        xw = oxw + df.iloc[idx]["XEEX"]
+        yw = oyw - df.iloc[idx]["XEEY"]
+        tx = oxw + df.iloc[idx]["TARGX"]
+        ty = oyw - df.iloc[idx]["TARGY"]
+        tw = (tx,ty)
+
+        cql_path[0].append(df.iloc[idx]["XEEX"])
+        cql_path[1].append(df.iloc[idx]["XEEY"])
+
+        xee = world2pix(xw, yw)
+        orig = world2pix(oxw, oyw)
+        targ = world2pix(tx, ty)
+        img = draw_target_ampc(img, tw=tw, targ=targ, orig=orig)
+        # cv2.drawMarker(img, orig, red, cv2.MARKER_CROSS, thickness=3)
+
+        for j in range(len(xee_prev)):
+            if j == 0:
+                cv2.circle(img, xee_prev[j], radius, cql_color, 3)
+
+            p1 = xee_prev[j]
+            if j < len(xee_prev)-1:
+                p2 = xee_prev[j+1]
+            else:
+                p2 = xee
+            cv2.line(img, p1, p2, cql_color, thickness=3)
+        xee_prev.append(xee)
+
+
+        ptop = 220
+        pbot = 720
+        pleft = 990
+        pright = 1280
+        pwidth = pright - pleft
+        plength = pbot - ptop
+        xpad = 60
+        ypad = 20
+        
+        pbox_full_p1 = (pleft, ptop)
+        pbox_full_p2 = (pright, pbot)
+        cv2.rectangle(img, pbox_full_p1, pbox_full_p2, white, -1)
+        cv2.rectangle(img, pbox_full_p1, pbox_full_p2, black, 1)
+        ptitle_p1 = (pleft, ptop-30)
+        ptitle_p2 = (pright, ptop)
+        cv2.rectangle(img, ptitle_p1, ptitle_p2, white, -1)
+        cv2.rectangle(img, ptitle_p1, ptitle_p2, black, 1)
+
+        text = "Internal Pressures (kPa)"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.7
+        thickness = 2
+        ptitle_p = (pleft + 10, ptop - 7)
+        cv2.putText(img, text, ptitle_p, font, fontScale, black, thickness)
+
+
+        pressures = [
+            [df.iloc[idx]["M2-PL"], df.iloc[idx]["M1-PL"]],
+            [df.iloc[idx]["M2-PR"], df.iloc[idx]["M1-PR"]]
+        ]
+
+        max_pressure = 120
+        min_pressure = 98
+        del_pressure = max_pressure - min_pressure
+
+        for i in range(2):
+            for j in range(2):
+                width = int(pwidth / 2)
+                length = int(plength / 2)
+                off_x = pleft + (i * width)
+                off_y = ptop + (j * length)
+                pbox_top = off_y + ypad
+                pbox_bot = off_y + length - ypad
+                pbox_left = off_x + xpad 
+                pbox_right = off_x + width - int(xpad / 1)
+                pbox_p1 = (pbox_left, pbox_top)
+                pbox_p2 = (pbox_right, pbox_bot)
+
+                pb_length = pbox_bot - pbox_top
+                
+                ap_val = pressures[i][j]
+                ap_val_x = pbox_left - 50
+                tp_val_x = pbox_right + 5
+
+                ap_top = pbox_bot - int(pb_length * ((ap_val - min_pressure) / del_pressure))
+                ap_p1 = (pbox_left, ap_top)
+                ap_p2 = (pbox_right, pbox_bot)
+
+                ap_val_p = (ap_val_x, ap_top)
+
+                ap_text = str(round(ap_val, 1))
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                fontScale = 0.5
+                thickness = 2
+
+                cv2.rectangle(img, ap_p1, ap_p2, blue, -1)
+                cv2.putText(img, ap_text, ap_val_p, font, fontScale, blue, thickness)
+                # cv2.line(img, tp_p1, tp_p2, red, 3)
+                # cv2.putText(img, tp_text, tp_val_p, font, fontScale, red, thickness)
+                cv2.rectangle(img, pbox_p1, pbox_p2, black, 3)
+
+        error =     (df.iloc[idx]["ERRORX"    ], df.iloc[idx]["ERRORY"      ])
+        error_round = (round(error[0], 2), round(error[1], 2))
+        distance = round(math.sqrt(error[0] * error[0] + error[1] * error[1]), 2)
+        targ_round =      (round(tx - oxw, 2), round(oyw - ty, 2))
+        xee_round =       (round(xw - oxw, 2), round(oyw - yw, 2))
+
+        if abs(error[0]) > 1 or abs(error[1]) > 1:
+            time_outside_g += 0.5
+        
+        title = []
+        title.append("CQL")
+        title.append(str(speed) + "x")
+
+        details = []
+        # details.append("DETAILS: AutoMPC")
+        # details.append("Playback Speed: " + str(speed) + "x")
+        # details.append("Run IDX:    " + str(run_idx))
+        details.append("Time Outside Goal Reg. (s): " + str(time_outside_g))
+        details.append("Dist (cm):       " + str(distance))
+        details.append("Xee (cm):        " + str(xee_round))
+        details.append("Target (cm):     " + str(targ_round))
+        details.append("Error (cm):      " + str(error_round))
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.6
+        thickness = 2
+        dp_x = 5
+        dp_y = 590
+        dp_del = 20
+        cv2.rectangle(img, (0,dp_y-20), (335,730), white, -1)
+        for i, text in enumerate(details):
+            details_p = (dp_x, dp_y + (dp_del * i)) 
+            color = black
+            if "Xee" in text:
+                color = cql_color
+            elif "Target" in text:
+                color = red
+            cv2.putText(img, text, details_p, font, fontScale, color, thickness)
+
+        dp_x = 15
+        dp_y = 45
+        dp_del = 40
+        fontScale = 1
+        cv2.rectangle(img, (0,0), (250,110), white, -1)
+        cv2.rectangle(img, (100,67), (200,83), cql_color, -1)
+        cv2.rectangle(img, (100,67), (200,83), black, 1)
+        for i, text in enumerate(title):
+            details_p = (dp_x, dp_y + (dp_del * i)) 
+            color = black
+            cv2.putText(img, text, details_p, font, fontScale, color, thickness)
+
+        cv2.circle(img, xee, radius, cql_color, 3)
+        # cv2.circle(img, targ, radius, green, 3)
+        
+        out.write(img)
+    
+    return cql_path
+
+def handle_trpo_run(run_idx, ol_path, vs_path, cql_path, out):
+    run_dir, csv_file, imgs_dir = get_run_dirs(trpo_dir, run_idx)
+    df = pd.read_csv(csv_file)
+
+    name_list = csv_file.split("/")[-1].split(".")[0].split("_")
+    targx = float(name_list[-2])
+    targy = float(name_list[-1])
+
+    xee_prev = []
+    trpo_path = [[],[]]
+
+    time_outside_g = -0.5
+    for idx, filename in enumerate(sorted(glob.glob(imgs_dir + '/*.jpg'), key=os.path.getmtime)):
+        print(filename)
+        img = cv2.imread(filename)
+        img = cv2.undistort(img, mtx, dist, None, newcameramtx)
+        oxw = df.iloc[idx]["ORIGX"]
+        oyw = df.iloc[idx]["ORIGY"]
+        origin = (oxw, oyw)
+        for i in range(1,10):
+            mx = oxw + df.iloc[idx]["M" + str(i) + "X"]
+            my = oyw - df.iloc[idx]["M" + str(i) + "Y"]
+            m = world2pix(mx, my)
+            cv2.circle(img, m, radius, red, 3)
+        draw_prev_path(img, ol_path, origin, ol_color)
+        draw_prev_path(img, vs_path, origin, vs_color)
+        draw_prev_path(img, cql_path, origin, cql_color)
+        xw = oxw + df.iloc[idx]["M10X"]
+        yw = oyw - df.iloc[idx]["M10Y"]
+        tx = oxw + targx
+        ty = oyw - targy
+        tw = (tx,ty)
+
+        trpo_path[0].append(df.iloc[idx]["M10X"])
+        trpo_path[1].append(df.iloc[idx]["M10Y"])
+
+        xee = world2pix(xw, yw)
+        orig = world2pix(oxw, oyw)
+        targ = world2pix(tx, ty)
+        img = draw_target_ampc(img, tw=tw, targ=targ, orig=orig)
+        # cv2.drawMarker(img, orig, red, cv2.MARKER_CROSS, thickness=3)
+
+        for j in range(len(xee_prev)):
+            if j == 0:
+                cv2.circle(img, xee_prev[j], radius, trpo_color, 3)
+
+            p1 = xee_prev[j]
+            if j < len(xee_prev)-1:
+                p2 = xee_prev[j+1]
+            else:
+                p2 = xee
+            cv2.line(img, p1, p2, trpo_color, thickness=3)
+        xee_prev.append(xee)
+
+
+        ptop = 220
+        pbot = 720
+        pleft = 990
+        pright = 1280
+        pwidth = pright - pleft
+        plength = pbot - ptop
+        xpad = 60
+        ypad = 20
+        
+        pbox_full_p1 = (pleft, ptop)
+        pbox_full_p2 = (pright, pbot)
+        cv2.rectangle(img, pbox_full_p1, pbox_full_p2, white, -1)
+        cv2.rectangle(img, pbox_full_p1, pbox_full_p2, black, 1)
+        ptitle_p1 = (pleft, ptop-30)
+        ptitle_p2 = (pright, ptop)
+        cv2.rectangle(img, ptitle_p1, ptitle_p2, white, -1)
+        cv2.rectangle(img, ptitle_p1, ptitle_p2, black, 1)
+
+        text = "Internal Pressures (kPa)"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.7
+        thickness = 2
+        ptitle_p = (pleft + 10, ptop - 7)
+        cv2.putText(img, text, ptitle_p, font, fontScale, black, thickness)
+
+
+        pressures = [
+            [df.iloc[idx]["M2-PL"], df.iloc[idx]["M1-PL"]],
+            [df.iloc[idx]["M2-PR"], df.iloc[idx]["M1-PR"]]
+        ]
+
+        max_pressure = 120
+        min_pressure = 98
+        del_pressure = max_pressure - min_pressure
+
+        for i in range(2):
+            for j in range(2):
+                width = int(pwidth / 2)
+                length = int(plength / 2)
+                off_x = pleft + (i * width)
+                off_y = ptop + (j * length)
+                pbox_top = off_y + ypad
+                pbox_bot = off_y + length - ypad
+                pbox_left = off_x + xpad 
+                pbox_right = off_x + width - int(xpad / 1)
+                pbox_p1 = (pbox_left, pbox_top)
+                pbox_p2 = (pbox_right, pbox_bot)
+
+                pb_length = pbox_bot - pbox_top
+                
+                ap_val = pressures[i][j]
+                ap_val_x = pbox_left - 50
+                tp_val_x = pbox_right + 5
+
+                ap_top = pbox_bot - int(pb_length * ((ap_val - min_pressure) / del_pressure))
+                ap_p1 = (pbox_left, ap_top)
+                ap_p2 = (pbox_right, pbox_bot)
+
+                ap_val_p = (ap_val_x, ap_top)
+
+                ap_text = str(round(ap_val, 1))
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                fontScale = 0.5
+                thickness = 2
+
+                cv2.rectangle(img, ap_p1, ap_p2, blue, -1)
+                cv2.putText(img, ap_text, ap_val_p, font, fontScale, blue, thickness)
+                # cv2.line(img, tp_p1, tp_p2, red, 3)
+                # cv2.putText(img, tp_text, tp_val_p, font, fontScale, red, thickness)
+                cv2.rectangle(img, pbox_p1, pbox_p2, black, 3)
+        
+        error = (targx - df.iloc[idx]["M10X"], targy - df.iloc[idx]["M10Y"])
+        # error =     (df.iloc[idx]["ERRORX"    ], df.iloc[idx]["ERRORY"      ])
+        error_round = (round(error[0], 2), round(error[1], 2))
+        distance = round(math.sqrt(error[0] * error[0] + error[1] * error[1]), 2)
+        targ_round =      (round(tx - oxw, 2), round(oyw - ty, 2))
+        xee_round =       (round(xw - oxw, 2), round(oyw - yw, 2))
+
+        if abs(error[0]) > 1 or abs(error[1]) > 1:
+            time_outside_g += 0.5
+        
+        title = []
+        title.append("TRPO")
+        title.append(str(speed) + "x")
+
+        details = []
+        # details.append("DETAILS: AutoMPC")
+        # details.append("Playback Speed: " + str(speed) + "x")
+        # details.append("Run IDX:    " + str(run_idx))
+        details.append("Time Outside Goal Reg. (s): " + str(time_outside_g))
+        details.append("Dist (cm):       " + str(distance))
+        details.append("Xee (cm):        " + str(xee_round))
+        details.append("Target (cm):     " + str(targ_round))
+        details.append("Error (cm):      " + str(error_round))
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.6
+        thickness = 2
+        dp_x = 5
+        dp_y = 590
+        dp_del = 20
+        cv2.rectangle(img, (0,dp_y-20), (335,730), white, -1)
+        for i, text in enumerate(details):
+            details_p = (dp_x, dp_y + (dp_del * i)) 
+            color = black
+            if "Xee" in text:
+                color = trpo_color
+            elif "Target" in text:
+                color = red
+            cv2.putText(img, text, details_p, font, fontScale, color, thickness)
+
+        dp_x = 15
+        dp_y = 45
+        dp_del = 40
+        fontScale = 1
+        cv2.rectangle(img, (0,0), (250,110), white, -1)
+        cv2.rectangle(img, (100,67), (200,83), trpo_color, -1)
+        cv2.rectangle(img, (100,67), (200,83), black, 1)
+        for i, text in enumerate(title):
+            details_p = (dp_x, dp_y + (dp_del * i)) 
+            color = black
+            cv2.putText(img, text, details_p, font, fontScale, color, thickness)
+
+        cv2.circle(img, xee, radius, trpo_color, 3)
+        # cv2.circle(img, targ, radius, green, 3)
+        
+        out.write(img)
+    
+    return trpo_path
 
 def draw_target_ampc(img, tw=None, targ=None, orig=None, color=red):
     cv2.circle(img, orig, radius, red, 3)
@@ -625,7 +1009,7 @@ def draw_target_ampc(img, tw=None, targ=None, orig=None, color=red):
     cv2.rectangle(img, tbox1, tbox2, red, 3)
     return img
 
-def handle_ampc_run(run_idx, ol_path, vs_path, out):
+def handle_ampc_run(run_idx, ol_path, vs_path, cql_path, trpo_path, out):
     run_dir, csv_file, imgs_dir = get_run_dirs(ampc_dir, run_idx)
     df = pd.read_csv(csv_file)
 
@@ -657,8 +1041,10 @@ def handle_ampc_run(run_idx, ol_path, vs_path, out):
             my = oyw - df.iloc[idx]["M" + str(i) + "Y"]
             m = world2pix(mx, my)
             cv2.circle(img, m, radius, red, 3)
-        draw_prev_path(img, ol_path, origin, yellow)
-        draw_prev_path(img, vs_path, origin, green)
+        draw_prev_path(img, ol_path, origin, ol_color)
+        draw_prev_path(img, vs_path, origin, vs_color)
+        draw_prev_path(img, cql_path, origin, cql_color)
+        draw_prev_path(img, trpo_path, origin, trpo_color)
         xw = oxw + df.iloc[idx]["XEEX"]
         yw = oyw - df.iloc[idx]["XEEY"]
         tx = oxw + df.iloc[idx]["TARGX"]
@@ -685,14 +1071,14 @@ def handle_ampc_run(run_idx, ol_path, vs_path, out):
 
         for j in range(len(xee_prev)):
             if j == 0:
-                cv2.circle(img, xee_prev[j], radius, blue, 3)
+                cv2.circle(img, xee_prev[j], radius, ampc_color, 3)
 
             p1 = xee_prev[j]
             if j < len(xee_prev)-1:
                 p2 = xee_prev[j+1]
             else:
                 p2 = xee
-            cv2.line(img, p1, p2, blue, thickness=3)
+            cv2.line(img, p1, p2, ampc_color, thickness=3)
         xee_prev.append(xee)
 
 
@@ -811,7 +1197,7 @@ def handle_ampc_run(run_idx, ol_path, vs_path, out):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
             if "Xee" in text:
-                color = blue
+                color = ampc_color
             elif "Target" in text:
                 color = red
             cv2.putText(img, text, details_p, font, fontScale, color, thickness)
@@ -821,14 +1207,14 @@ def handle_ampc_run(run_idx, ol_path, vs_path, out):
         dp_del = 40
         fontScale = 1
         cv2.rectangle(img, (0,0), (250,110), white, -1)
-        cv2.rectangle(img, (100,67), (200,83), blue, -1)
+        cv2.rectangle(img, (100,67), (200,83), ampc_color, -1)
         cv2.rectangle(img, (100,67), (200,83), black, 1)
         for i, text in enumerate(title):
             details_p = (dp_x, dp_y + (dp_del * i)) 
             color = black
             cv2.putText(img, text, details_p, font, fontScale, color, thickness)
 
-        cv2.circle(img, xee, radius, blue, 3)
+        cv2.circle(img, xee, radius, ampc_color, 3)
         # cv2.circle(img, targ, radius, green, 3)
         
         out.write(img)
@@ -839,7 +1225,9 @@ def handle_ampc_run(run_idx, ol_path, vs_path, out):
 def create_video(targ, out):
     ol_path = handle_ol_run(targ, out)
     vs_path = handle_vs_run(targ, ol_path, out)
-    ampc_path = handle_ampc_run(targ, ol_path, vs_path, out)
+    cql_path = handle_cql_run(targ, ol_path, vs_path, out)
+    trpo_path = handle_trpo_run(targ, ol_path, vs_path, cql_path, out)
+    ampc_path = handle_ampc_run(targ, ol_path, vs_path, cql_path, trpo_path, out)
 
 if __name__ == "__main__":
     mp4_codec = cv2.VideoWriter_fourcc(*'X264')

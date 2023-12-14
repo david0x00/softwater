@@ -55,8 +55,8 @@ class VisualServo(Controller):
 
         self.pressure_error_threshold = 0.1
 
-        # self.update_target_timeout = 5 
-        self.update_target_timeout = 1 
+        self.update_target_timeout = 5 
+        # self.update_target_timeout = 1 
 
         self.int_sat_min = np.array([
             [-50],
@@ -138,27 +138,7 @@ class VisualServo(Controller):
             return
 
         self.target = new_target
-        self.adjusted_target = self.target
-        self.target_pressures = self.ik.calc(self.adjusted_target)
-
-        self.update_target_counter = 0
-        self.integration_error = np.zeros((2, 1))
-
-        self.start_time = time.perf_counter()
-        self.prev_time = self.start_time
-
-        self.dt = 0
-        self.error = np.zeros((2, 1))
-        self.P = np.zeros((2, 1))
-        self.I = np.zeros((2, 1))
-
-    
-    def on_start(self):
-        print("Controller Start")
-        self.ik = IK()
-        self.update_target(self.target)
         # self.adjusted_target = self.target
-        # self.ik = IK()
         # self.target_pressures = self.ik.calc(self.adjusted_target)
 
         # self.update_target_counter = 0
@@ -172,11 +152,37 @@ class VisualServo(Controller):
         # self.P = np.zeros((2, 1))
         # self.I = np.zeros((2, 1))
 
+    
+    def on_start(self):
+        print("Controller Start")
+        self.update_target_counter = 0
+        self.ik = IK()
+        return
+        # self.update_target(self.target)
+        self.adjusted_target = self.target
+        # self.ik = IK()
+        self.target_pressures = self.ik.calc(self.adjusted_target)
+
+        self.update_target_counter = 0
+        self.integration_error = np.zeros((2, 1))
+
+        # self.start_time = time.perf_counter()
+        # self.prev_time = self.start_time
+
+        self.dt = 0
+        self.error = np.zeros((2, 1))
+        self.P = np.zeros((2, 1))
+        self.I = np.zeros((2, 1))
+
     def on_end(self):
         print("Controller End")
 
     def clip_int_error(self):
         self.integration_error = np.clip(self.integration_error, a_max=self.int_sat_max, a_min=self.int_sat_min)
+    
+    def set_time(self):
+        self.prev_time = time.perf_counter()
+        
     
     def adjust_target(self, x_ee_in):
         # Get dt and reset prev_time
