@@ -191,10 +191,11 @@ if __name__ == "__main__":
             # if (debug_rate.ready()):
             #     print(f'{broker.ping() * 1000} ms', len(broker.messages), broker.bytes_missed(), broker.bytes_transfered(), broker.bytes_received(), len(broker._send_msgs))
             for msg in broker.messages:
-                ssTUP = namedtuple('StageState', 'timestamp init drivers p0 p1 p2 p3 yaw pitch roll')
-                ssFMT = "<QBBfffffff"
-                ssTUP = ssTUP._make(struct.unpack(ssFMT, msg.data))
-                print(ssTUP)
+                if msg.type == 1:
+                    ssTUP = namedtuple('StageStatePacked', 'stage timestamp ping init drivers p0 p1 p2 p3 yaw pitch roll')
+                    ssFMT = "<BQIBBfffffff"
+                    ssTUP = ssTUP._make(struct.unpack(ssFMT, msg.data))
+                    print(ssTUP)
             broker.messages.clear()
         else:
             first = True

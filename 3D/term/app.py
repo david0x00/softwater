@@ -275,11 +275,12 @@ def main(stdscr, comm):
             for (i, textbox) in enumerate(valve_state_text_boxes):
                 if ss:
                     if is_set(ss["driver"], i):
-                        textbox.set_text("CLOSED")
-                        textbox.put(row, col_start + i * spacer, red)
-                    else:
                         textbox.set_text("OPEN")
                         textbox.put(row, col_start + i * spacer, green)
+                    else:
+                        textbox.set_text("CLOSED")
+                        textbox.put(row, col_start + i * spacer, red)
+                        
                 else:
                     textbox.set_text("N/A")
                     textbox.put(row, col_start + i * spacer, red)
