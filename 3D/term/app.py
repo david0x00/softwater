@@ -1,5 +1,6 @@
 import os
-import keyboard
+# import keyboard
+from pynput import keyboard
 import serial.tools.list_ports
 from colorama import Fore, Style
 from collections import namedtuple
@@ -113,10 +114,18 @@ def main(stdscr, comm):
     ss = None
 
     def key_press_cb(event):
-        if event.name in "12345678" and ss:
-            idx = "12345678".index(event.name)
+        # if event.name in "12345678" and ss:
+        if hasattr(event, 'char'):
+            name = event.char
+        else:
+            name = ""
+
+        if name in "12345678" and ss:
+            # idx = "12345678".index(event.name)
+            idx = "12345678".index(name)
             comm.send(1, struct.pack("<BB", idx, not is_set(ss['driver'], idx)))
-        elif event.name == 'l':
+        # elif event.name == 'l':
+        elif (name) == 'l':
             global logging, log_data, log_start
             if logging:
                 if not os.path.exists("./logs"):
@@ -148,7 +157,13 @@ def main(stdscr, comm):
                 log_data = []
                 logging = True
                 log_start = time.perf_counter()
-    keyboard.on_press(key_press_cb)
+    # keyboard.on_press(key_press_cb)
+
+    # pynput
+    listener = keyboard.Listener(
+        on_press=key_press_cb)
+    listener.start()
+
 
     curses.curs_set(0)
     curses.use_default_colors()
