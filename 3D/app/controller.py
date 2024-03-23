@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     controller.beginLog("./log.csv")
 
-    rate = Rate(50)
+    rate = Rate(0.5)
     g = Rate(0.33)
 
     on = True
