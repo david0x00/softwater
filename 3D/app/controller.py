@@ -32,7 +32,7 @@ class StageState:
         return self.data['drivers'] & (1 << bit)
 
 class SetDriver:
-    _driverFMT = "<BB"
+    _driverFMT: str = "<BB"
     _stage: int
     _state: int
 
@@ -52,9 +52,12 @@ class SetDriver:
     
     def pack(self):
         return struct.pack(self._driverFMT, self._stage, self._state)
+    
+def packLEDS(stage, arr):
+    return struct.pack("<B" + "B" * 12, stage, *arr[0], *arr[1], *arr[2], *arr[3])
 
 class Controller:
-    stageData: dict
+    stageData: dict = {}
 
     _usb: USBMessageBroker
     _logFile: str = ""
@@ -93,21 +96,32 @@ class Controller:
         for msg in self._usb.messages:
             if msg.type == 1:
                 ss = StageState(msg.data)
-                counts[ss.data["stage"]] += 1
+                
                 if self._logFile:
                     self._logData.append(ss)
-                print(ss.data)
+                if not ss.data['stage'] in self.stageData or (self.stageData[ss.data['stage']]['timestamp'] < ss.data['timestamp'] and self.stageData[ss.data['stage']]['timestamp'] + 1e7 > ss.data['timestamp']):
+                    self.stageData[ss.data['stage']] = ss.data
+                    counts[ss.data["stage"]] += 1
+                    #print(controller.stageData[ss.data['stage']])
+            else:
+                print(msg.data.decode('utf-8'))
         self._usb.messages.clear()
         self._usb.update()
+        return True
             
 if __name__ == "__main__":
-    usb = USBMessageBroker("COM5", baudrate=1e6)
+    usb = USBMessageBroker("COM5", baudrate=2e6)
     controller = Controller(usb)
 
     controller.beginLog("./log.csv")
 
-    rate = Rate(100)
+    rate = Rate(50)
+    g = Rate(0.33)
+
+    on = True
     
+    import time
+    start = time.time()
     
     try:
         for i in range(8):
@@ -116,18 +130,30 @@ if __name__ == "__main__":
 
         while True:
             if rate.ready():
+                leds = [
+                    [0, int(255 * g.stage()), 0],
+                    [0, int(255 * g.stage()), 0],
+                    [0, int(255 * g.stage()), 0],
+                    [0, int(255 * g.stage()), 0],
+                ]
+
+
+                on = not on
                 for i in range(8):
                     sd = SetDriver(i)
-                    sd.modifyBit(BIT_S0, True)
-                    sd.modifyBit(BIT_S1, True)
-                    sd.modifyBit(BIT_S2, True)
-                    sd.modifyBit(BIT_S3, True)
-                    sd.modifyBit(BIT_S4, True)
-                    sd.modifyBit(BIT_S5, True)
+                    sd.modify(np.random.randint(0, 2, 8))
+                    sd.modifyBit(BIT_S0, on)
+                    sd.modifyBit(BIT_S1, False)
+                    sd.modifyBit(BIT_S2, False)
+                    sd.modifyBit(BIT_S3, False)
+                    sd.modifyBit(BIT_S4, False)
+                    sd.modifyBit(BIT_S5, False)
                     sd.modifyBit(BIT_M0, False)
                     sd.modifyBit(BIT_M1, False)
+                    usb.send(5, packLEDS(i, leds))
                     usb.send(0, sd.pack())
-
+                    print(counts)
+                        
             controller.update()
     except KeyboardInterrupt:
         controller.endLog()

@@ -47,6 +47,13 @@ class Rate:
                 self._start = time.perf_counter()
             return True
         return False
+    
+    def stage(self):
+        stage = (time.perf_counter() - self._start) / self._inv_rate
+        if stage > 1:
+            stage = 1
+            self._start = time.perf_counter()
+        return stage
 
     def cycles(self):
         return self._cycles, self._missed

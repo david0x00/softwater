@@ -78,6 +78,7 @@ class USBMessageBroker:
 
     _ping_timeout: int = 0.5
     _last_ping_send: int = 0
+    _ping_recv: bool = False
     _ping_time: float = float('inf')
     _ping_id: int = 0
     _ping_rate: Rate = Rate(1 / _ping_timeout)
@@ -148,15 +149,19 @@ class USBMessageBroker:
                             elif self._header.type == self._REPING:
                                 if (int.from_bytes(bytes(self._msgdarr), 'little') == self._ping_id):
                                     self._ping_time = time.perf_counter() - self._last_ping_send
+                                    self._ping_recv = True
                             else:
                                 self.messages.append(USBRecvMessage(self._header.type - self._reserved_types, bytes(self._msgdarr)))
                         self._header = None
                         self._msgdarr = []                
                 
             if self._ping_rate.ready():
+                if not self._ping_recv:
+                    self._ping_time = float('inf')
                 self._ping_id += 1
                 self._send(self._PING, 0, self._ping_id.to_bytes(4, 'little'))
                 self._last_ping_send = time.perf_counter()
+                self._ping_recv = False
             
             while not self._send_msgs.empty():
                 priority, msg = self._send_msgs.get()
