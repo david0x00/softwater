@@ -322,37 +322,45 @@ def main(stdscr, usb):
     
     try:
         while True:
-            for stage in controller.lightsData.keys():
-                controller.lightsData[stage] = [[0, 0, 0] for _ in range(4)]
-            if selectedStage in controller.lightsData.keys():
-                controller.lightsData[selectedStage] = [[0, 255, 0] for _ in range(4)]
-            if 'a' in keys and keys['a']:
+            if 'q' in keys and keys['q']:
                 for stage in controller.lightsData.keys():
                     controller.lightsData[stage] = [[255, 95, 5] for _ in range(4)]
+            else:
+                for stage in controller.lightsData.keys():
+                    controller.lightsData[stage] = [[0, 0, 0] for _ in range(4)]
+                if selectedStage in controller.lightsData.keys():
+                    controller.lightsData[selectedStage] = [[0, 255, 0] for _ in range(4)]
 
-            for stage in controller.driverData.keys():
-                controller.driverData[stage] = SetDriver(stage)
-            if selectedStage in controller.driverData.keys():
-                if 'x' in keys and keys['x']:
-                    if 'up' in keys and keys['up']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M0, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S0, True)
-                    if 'left' in keys and keys['left']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M0, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S5, True)
-                    if 'right' in keys and keys['right']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M0, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S4, True)
-                if 'z' in keys and keys['z']:
-                    if 'up' in keys and keys['up']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M1, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S1, True)
-                    if 'left' in keys and keys['left']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M1, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S3, True)
-                    if 'right' in keys and keys['right']:
-                        controller.driverData[selectedStage].modifyBit(BIT_M1, True)
-                        controller.driverData[selectedStage].modifyBit(BIT_S2, True)
+            if 'a' in keys and keys['a']:
+                for stage in controller.lightsData.keys():
+                    controller.driverData[stage].modify([False, True, True, True, False, False, True, False])
+            elif 'd' in keys and keys['d']:
+                for stage in controller.lightsData.keys():
+                    controller.driverData[stage].modify([True, False, False, False, True, True, False, True])
+            else:
+                for stage in controller.driverData.keys():
+                    controller.driverData[stage] = SetDriver(stage)
+                if selectedStage in controller.driverData.keys():
+                    if 'x' in keys and keys['x']:
+                        if 'up' in keys and keys['up']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S0, True)
+                        if 'left' in keys and keys['left']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S5, True)
+                        if 'right' in keys and keys['right']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S4, True)
+                    if 'z' in keys and keys['z']:
+                        if 'up' in keys and keys['up']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S1, True)
+                        if 'left' in keys and keys['left']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S3, True)
+                        if 'right' in keys and keys['right']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S2, True)
 
             controller.update()
 
