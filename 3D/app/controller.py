@@ -80,13 +80,17 @@ class Controller:
     _sendRate = Rate(25)
     _on = False
 
+    logging_on = False
+
     def __init__(self, usb) -> None:
         self._usb = usb
 
     def beginLog(self, file):
         self._logFile = file
+        self.logging_on = True
     
     def endLog(self):
+        self.logging_on = False
         if not self._logFile:
             return
         with open(self._logFile, "w", newline="") as f:
@@ -226,13 +230,13 @@ logo = """
  """
 
 selectedStage = 0
-            
+
 def main(stdscr, usb):
     global selectedStage
     
     controller = Controller(usb)
 
-    controller.beginLog("./log.csv")
+    # controller.beginLog("./log.csv")
 
     keys = {}
 
@@ -322,6 +326,13 @@ def main(stdscr, usb):
     
     try:
         while True:
+            if 'o' in keys and keys['o']:
+                break
+
+            if 'l' in keys and keys['l']:
+                if controller.logging_on is False:
+                    controller.beginLog("./log.csv")
+
             if 'q' in keys and keys['q']:
                 for stage in controller.lightsData.keys():
                     controller.lightsData[stage] = [[255, 95, 5] for _ in range(4)]
@@ -329,37 +340,40 @@ def main(stdscr, usb):
                 for stage in controller.lightsData.keys():
                     controller.lightsData[stage] = [[0, 0, 0] for _ in range(4)]
                 if selectedStage in controller.lightsData.keys():
-                    controller.lightsData[selectedStage] = [[0, 255, 0] for _ in range(4)]
+                    if controller.logging_on is True:
+                        controller.lightsData[selectedStage] = [[0, 0, 255] for _ in range(4)]
+                    else:
+                        controller.lightsData[selectedStage] = [[0, 255, 0] for _ in range(4)]
 
-            if 'a' in keys and keys['a']:
+            if 'a' in keys and keys['a']: # depressurize
                 for stage in controller.lightsData.keys():
                     controller.driverData[stage].modify([False, True, True, True, False, False, True, False])
-            elif 'd' in keys and keys['d']:
+            elif 'd' in keys and keys['d']: # pressurize
                 for stage in controller.lightsData.keys():
                     controller.driverData[stage].modify([True, False, False, False, True, True, False, True])
             else:
                 for stage in controller.driverData.keys():
                     controller.driverData[stage] = SetDriver(stage)
                 if selectedStage in controller.driverData.keys():
-                    if 'x' in keys and keys['x']:
+                    if 'x' in keys and keys['x']: # pressurize
                         if 'up' in keys and keys['up']:
-                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
                             controller.driverData[selectedStage].modifyBit(BIT_S0, True)
                         if 'left' in keys and keys['left']:
-                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
                             controller.driverData[selectedStage].modifyBit(BIT_S5, True)
                         if 'right' in keys and keys['right']:
-                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
-                            controller.driverData[selectedStage].modifyBit(BIT_S4, True)
-                    if 'z' in keys and keys['z']:
-                        if 'up' in keys and keys['up']:
                             controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_S4, True)
+                    if 'z' in keys and keys['z']: # depressurize
+                        if 'up' in keys and keys['up']:
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
                             controller.driverData[selectedStage].modifyBit(BIT_S1, True)
                         if 'left' in keys and keys['left']:
-                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
                             controller.driverData[selectedStage].modifyBit(BIT_S3, True)
                         if 'right' in keys and keys['right']:
-                            controller.driverData[selectedStage].modifyBit(BIT_M1, True)
+                            controller.driverData[selectedStage].modifyBit(BIT_M0, True)
                             controller.driverData[selectedStage].modifyBit(BIT_S2, True)
 
             controller.update()
