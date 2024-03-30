@@ -126,8 +126,10 @@ class Controller:
 
     def beginLog(self, file):
         self._logFile = file
+        self.logging_on = True
     
     def endLog(self):
+        self.logging_on = False
         if not self._logFile:
             return
         with open(self._logFile, "w", newline="") as f:
