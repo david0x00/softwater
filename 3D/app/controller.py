@@ -26,6 +26,9 @@ class PressureController:
         self._last = time.perf_counter()
     
     def setTargetPressure(self, value, adj=False):
+        if value == None:
+            self._setPoint = -1
+            return
         if adj:
             if self._setPoint < 0:
                 return
@@ -260,6 +263,15 @@ class Controller:
                 if self._logFile:
                     self._logData.append(ss)
                 
+                ###
+                ### Hack to deal with no second stage
+                ###
+                if ss['stage'] > 1:
+                    ss._data['stage'] -= 1
+                ###
+                ###
+                ###
+
                 if not ss['stage'] in self.stageData.keys():
                     self.lightsData[ss['stage']] = [[0, 0, 0] for _ in range(4)]
                     self.driverData[ss['stage']] = SetDriver(ss['stage'])
@@ -268,8 +280,28 @@ class Controller:
 
         if self._sendRate.ready():
             for stage in self.lightsData:
-                self._usb.send(5, packLEDS(stage, self.lightsData[stage]))
+                ###
+                ### Hack to deal with no second stage
+                ###
+                actualStage = stage
+                if stage > 1:
+                    actualStage += 1
+                self._usb.send(5, packLEDS(actualStage, self.lightsData[stage]))
+                ###
+                ###
+                ###
             for stage in self.driverData:
-                self._usb.send(0, self.driverData[stage].pack())
+                ###
+                ### Hack to deal with no second stage
+                ###
+                if stage > 1:
+                    actualStage = stage + 1
+                else:
+                    actualStage = None
+                self._usb.send(0, self.driverData[stage].pack(actualStage))
+                ###
+                ###
+                ###
+                
         self._usb.update()
         return True
