@@ -111,8 +111,8 @@ class App:
                 'pitch_bar': DynamicTextBox(stdscr),
                 'roll_value': DynamicTextBox(stdscr),
                 'roll_bar': DynamicTextBox(stdscr),
-                'drivers': [DynamicTextBox(stdscr, "|") for _ in range(8)]
-            } for _ in range(8)]
+                'drivers': [DynamicTextBox(stdscr, "|") for _ in range(7)]
+            } for _ in range(7)]
     
         self._con_stage_name = DynamicTextBox(stdscr, "Stage:")
         self._con_a_name = DynamicTextBox(stdscr, "a:")
@@ -121,8 +121,11 @@ class App:
         self._conInfo = [{
             'a_value': DynamicTextBox(stdscr),
             'b_value': DynamicTextBox(stdscr),
-            'c_value': DynamicTextBox(stdscr)
-        } for _ in range(8)]
+            'c_value': DynamicTextBox(stdscr),
+            'y_value': DynamicTextBox(stdscr),
+            'p_value': DynamicTextBox(stdscr),
+            'r_value':  DynamicTextBox(stdscr)
+        } for _ in range(7)]
 
     def _key_press_cb(self, event):
         if hasattr(event, 'char'):
@@ -147,10 +150,11 @@ class App:
         return key in self._keys and self._keys[key]
     
     def run(self):
-            stageControllers = [StageController() for _ in range(8)]
+            stageControllers = [StageController() for _ in range(7)]
             cupdate = Rate(30)
             csend = Rate(3)
             multiMode = False
+            self._controller.beginLog('./log.csv')
 
             try:
                 while True:
@@ -179,6 +183,19 @@ class App:
                     isNew, value = self._xcon.DPadDown()
                     if isNew and value and self._selectedStage - 1 in self._controller.stageData.keys():
                         self._selectedStage -= 1
+                    
+                    _, value = self._xcon.X()
+                    if value:
+                        for i in range(7):
+                            if i in self._controller.stageData.keys():
+                                sd = self._controller.stageData[i]
+                                nsd = None
+                                if i + 1 in self._controller.stageData.keys():
+                                    nsd = self._controller.stageData[i + 1]
+                                    stageControllers[i].calibrateIMU(sd, nsd)
+                                stageControllers[i].setATarget(None, True)
+                                stageControllers[i].setBTarget(None, True)
+                                stageControllers[i].setCTarget(None, True)
 
                     _, lvalue = self._xcon.LeftBumper()
                     _, rvalue = self._xcon.RightBumper()
@@ -190,6 +207,7 @@ class App:
                             self._controller.driverData[stage].modify([True, False, False, False, True, True, False, True])
                     else:
                         _, a = self._xcon.A()
+                        _, b = self._xcon.B()
                         
                         if a:
                             _, lt = self._xcon.LeftTrigger()
@@ -217,14 +235,14 @@ class App:
                                 # stageControllers[self._selectedStage].setBTarget((dp + bVal) * cupdate.get_inverse_rate(), True)
                                 # stageControllers[self._selectedStage].setCTarget((dp + cVal) * cupdate.get_inverse_rate(), True)
 
-                                for i in range(8):
+                                for i in range(7):
                                     if multiMode or self._selectedStage == i:
-                                        stageControllers[i].setATarget((dp + aVal) * cupdate.get_inverse_rate(), True)
-                                        stageControllers[i].setBTarget((dp + bVal) * cupdate.get_inverse_rate(), True)
-                                        stageControllers[i].setCTarget((dp + cVal) * cupdate.get_inverse_rate(), True)
+                                        stageControllers[i].setATarget((dp + aVal) * cupdate.get_inverse_rate() * 2, True)
+                                        stageControllers[i].setBTarget((dp + bVal) * cupdate.get_inverse_rate() * 2, True)
+                                        stageControllers[i].setCTarget((dp + cVal) * cupdate.get_inverse_rate() * 2, True)
 
                             if csend.ready():
-                                for i in range(8):
+                                for i in range(7):
                                     if i in self._controller.stageData.keys():
                                         sd = self._controller.stageData[i]
                                         nsd = None
@@ -232,6 +250,21 @@ class App:
                                             nsd = self._controller.stageData[i + 1]
                                         if multiMode or self._selectedStage == i:
                                             self._controller.driverData[i] = stageControllers[i].update(sd, nsd)
+                        elif b:
+                            _, ljx = self._xcon.LeftJoystickX()
+                            _, ljy = self._xcon.LeftJoystickY()
+
+                            for i in range(7):
+                                if i in self._controller.stageData.keys():
+                                    sd = self._controller.stageData[i]
+                                    nsd = None
+                                    if i + 1 in self._controller.stageData.keys():
+                                        nsd = self._controller.stageData[i + 1]
+                                    elif multiMode or self._selectedStage == i:
+                                        stageControllers[i].setPitchTarget(ljy * 80)
+                                        stageControllers[i].setRollTarget(ljx * 80)
+                                    if multiMode or self._selectedStage == i:
+                                        self._controller.driverData[i] = stageControllers[i].update(sd, nsd, True)
                         else:
                             for stage in self._controller.driverData.keys():
                                 self._controller.driverData[stage] = SetDriver(stage)
@@ -343,7 +376,7 @@ class App:
                                 info['yaw_bar'].put(row, col, self._blue)
                                 col += self.bar_space + self.lspacer
                                 
-                                for i in range(8):
+                                for i in range(7):
                                     if sd.driver(i):
                                         info['drivers'][i].put(row, col, self._green)
                                     else:
@@ -366,7 +399,8 @@ class App:
                             col = 0
                             self._scr.addstr(row, col, f"{i}", self._blue)
                             col += self.sspacer
-                            targets = controller.getTargets()
+                            targets = controller.getPressureTargets()
+                            y, p, r = controller.getYPR()
                             
                             self._conInfo[i]['a_value'].set_text("{:.3f}".format(targets[0]))
                             self._conInfo[i]['a_value'].put(row, col, self._yellow)
@@ -378,6 +412,18 @@ class App:
 
                             self._conInfo[i]['c_value'].set_text("{:.3f}".format(targets[2]))
                             self._conInfo[i]['b_value'].put(row, col, self._yellow)
+                            col += self.sspacer
+
+                            self._conInfo[i]['y_value'].set_text("{:.3f}".format(y))
+                            self._conInfo[i]['y_value'].put(row, col, self._yellow)
+                            col += self.sspacer
+
+                            self._conInfo[i]['p_value'].set_text("{:.3f}".format(p))
+                            self._conInfo[i]['p_value'].put(row, col, self._yellow)
+                            col += self.sspacer
+
+                            self._conInfo[i]['r_value'].set_text("{:.3f}".format(r))
+                            self._conInfo[i]['r_value'].put(row, col, self._yellow)
                             col += self.sspacer
 
 

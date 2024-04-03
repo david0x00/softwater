@@ -50,8 +50,11 @@ class SetDriver:
         else:
             self._state = self._state & ~(1 << bit)
     
-    def pack(self):
-        return struct.pack(self._driverFMT, self._stage, self._state)
+    def pack(self, newStage=None):
+        if newStage is None:
+            return struct.pack(self._driverFMT, self._stage, self._state)
+        else:
+            return struct.pack(self._driverFMT, newStage, self._state)
     
 def packLEDS(stage, arr):
     return struct.pack("<B" + "B" * 12, stage, *arr[0], *arr[1], *arr[2], *arr[3])
