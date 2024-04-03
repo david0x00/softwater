@@ -6,3 +6,6 @@ initial_experiments/
 .csv
 .venv
 .vscode
+.DS_Store
+3D/app/.DS_Store
+3D/.DS_Store
